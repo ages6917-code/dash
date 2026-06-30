@@ -247,6 +247,45 @@ select.iedit{cursor:pointer}
 .bukyul{display:inline-flex;align-items:center;gap:6px;margin-top:14px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:10px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer}
 .stagepill{padding:5px 10px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;color:#64748b;background:#fff}
 .stagepill.on{color:#fff}.stagepill:hover{border-color:#cbd5e1}
+/* ===== AI 어시스턴트 박스 ===== */
+.aibox{background:#0f172a;border:1px solid #1e293b;border-radius:16px;padding:18px 20px;margin-bottom:16px;box-shadow:0 0 0 1px rgba(99,102,241,.25),0 8px 30px rgba(79,70,229,.22)}
+.ai-top{font-size:11px;font-weight:700;color:#818cf8;letter-spacing:.4px;display:flex;align-items:center;gap:7px}
+.ai-dot{width:8px;height:8px;border-radius:50%;background:#22d3ee;box-shadow:0 0 8px #22d3ee}
+.ai-prov{margin-left:auto;color:#94a3b8;background:#1e293b;border:1px solid #334155;border-radius:20px;padding:3px 11px;cursor:pointer;font-size:11px}
+.ai-prov:hover{color:#c7d2fe;border-color:#6366f1}
+.ai-title{font-size:16px;font-weight:800;color:#f1f5f9;margin:9px 0 13px}
+.ai-bar{display:flex;gap:8px}
+.ai-bar input{flex:1;border:1px solid #334155;background:#1e293b;border-radius:11px;padding:12px 14px;font-size:13.5px;color:#fff;outline:none}
+.ai-bar input::placeholder{color:#64748b}
+.ai-bar input:focus{border-color:#6366f1}
+.ai-bar button{width:46px;border:none;border-radius:11px;background:linear-gradient(135deg,#6366f1,#8b5cf6);color:#fff;font-size:18px;font-weight:800;cursor:pointer}
+.ai-bar button:hover{filter:brightness(1.1)}
+.ai-recos{display:flex;flex-wrap:wrap;gap:7px;margin-top:12px}
+.ai-recos .reco{font-size:12.5px;font-weight:600;padding:8px 13px;border-radius:10px;background:rgba(99,102,241,.12);color:#c7d2fe;border:1px solid rgba(99,102,241,.35);cursor:pointer}
+.ai-recos .reco:hover{background:rgba(99,102,241,.22)}
+.ai-chips{display:flex;gap:7px;margin-top:13px;padding-top:12px;border-top:1px solid #1e293b}
+.ai-chips span{font-size:11px;padding:5px 13px;border-radius:20px;background:#1e293b;color:#94a3b8;border:1px solid #334155;cursor:pointer}
+.ai-chips span.on{background:rgba(99,102,241,.18);color:#a5b4fc;border-color:#6366f1}
+.ai-ans{margin-top:14px;background:#0b1220;border:1px solid #1e293b;border-radius:12px;padding:14px 16px}
+.ai-q{font-size:12.5px;color:#a5b4fc;font-weight:700;margin-bottom:9px;padding-bottom:9px;border-bottom:1px solid #1e293b}
+.ai-a{font-size:13.5px;color:#e2e8f0;line-height:1.7;white-space:pre-wrap}
+.ai-load{font-size:13px;color:#94a3b8;display:flex;align-items:center;gap:9px}
+.ai-err{font-size:13px;color:#fca5a5;line-height:1.6}
+.spin2{width:15px;height:15px;border:2.5px solid #334155;border-top-color:#818cf8;border-radius:50%;animation:spin .8s linear infinite;display:inline-block}
+.ai-ov{position:fixed;inset:0;background:rgba(2,6,23,.6);z-index:9000;display:flex;align-items:center;justify-content:center;padding:20px}
+.ai-modal{background:#0f172a;border:1px solid #1e293b;border-radius:18px;padding:22px;width:100%;max-width:420px;box-shadow:0 20px 60px rgba(0,0,0,.5)}
+.aim-h{display:flex;justify-content:space-between;align-items:center;font-size:16px;color:#f1f5f9}
+.aim-sub{font-size:12px;color:#94a3b8;line-height:1.6;margin:8px 0 14px}
+.aim-provs{display:flex;gap:8px;margin-bottom:14px}
+.aim-provs label{flex:1;text-align:center;font-size:13px;font-weight:700;color:#94a3b8;background:#1e293b;border:1.5px solid #334155;border-radius:11px;padding:10px 0;cursor:pointer}
+.aim-provs label.on{color:#a5b4fc;border-color:#6366f1;background:rgba(99,102,241,.15)}
+.aim-provs input{display:none}
+.aim-provs .free{font-size:9.5px;background:#16a34a;color:#fff;padding:1px 6px;border-radius:8px;margin-left:3px;vertical-align:middle}
+.aim-f{margin-bottom:11px}
+.aim-f label{display:block;font-size:11.5px;color:#cbd5e1;font-weight:700;margin-bottom:5px}
+.aim-f label a{color:#818cf8;font-weight:600;font-size:11px;margin-left:5px;text-decoration:none}
+.aim-f input{width:100%;border:1px solid #334155;background:#1e293b;border-radius:10px;padding:10px 12px;font-size:13px;color:#fff;outline:none}
+.aim-f input:focus{border-color:#6366f1}
 </style>
 </head>
 <body>
@@ -1013,6 +1052,7 @@ function renderCustomer(id){
    <div class="sum" style="flex-wrap:wrap;justify-content:flex-end;max-width:60%;gap:6px">
      ${STAGES.map(st=>`<span class="stagepill ${c.stage===st?'on':''}" style="${c.stage===st?`background:${STAGE[st]};border-color:${STAGE[st]}`:''}" onclick="setCust('${id}',{stage:'${st}',contacted:${st!=='연락전'}})">${esc(st)}</span>`).join('')}
    </div></div>
+ ${aiBoxHtml(id)}
  <div class="grid2">
    <div class="panel">
      ${docsHtml(id,c)}
@@ -1118,6 +1158,130 @@ function renderExt(){
  <div class="panel"><div class="ph"><b>🛡️ 보험 계약 (${insDeals.length}건)</b><span class="sub">금액·상태 눌러 수정</span></div>${insDeals.length?insDeals.map(c=>feeRow(c,'insurance')).join(''):'<div class="ins">진행 건이 없습니다.</div>'}</div>
  <div class="panel"><div class="ph"><b>🧾 세무 이관 (${taxDeals.length}건)</b><span class="sub">금액·상태 눌러 수정</span></div>${taxDeals.length?taxDeals.map(c=>feeRow(c,'tax')).join(''):'<div class="ins">진행 건이 없습니다.</div>'}</div>
  <div style="text-align:center;color:#94a3b8;font-size:12px;margin-top:14px">${esc(s.name)}님 관련 건만 표시 · 다른 고객/수익 정보는 보이지 않습니다</div>`;
+}
+
+/* ===== 🤖 AI 어시스턴트 (Claude / GPT / Gemini · 각자 키 · 브라우저 저장) ===== */
+const AI_LS='consult_ai_cfg';
+const AI_PROVS={gemini:'Gemini',openai:'GPT',claude:'Claude'};
+const AI_SYS='당신은 한국의 정책자금·대출·보험·세무 컨설팅 전문가 AI 비서입니다. 아래 [고객 정보]를 근거로 컨설턴트(사용자)의 질문에 한국어로 간결하고 실무적으로 답하세요. 핵심을 먼저, 필요하면 항목별로. 정보가 없는 부분은 추측하지 말고 "자료 없음"이라고 표시하세요.';
+function aiCfg(){ try{return JSON.parse(localStorage.getItem(AI_LS))||{};}catch(e){return {};} }
+function aiSaveCfg(c){ try{localStorage.setItem(AI_LS,JSON.stringify(c));}catch(e){} }
+function aiProv(){ return aiCfg().provider||'gemini'; }
+function aiKey(p){ return ((aiCfg().keys)||{})[p||aiProv()]||''; }
+function aiVal(id){ return (document.getElementById(id)||{value:''}).value.trim(); }
+function aiSetProv(p){ const c=aiCfg(); c.provider=p; aiSaveCfg(c); if(!aiKey(p)){ aiSettings(); } else { rerender(); } }
+function aiBoxHtml(id){
+  const p=aiProv();
+  return `<div class="aibox">
+    <div class="ai-top"><span class="ai-dot"></span> AI 어시스턴트 <span class="ai-prov" onclick="aiSettings()" title="AI 설정·키 입력">⚙ ${AI_PROVS[p]}</span></div>
+    <div class="ai-title">고객 서류에 대해 궁금한 건 저한테 물어보세요!</div>
+    <div class="ai-bar"><input id="aiQ" placeholder="질문을 입력하세요…" onkeydown="if(event.key==='Enter')aiAsk('${id}')"><button onclick="aiAsk('${id}')">↑</button></div>
+    <div class="ai-recos">
+      <span class="reco" onclick="aiAsk('${id}','이 고객의 서류와 재무 상황을 3줄로 요약해줘')">📄 서류 요약해줘</span>
+      <span class="reco" onclick="aiAsk('${id}','이 고객에게 어떤 정책자금·컨설팅 방향이 적합할지 제안해줘')">💡 컨설팅 어떻게 할까?</span>
+      <span class="reco" onclick="aiAsk('${id}','승인을 위해 부족하거나 보강이 필요한 서류·요건을 알려줘')">📊 부족한 서류는?</span>
+      <span class="reco" onclick="aiAsk('${id}','이 고객의 자금 승인 가능성과 리스크를 평가해줘')">✅ 승인 가능성은?</span>
+    </div>
+    <div class="ai-chips">
+      <span class="${p==='claude'?'on':''}" onclick="aiSetProv('claude')">Claude</span>
+      <span class="${p==='openai'?'on':''}" onclick="aiSetProv('openai')">GPT</span>
+      <span class="${p==='gemini'?'on':''}" onclick="aiSetProv('gemini')">Gemini</span>
+    </div>
+    <div class="ai-ans" id="aiAns" style="display:none"></div>
+  </div>`;
+}
+function aiContext(c){
+  let t='[고객 정보]\n';
+  t+='이름: '+(c.nm||'-')+'\n유형: '+(c.type||'-')+'\n업종/사업: '+(c.biz||'-')+'\n상호: '+(c.bizName||'-')+'\n진행단계: '+(c.stage||'-')+'\n신청금액: '+(c.fund||'-')+'\n최초접수: '+(c.received||'-')+'\n';
+  if(c.memo) t+='담당메모: '+c.memo+'\n';
+  if(c.docs&&c.docs.length) t+='제출서류: '+c.docs.map(d=>(d&&d.name)||d).join(', ')+'\n';
+  const sm=c.summary;
+  if(sm&&Object.keys(sm).length){
+    t+='\n[재무 요약]\n';
+    if(sm.sales&&sm.sales.length) t+='매출추이: '+sm.sales.map(s=>s.y+' '+s.v+'억').join(', ')+'\n';
+    if(sm.asset) t+='자산총계: '+sm.asset+'\n';
+    if(sm.liab) t+='부채총계: '+sm.liab+'\n';
+    if(sm.cap) t+='자본총계: '+sm.cap+'\n';
+    if(sm.debtRatio) t+='부채비율: '+sm.debtRatio+'\n';
+    if(sm.loans&&sm.loans.length) t+='대출현황: '+sm.loans.map(l=>l.bank+' '+l.amt+(l.desc?'('+l.desc+')':'')).join(', ')+'\n';
+    if(sm.warn) t+='주의: '+sm.warn+'\n';
+    if(sm.credit) t+='신용: '+sm.credit+'\n';
+  }
+  if(c.summaryNote) t+='재무메모: '+c.summaryNote+'\n';
+  return t;
+}
+function aiFmt(s){ return esc(s).replace(/\*\*(.+?)\*\*/g,'<b>$1</b>'); }
+async function aiAsk(id,preset){
+  const c=getCust(id); if(!c) return;
+  const inp=document.getElementById('aiQ');
+  const q=(preset||(inp?inp.value:'')||'').trim();
+  if(!q){ toast('질문을 입력하세요'); if(inp)inp.focus(); return; }
+  const p=aiProv(), key=aiKey(p);
+  if(!key){ toast(AI_PROVS[p]+' 키를 먼저 입력하세요'); aiSettings(); return; }
+  const ans=document.getElementById('aiAns'); if(!ans) return;
+  if(preset&&inp) inp.value=q;
+  ans.style.display='block';
+  ans.innerHTML='<div class="ai-load"><span class="spin2"></span> '+AI_PROVS[p]+'가 답변 생성 중…</div>';
+  try{
+    const out=await aiCall(p,key,aiContext(c),q);
+    ans.innerHTML='<div class="ai-q">🙋 '+esc(q)+'</div><div class="ai-a">'+aiFmt(out)+'</div>';
+  }catch(e){
+    ans.innerHTML='<div class="ai-err">⚠ '+esc(e.message||'호출 실패')+'<br><span style="opacity:.75">키가 올바른지 / 잔액이 있는지 확인하세요. <a onclick="aiSettings()" style="color:#a5b4fc;cursor:pointer;text-decoration:underline">설정 열기</a></span></div>';
+  }
+}
+async function aiCall(p,key,ctx,q){
+  const userMsg=ctx+'\n\n[질문]\n'+q;
+  if(p==='gemini'){
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),
+      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:AI_SYS}]},contents:[{parts:[{text:userMsg}]}]})});
+    const j=await r.json(); if(!r.ok) throw new Error((j.error&&j.error.message)||'Gemini 오류');
+    return (((j.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'(응답 없음)';
+  }
+  if(p==='openai'){
+    const r=await fetch('https://api.openai.com/v1/chat/completions',
+      {method:'POST',headers:{'Content-Type':'application/json','Authorization':'Bearer '+key},
+       body:JSON.stringify({model:'gpt-4o-mini',messages:[{role:'system',content:AI_SYS},{role:'user',content:userMsg}]})});
+    const j=await r.json(); if(!r.ok) throw new Error((j.error&&j.error.message)||'OpenAI 오류');
+    return (((j.choices||[])[0]||{}).message||{}).content||'(응답 없음)';
+  }
+  if(p==='claude'){
+    const r=await fetch('https://api.anthropic.com/v1/messages',
+      {method:'POST',headers:{'Content-Type':'application/json','x-api-key':key,'anthropic-version':'2023-06-01','anthropic-dangerous-direct-browser-access':'true'},
+       body:JSON.stringify({model:'claude-3-5-haiku-20241022',max_tokens:1024,system:AI_SYS,messages:[{role:'user',content:userMsg}]})});
+    const j=await r.json(); if(!r.ok) throw new Error((j.error&&j.error.message)||'Claude 오류');
+    return ((j.content||[])[0]||{}).text||'(응답 없음)';
+  }
+  throw new Error('알 수 없는 AI');
+}
+function aiSettings(){
+  const c=aiCfg(), k=c.keys||{}, p=aiProv();
+  const ex=document.getElementById('aiSet'); if(ex)ex.remove();
+  const ov=document.createElement('div'); ov.id='aiSet'; ov.className='ai-ov';
+  ov.innerHTML=`<div class="ai-modal" onclick="event.stopPropagation()">
+    <div class="aim-h"><b>🤖 AI 설정</b><span onclick="document.getElementById('aiSet').remove()" style="cursor:pointer;color:#94a3b8">✕</span></div>
+    <div class="aim-sub">사용할 AI를 고르고 키를 <b>한 번만</b> 넣으면 됩니다. 키는 <b>이 브라우저에만</b> 저장돼요(공유·전송 안 함). 키가 없으면 <b>Gemini 무료 발급</b>을 추천!</div>
+    <div class="aim-provs">
+      <label class="${p==='gemini'?'on':''}"><input type="radio" name="aip" value="gemini" ${p==='gemini'?'checked':''}>Gemini<span class="free">무료</span></label>
+      <label class="${p==='openai'?'on':''}"><input type="radio" name="aip" value="openai" ${p==='openai'?'checked':''}>GPT</label>
+      <label class="${p==='claude'?'on':''}"><input type="radio" name="aip" value="claude" ${p==='claude'?'checked':''}>Claude</label>
+    </div>
+    <div class="aim-f"><label>Gemini 키 <a href="https://aistudio.google.com/app/apikey" target="_blank">무료 발급 →</a></label><input id="kGem" value="${esc(k.gemini||'')}" placeholder="AIza..."></div>
+    <div class="aim-f"><label>OpenAI(GPT) 키 <a href="https://platform.openai.com/api-keys" target="_blank">발급 →</a></label><input id="kOai" value="${esc(k.openai||'')}" placeholder="sk-..."></div>
+    <div class="aim-f"><label>Claude 키 <a href="https://console.anthropic.com/settings/keys" target="_blank">발급 →</a></label><input id="kCla" value="${esc(k.claude||'')}" placeholder="sk-ant-..."></div>
+    <button class="btn b" style="width:100%;margin-top:6px" onclick="aiSaveSettings()">저장</button>
+  </div>`;
+  ov.onclick=()=>ov.remove();
+  document.querySelectorAll('.aim-provs label').forEach(l=>l.onclick=()=>{ document.querySelectorAll('.aim-provs label').forEach(x=>x.classList.remove('on')); l.classList.add('on'); l.querySelector('input').checked=true; });
+  document.body.appendChild(ov);
+}
+function aiSaveSettings(){
+  const sel=document.querySelector('input[name=aip]:checked');
+  const c=aiCfg();
+  c.provider=sel?sel.value:'gemini';
+  c.keys={gemini:aiVal('kGem'),openai:aiVal('kOai'),claude:aiVal('kCla')};
+  aiSaveCfg(c);
+  const ov=document.getElementById('aiSet'); if(ov)ov.remove();
+  toast('AI 설정 저장됨'); rerender();
 }
 </script>
 </body>
