@@ -302,6 +302,21 @@ select.iedit{cursor:pointer}
 .login-g .gicon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:conic-gradient(#ea4335 0 25%,#fbbc05 0 50%,#34a853 0 75%,#4285f4 0);color:#fff;font-weight:900;font-size:13px}
 .login-note{font-size:11.5px;color:#64748b;margin-top:16px}
 .login-deny{background:#2a1418;border:1px solid #7f1d1d;color:#fca5a5;border-radius:12px;padding:12px;font-size:12.5px;line-height:1.6;margin-bottom:16px}
+/* 음성·통화 녹음 */
+.recbox{background:#fff;border:1px solid #eef0f4;border-radius:14px;padding:15px;margin-bottom:16px}
+.reczone{display:flex;align-items:center;gap:13px;width:100%;background:linear-gradient(135deg,#eef2ff,#faf5ff);border:1.5px dashed #c7d2fe;border-radius:13px;padding:15px;cursor:pointer;margin:4px 0 12px}
+.reczone:active{filter:brightness(.97)}
+.recz-ic{width:44px;height:44px;border-radius:12px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}
+.reczone b{font-size:14px;color:#1e293b}
+.recz-sub{font-size:11.5px;color:#64748b;margin-top:3px}
+.recitem{background:#f8fafc;border:1px solid #eef0f4;border-radius:11px;padding:11px 13px;margin-top:9px}
+.recrow{display:flex;align-items:center;gap:8px}
+.recic{font-size:15px}
+.recnm{flex:1;font-size:13px;font-weight:600;color:#1e293b;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.recwhere{font-size:10px;color:#94a3b8;background:#eef2ff;padding:2px 7px;border-radius:7px;flex-shrink:0}
+.recitem .x{cursor:pointer;color:#cbd5e1;font-size:13px;flex-shrink:0}
+.recitem .x:hover{color:#ef4444}
+.recitem audio{width:100%;margin-top:8px;height:34px}
 </style>
 </head>
 <body>
@@ -657,6 +672,47 @@ function docsHtml(id,c){
     <div class="dropzone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="docDrop(event,'${id}')">
       📎 파일 끌어다 놓기 <b>(알집 OK · 자동 분리저장)</b><br><label class="filelabel">또는 파일 선택<input type="file" multiple style="display:none" onchange="docUpload('${id}',this.files)"></label></div>
     ${items||'<div class="docempty">아직 등록된 서류가 없습니다. 끌어다 놓으면 D:\\컨설팅_서류\\에 저장됩니다.</div>'}</div>`;
+}
+
+/* ===== 🎙️ 음성·통화 녹음 첨부 (데탑=D드라이브 / 폰=클라우드 자동분기) ===== */
+function recHtml(id,c){
+  const recs=c.arec||[]; const nm=c.nm||id;
+  const items=recs.map((a,i)=>{
+    const src = a.mode==='c' ? a.data : (FILESRV+'/file?customer='+encodeURIComponent(nm)+'&name='+encodeURIComponent(a.name)+'&inline=1');
+    const where = a.mode==='c' ? '☁ 클라우드' : '💾 D드라이브';
+    return `<div class="recitem"><div class="recrow"><span class="recic">🎙️</span><span class="recnm">${esc(a.name||'통화녹음')}</span><span class="recwhere">${where}</span><span class="x" title="삭제" onclick="recDelete('${id}',${i})">✕</span></div>
+      <audio controls preload="none" src="${src}"></audio></div>`;
+  }).join('');
+  return `<div class="recbox"><div class="dh" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><b>🎙️ 음성·통화 녹음 <span style="color:#b9a96b;font-weight:600">(${recs.length})</span></b></div>
+    <label class="reczone"><input type="file" accept="audio/*" multiple style="display:none" onchange="recUpload('${id}',this.files)">
+      <div class="recz-ic">🎙️</div><div><b>음성 파일 추가</b><div class="recz-sub">📞 폰에서 누르면 통화 녹음 선택 · 데탑이면 파일 선택</div></div></label>
+    ${items||'<div class="docempty">아직 음성이 없습니다. 위를 눌러 통화 녹음을 추가하세요.</div>'}</div>`;
+}
+async function recUpload(id,fileList){
+  const c=getCust(id)||{}; const nm=c.nm||id; const files=[...fileList]; if(!files.length)return;
+  toast('음성 업로드 중… '+files.length+'개');
+  let srvOK=false;
+  try{ const ping=await fetch(FILESRV+'/list?customer='+encodeURIComponent(nm)); srvOK=ping.ok; }catch(e){ srvOK=false; }
+  const arec=(c.arec||[]).slice();
+  for(const f of files){
+    if(srvOK){
+      try{ const data=await _b64(f);
+        await fetch(FILESRV+'/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer:nm,name:f.name,data})});
+        arec.push({name:f.name,ts:Date.now(),mode:'d'}); continue;
+      }catch(e){ /* 서버 실패 → 클라우드로 폴백 */ }
+    }
+    if(f.size>9*1024*1024){ toast(f.name+' 9MB 초과 — 긴 녹음은 데탑에서 추가하세요'); continue; }
+    const data=await _b64(f);
+    arec.push({name:f.name,ts:Date.now(),mode:'c',data});
+  }
+  setCust(id,{arec});
+  toast(srvOK?'음성 저장 완료 ✓ (D드라이브)':'음성 저장 완료 ✓ (클라우드)');
+}
+function recDelete(id,i){
+  const c=getCust(id)||{}; const arec=(c.arec||[]).slice(); const a=arec[i]; if(!a)return;
+  if(!confirm((a.name||'녹음')+' 삭제할까요?')) return;
+  if(a.mode==='d'){ try{ fetch(FILESRV+'/delete?customer='+encodeURIComponent(c.nm||id)+'&name='+encodeURIComponent(a.name)); }catch(e){} }
+  arec.splice(i,1); setCust(id,{arec}); toast('삭제됨');
 }
 
 /* ===== 컨설팅 메모(멀티라인) ===== */
@@ -1118,6 +1174,7 @@ function renderCustomer(id){
  <div class="grid2">
    <div class="panel">
      ${docsHtml(id,c)}
+     ${recHtml(id,c)}
      <div class="ph"><b>📋 진행 정보</b><span class="sub">값을 클릭하면 수정</span></div>
      <div class="fld"><label>진행 단계</label><div class="ev" onclick="iStage(this,'${id}')">${esc(c.stage)} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
      <div class="fld"><label>사업자 / 상호명</label><div class="ev" onclick="iText(this,'${id}','bizName')">${esc(c.bizName)||'(입력)'}</div></div>
