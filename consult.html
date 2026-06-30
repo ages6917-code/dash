@@ -287,6 +287,8 @@ select.iedit{cursor:pointer}
 .aim-f label a{color:#818cf8;font-weight:600;font-size:11px;margin-left:5px;text-decoration:none}
 .aim-f input{width:100%;border:1px solid #334155;background:#1e293b;border-radius:10px;padding:10px 12px;font-size:13px;color:#fff;outline:none}
 .aim-f input:focus{border-color:#6366f1}
+.team-cta{display:flex;align-items:center;gap:8px;background:linear-gradient(135deg,rgba(99,102,241,.22),rgba(16,185,129,.16));border:1.5px solid rgba(129,140,248,.5);border-radius:13px;padding:12px 14px;margin-bottom:14px;cursor:pointer;font-size:13px;color:#e0e7ff}
+.team-cta:hover{border-color:#a5b4fc;background:linear-gradient(135deg,rgba(99,102,241,.32),rgba(16,185,129,.22))}
 .gem-card{background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(99,102,241,.1));border:1.5px solid rgba(52,211,153,.4);border-radius:15px;padding:16px;margin-bottom:14px}
 .gem-top{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:800;color:#f1f5f9;margin-bottom:11px}
 .gem-badge{font-size:10px;background:#16a34a;color:#fff;padding:2px 8px;border-radius:20px;font-weight:700}
@@ -1309,14 +1311,20 @@ const AI_PROVS={gemini:'Gemini',openai:'GPT',claude:'Claude'};
 const AI_SYS='당신은 한국의 정책자금·대출·보험·세무 컨설팅 전문가 AI 비서입니다. 아래 [고객 정보]를 근거로 컨설턴트(사용자)의 질문에 한국어로 간결하고 실무적으로 답하세요. 핵심을 먼저, 필요하면 항목별로. 정보가 없는 부분은 추측하지 말고 "자료 없음"이라고 표시하세요.';
 function aiCfg(){ try{return JSON.parse(localStorage.getItem(AI_LS))||{};}catch(e){return {};} }
 function aiSaveCfg(c){ try{localStorage.setItem(AI_LS,JSON.stringify(c));}catch(e){} }
-function aiProv(){ return aiCfg().provider||'gemini'; }
-function aiKey(p){ return ((aiCfg().keys)||{})[p||aiProv()]||''; }
+/* === 팀 공용 키: 사장님이 Firebase(/_aikey)에 1번 등록 → 팀 전원 자동 사용 (개인 키 입력 0) === */
+function teamKey(){ try{ return (DATA&&DATA._aikey&&DATA._aikey.gemini)||''; }catch(e){ return ''; } }
+function aiTeamOn(){ return !!teamKey(); }
+function aiProv(){ if(aiTeamOn()) return 'gemini'; return aiCfg().provider||'gemini'; }
+function aiKey(p){ p=p||aiProv(); if(p==='gemini' && teamKey()) return teamKey(); return ((aiCfg().keys)||{})[p]||''; }
 function aiVal(id){ return (document.getElementById(id)||{value:''}).value.trim(); }
-function aiSetProv(p){ const c=aiCfg(); c.provider=p; aiSaveCfg(c); if(!aiKey(p)){ aiSettings(); } else { rerender(); } }
+function aiSetProv(p){ if(aiTeamOn()){ rerender(); return; } const c=aiCfg(); c.provider=p; aiSaveCfg(c); if(!aiKey(p)){ aiSettings(); } else { rerender(); } }
 function aiBoxHtml(id){
-  const p=aiProv();
+  const p=aiProv(), team=aiTeamOn();
+  const badge = team
+    ? `<span class="ai-prov" onclick="aiSettings()" title="팀 공용 AI" style="background:#064e3b;color:#6ee7b7">🟢 팀 공용 AI</span>`
+    : `<span class="ai-prov" onclick="aiSettings()" title="AI 설정·키 입력">⚙ ${AI_PROVS[p]}</span>`;
   return `<div class="aibox">
-    <div class="ai-top"><span class="ai-dot"></span> AI 어시스턴트 <span class="ai-prov" onclick="aiSettings()" title="AI 설정·키 입력">⚙ ${AI_PROVS[p]}</span></div>
+    <div class="ai-top"><span class="ai-dot"></span> AI 어시스턴트 ${badge}</div>
     <div class="ai-title">고객 서류에 대해 궁금한 건 저한테 물어보세요!</div>
     <div class="ai-bar"><input id="aiQ" placeholder="질문을 입력하세요…" onkeydown="if(event.key==='Enter')aiAsk('${id}')"><button onclick="aiAsk('${id}')">↑</button></div>
     <div class="ai-recos">
@@ -1325,11 +1333,11 @@ function aiBoxHtml(id){
       <span class="reco" onclick="aiAsk('${id}','승인을 위해 부족하거나 보강이 필요한 서류·요건을 알려줘')">📊 부족한 서류는?</span>
       <span class="reco" onclick="aiAsk('${id}','이 고객의 자금 승인 가능성과 리스크를 평가해줘')">✅ 승인 가능성은?</span>
     </div>
-    <div class="ai-chips">
+    ${team?'':`<div class="ai-chips">
       <span class="${p==='claude'?'on':''}" onclick="aiSetProv('claude')">Claude</span>
       <span class="${p==='openai'?'on':''}" onclick="aiSetProv('openai')">GPT</span>
       <span class="${p==='gemini'?'on':''}" onclick="aiSetProv('gemini')">Gemini</span>
-    </div>
+    </div>`}
     <div class="ai-ans" id="aiAns" style="display:none"></div>
   </div>`;
 }
@@ -1413,8 +1421,27 @@ function aiSettings(){
   const ex=document.getElementById('aiSet'); if(ex)ex.remove();
   const ov=document.createElement('div'); ov.id='aiSet'; ov.className='ai-ov';
   const have=k.gemini?'✓ 키 등록됨':'';
+  // 팀 공용 모드가 켜져 있으면: 팀원은 아무것도 안 해도 됨
+  if(aiTeamOn()){
+    ov.innerHTML=`<div class="ai-modal" onclick="event.stopPropagation()">
+      <div class="aim-h"><b>🤖 AI 설정</b><span onclick="document.getElementById('aiSet').remove()" style="cursor:pointer;color:#94a3b8">✕</span></div>
+      <div class="gem-card" style="text-align:center">
+        <div style="font-size:34px">🟢</div>
+        <div style="font-size:16px;font-weight:800;color:#6ee7b7;margin-top:4px">팀 공용 AI 켜짐</div>
+        <div class="aim-sub" style="margin-top:6px">키 입력 필요 없어요. 그냥 <b style="color:#cbd5e1">질문만</b> 하시면 됩니다.</div>
+      </div>
+      <div class="adv-toggle" onclick="aiToggleAdv()" style="margin-top:10px">⚙ 사장님 — 팀 공용 키 변경/해제 ▾</div>
+      <div id="advBox" style="display:none">
+        <div class="aim-f"><label>팀 공용 Gemini 키 <a href="https://aistudio.google.com/app/apikey" target="_blank">발급 →</a></label><input id="kTeam" value="${esc(teamKey())}" placeholder="AIza…"></div>
+        <button class="btn b" style="width:100%" onclick="teamKeySave()">팀 공용 키 저장(전원 적용)</button>
+        <button class="btn" style="width:100%;margin-top:8px;background:#3a1d1d;color:#fca5a5" onclick="teamKeyOff()">팀 공용 모드 끄기</button>
+      </div>
+    </div>`;
+    ov.onclick=()=>ov.remove(); document.body.appendChild(ov); return;
+  }
   ov.innerHTML=`<div class="ai-modal" onclick="event.stopPropagation()">
     <div class="aim-h"><b>🤖 AI 설정</b><span onclick="document.getElementById('aiSet').remove()" style="cursor:pointer;color:#94a3b8">✕</span></div>
+    <div class="team-cta" onclick="teamKeySetup()">🚀 <b>팀 공용 모드 켜기</b> — 키 1개만 등록하면 팀 전원 키 없이 사용 <span style="margin-left:auto">›</span></div>
     <div class="aim-sub">폰에서는 <b style="color:#34d399">Gemini(무료)</b>가 제일 쉬워요. 아래 버튼으로 키 받아 붙여넣기만 하면 끝! <b style="color:#cbd5e1">Claude·GPT 콘솔은 안 봐도 됩니다.</b></div>
 
     <div class="gem-card">
@@ -1435,12 +1462,41 @@ function aiSettings(){
       <div class="aim-f"><label>Claude 키 <a href="https://console.anthropic.com/settings/keys" target="_blank">발급(PC) →</a></label><input id="kCla" value="${esc(k.claude||'')}" placeholder="sk-ant-..."></div>
       <button class="btn b" style="width:100%" onclick="aiSaveSettings()">선택한 AI로 저장</button>
     </div>
-    <div class="login-note" style="text-align:center;margin-top:14px">🚀 팀원 전원 <b>키 없이</b> 쓰게 하려면 → 사장님께 "팀 공용 모드" 요청</div>
+    <div class="login-note" style="text-align:center;margin-top:14px">🚀 팀원이 키를 못 받나요? → 위 <b style="color:#a5b4fc">‘팀 공용 모드 켜기’</b> 한 번이면 팀 전원 키 없이 사용</div>
   </div>`;
   ov.onclick=()=>ov.remove();
   document.body.appendChild(ov);
 }
 function aiToggleAdv(){ const b=document.getElementById('advBox'); if(b) b.style.display=(b.style.display==='none'?'block':'none'); }
+/* === 팀 공용 키 등록 (사장님 전용) === */
+function teamKeySetup(){
+  const ov=document.getElementById('aiSet'); const box=ov?ov.querySelector('.ai-modal'):null; if(!box)return;
+  box.innerHTML=`<div class="aim-h"><b>🚀 팀 공용 모드</b><span onclick="document.getElementById('aiSet').remove()" style="cursor:pointer;color:#94a3b8">✕</span></div>
+    <div class="aim-sub">사장님이 <b style="color:#34d399">Gemini 무료 키 1개</b>만 등록하면, 팀원들은 <b style="color:#cbd5e1">키 입력 없이</b> 접속만 해도 AI를 씁니다. (Firebase에 저장 → 전원 자동 적용)</div>
+    <div class="gem-card">
+      <a class="gem-get" href="https://aistudio.google.com/app/apikey" target="_blank">🔑 무료 키 받기 (폰에서도 1분) →</a>
+      <input id="kTeam" value="${esc(teamKey())}" placeholder="받은 키( AIza… ) 여기 붙여넣기">
+      <button class="btn b" style="width:100%;margin-top:10px;font-size:15px;padding:13px" onclick="teamKeySave()">팀 전원에게 적용</button>
+    </div>
+    <div class="login-note" style="text-align:center;margin-top:12px">🔒 키는 우리 대시보드(${esc(location.hostname||'이 도메인')})에서만 쓰도록 Google AI Studio에서 도메인 제한을 걸면 더 안전해요.</div>`;
+}
+function teamKeySave(){
+  const key=aiVal('kTeam'); if(!key){ toast('키를 붙여넣어 주세요'); return; }
+  if(typeof offline!=='undefined' && offline){ toast('오프라인 — 실시간 켠 뒤 등록하세요'); return; }
+  const btn=event&&event.target; if(btn){ btn.disabled=true; btn.textContent='확인 중…'; }
+  // 키 유효성 1회 검증 후 저장
+  aiCall('gemini',key,'[테스트]','연결 테스트. "OK"라고만 답해.').then(()=>{
+    try{ DATA._aikey={gemini:key,by:(typeof ME_EMAIL!=='undefined'&&ME_EMAIL)||'admin',ts:Date.now()}; }catch(e){}
+    dref('_aikey').set({gemini:key,by:(typeof ME_EMAIL!=='undefined'&&ME_EMAIL)||'admin',ts:Date.now()})
+      .then(()=>{ const ov=document.getElementById('aiSet'); if(ov)ov.remove(); toast('팀 공용 AI 켜짐 — 전원 적용 ✓'); rerender(); })
+      .catch(()=>{ toast('저장 실패(권한 확인)'); if(btn){btn.disabled=false;btn.textContent='팀 전원에게 적용';} });
+  }).catch(e=>{ toast('키 오류: '+(e.message||'유효하지 않음')); if(btn){btn.disabled=false;btn.textContent='팀 전원에게 적용';} });
+}
+function teamKeyOff(){
+  if(typeof offline!=='undefined' && offline){ toast('오프라인'); return; }
+  try{ delete DATA._aikey; }catch(e){}
+  dref('_aikey').remove().then(()=>{ const ov=document.getElementById('aiSet'); if(ov)ov.remove(); toast('팀 공용 모드 꺼짐'); rerender(); }).catch(()=>toast('실패'));
+}
 function aiUseGemini(){
   const key=aiVal('kGem'); if(!key){ toast('키를 붙여넣어 주세요'); return; }
   const c=aiCfg(); c.provider='gemini'; c.keys=Object.assign({}, c.keys||{}, {gemini:key}); aiSaveCfg(c);
@@ -1480,7 +1536,8 @@ function openAdmin(){
       <div><div style="font-size:16px;font-weight:800;color:#f1f5f9">${esc(nm)}</div><div style="font-size:12px;color:#94a3b8">${esc(ro)}</div></div>
     </div>
     <div class="adm-item" onclick="editMe()">✏️ <span>이름·직함 수정</span><span style="flex:0;color:#64748b">›</span></div>
-    <div class="adm-item" onclick="admClose();aiSettings()">🤖 <span>AI 설정 (키 입력)</span><span style="flex:0;color:#64748b">›</span></div>
+    <div class="adm-item" onclick="admClose();aiSettings();setTimeout(function(){if(!aiTeamOn())teamKeySetup();},30)">🚀 <span>팀 공용 AI 켜기 ${aiTeamOn()?'<b style=\"color:#34d399\">(켜짐)</b>':'(키 1개로 전원)'}</span><span style="flex:0;color:#64748b">›</span></div>
+    <div class="adm-item" onclick="admClose();aiSettings()">🤖 <span>AI 설정 (개인 키)</span><span style="flex:0;color:#64748b">›</span></div>
     <div class="adm-item" onclick="copyShare()">🔗 <span>공유 링크 복사</span><span style="flex:0;color:#64748b">›</span></div>
     ${(typeof AUTH_REQUIRED!=='undefined'&&AUTH_REQUIRED&&ME_EMAIL)?`<div class="adm-item out" onclick="doSignOut()">🚪 <span>로그아웃 (${esc(ME_EMAIL)})</span><span style="flex:0">›</span></div>`:''}
     <div style="font-size:11px;color:#64748b;text-align:center;margin-top:14px">컨설팅 CRM · ${typeof offline!=='undefined'&&offline?'오프라인 🔴':'실시간 동기화 🟢'}</div>
