@@ -6,12 +6,14 @@
 <meta name="theme-color" content="#101a36">
 <title>컨설팅 CRM 대시보드</title>
 <link rel="apple-touch-icon" href="_assets/icon180.png">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent}
 :root{--bg:#f4f6fb;--card:#fff;--ink:#0f172a;--sub:#64748b;--line:#eef1f6;--brand:#3b82f6;--dark:#101a36}
 body{background:var(--bg);color:var(--ink);min-height:100vh}
 .app{display:flex;min-height:100vh}
-/* 사이드바 */
 .side{width:228px;background:var(--dark);position:fixed;top:0;left:0;bottom:0;display:flex;flex-direction:column;z-index:20}
 .brand{padding:22px 22px 18px;display:flex;align-items:center;gap:10px;border-bottom:1px solid rgba(255,255,255,.07)}
 .brand .logo{width:38px;height:38px;background:linear-gradient(135deg,#63b3ed,#7c5cff);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:20px}
@@ -22,7 +24,6 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 .me{padding:16px 22px;border-top:1px solid rgba(255,255,255,.07);display:flex;align-items:center;gap:10px}
 .me .av{width:34px;height:34px;border-radius:50%;background:#2a3a63;color:#cdd9f5;display:flex;align-items:center;justify-content:center;font-weight:700}
 .me b{color:#dbeafe;font-size:13px;display:block}.me span{color:#6b7aa3;font-size:11px}
-/* 본문 */
 .main{margin-left:228px;flex:1;padding:26px 32px;width:100%}
 .top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;gap:12px;flex-wrap:wrap}
 .top h1{font-size:23px;font-weight:800}.top .date{font-size:13px;color:var(--sub);margin-top:3px}
@@ -30,8 +31,8 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 .btn{padding:9px 16px;border-radius:10px;font-size:13px;font-weight:700;cursor:pointer;border:none}
 .btn.g{background:#fff;border:1px solid #e2e8f0;color:#475569}
 .btn.b{background:var(--brand);color:#fff}
+.back{color:#3b82f6;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px;display:inline-block}
 .sechead{font-size:13px;font-weight:800;color:#475569;margin:0 0 10px}
-/* 수익 카드 */
 .rev{display:flex;gap:16px;margin-bottom:16px;flex-wrap:wrap}
 .rev .c{flex:1;min-width:230px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px}
 .rev .c .h{display:flex;align-items:center;gap:10px;margin-bottom:12px}
@@ -39,7 +40,6 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 .rev .c .lb{font-size:14px;color:var(--sub);font-weight:700}
 .rev .c .v{font-size:29px;font-weight:800}.rev .c .v small{font-size:15px;color:#94a3b8;font-weight:800}
 .rev .c .s{font-size:12.5px;font-weight:700;margin-top:4px}
-/* 중단: 세무 + 액션 */
 .midrow{display:flex;gap:16px;margin-bottom:18px;flex-wrap:wrap}
 .tax{flex:1.3;min-width:300px;background:var(--card);border:1px solid var(--line);border-radius:18px;padding:22px}
 .tax .h{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
@@ -52,13 +52,14 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 .acts{flex:1.7;min-width:300px;display:flex;gap:14px}
 .act{flex:1;border-radius:16px;padding:18px;color:#fff;cursor:pointer}
 .act .ic{font-size:22px}.act .n{font-size:32px;font-weight:800;margin:6px 0 0}.act .l{font-size:13px;opacity:.92;font-weight:600}
-/* 고객 리스트 카드 */
 .panel{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px;margin-bottom:16px}
 .panel .ph{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
 .panel .ph b{font-size:15px;font-weight:800}.panel .ph .more{color:var(--brand);font-size:13px;font-weight:700;cursor:pointer}
 .panel .ph .sub{font-size:12px;color:#94a3b8;font-weight:500;margin-left:6px}
 .row{display:flex;align-items:center;padding:12px 0;border-bottom:1px solid #f1f5f9;gap:12px}
 .row:last-child{border-bottom:none}
+.row.click{cursor:pointer;border-radius:10px;padding:12px 8px;margin:0 -8px}
+.row.click:hover{background:#f8fafc}
 .row .av{width:34px;height:34px;border-radius:10px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-weight:700;color:#475569;flex-shrink:0}
 .row .info{flex:1;min-width:0}
 .row .info b{font-weight:700;font-size:14px}.row .info b span{color:#cbd5e1;font-weight:400}
@@ -66,45 +67,157 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 .row .amt{font-size:13px;font-weight:700;white-space:nowrap}
 .chip{padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;white-space:nowrap}
 .row .call{background:var(--brand);color:#fff;padding:6px 12px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer}
-/* 쉐어처 */
 .shx{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:16px}
-.shc{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;border-top:3px solid var(--brand)}
+.shc{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;border-top:3px solid var(--brand);cursor:pointer;transition:.15s}
+.shc:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.07)}
 .shc .hh{display:flex;align-items:center;gap:12px;margin-bottom:14px}
 .shc .hh .av{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800}
 .shc .hh b{font-size:15px}.shc .hh span{font-size:12px;color:var(--sub)}
-.shc .stat{display:flex;gap:16px;margin-bottom:14px}
+.shc .stat{display:flex;gap:16px}
 .shc .stat div b{font-size:20px;font-weight:800;display:block}.shc .stat div span{font-size:11.5px;color:var(--sub)}
-.shc .link{display:flex;gap:8px}
-.shc .link input{flex:1;border:1px solid #e2e8f0;border-radius:9px;padding:8px 10px;font-size:11.5px;color:#475569;background:#f8fafc}
-.shc .link .cp{background:#0f172a;color:#fff;border:none;border-radius:9px;padding:8px 14px;font-size:12px;font-weight:700;cursor:pointer}
-/* 공유 뷰 배너 */
+/* 팀장 상세 */
+.tlhead{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 26px;margin-bottom:18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.tlhead .av{width:60px;height:60px;border-radius:16px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800}
+.tlhead .nm{font-size:22px;font-weight:800}.tlhead .og{color:var(--sub);font-size:14px;margin-top:2px}
+.tlhead .sum{display:flex;gap:24px;text-align:center;margin-left:auto}
+.tlhead .sum div b{font-size:24px;font-weight:800;display:block}.tlhead .sum div span{font-size:12px;color:#94a3b8}
+.grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
+@media(max-width:760px){.grid2{grid-template-columns:1fr}}
+.ins{display:flex;justify-content:space-between;align-items:center;padding:13px 0;border-bottom:1px solid #f1f5f9;gap:10px}
+.ins:last-child{border-bottom:none}
+.ins .nm{font-weight:700;font-size:14px}.ins .fd{color:#94a3b8;font-size:12.5px;margin-left:4px}
+.ins .val{font-weight:800;font-size:14px;cursor:pointer;border-bottom:1px dashed #cbd5e1}
+.st{display:inline-block;padding:3px 10px;border-radius:99px;font-size:12px;font-weight:700;cursor:pointer;border:none;white-space:nowrap}
+.st.대기{background:#fef3c7;color:#d97706}.st.완료{background:#dcfce7;color:#16a34a}.st.취소{background:#fee2e2;color:#dc2626}
+.fld{margin-bottom:14px}.fld label{font-size:12px;color:#94a3b8;font-weight:700;display:block;margin-bottom:5px}
+.fld .ev{font-size:15px;font-weight:600;cursor:pointer;padding:9px 12px;background:#f8fafc;border:1px solid #eef1f6;border-radius:10px}
+.fld .ev:hover,.val:hover{outline:1.5px dashed #c7d2fe}
+.iedit{width:100%;font-size:15px;font-weight:600;padding:8px 11px;border:1.6px solid var(--brand);border-radius:10px;outline:none;font-family:inherit;background:#fff;color:var(--ink)}
+.ins .iedit,.val .iedit{width:130px;font-size:13px;padding:5px 8px}
+select.iedit{cursor:pointer}
 .sharebar{background:linear-gradient(135deg,#101a36,#1e293b);color:#fff;padding:16px 22px;border-radius:16px;margin-bottom:18px;display:flex;align-items:center;gap:14px}
 .sharebar .badge{background:rgba(255,255,255,.14);padding:4px 12px;border-radius:99px;font-size:12px;font-weight:700}
 .hide{display:none!important}
-/* 반응형 (폰) */
 .menubtn{display:none}
 @media(max-width:860px){
- .side{transform:translateX(-100%);transition:.25s}
- .side.open{transform:translateX(0)}
- .main{margin-left:0;padding:18px 14px}
- .menubtn{display:flex}
- .acts{flex-wrap:wrap}.act{min-width:46%}
- .rev .c{min-width:46%}
- .top h1{font-size:20px}
+ .side{transform:translateX(-100%);transition:.25s}.side.open{transform:translateX(0)}
+ .main{margin-left:0;padding:18px 14px}.menubtn{display:flex}
+ .acts{flex-wrap:wrap}.act{min-width:46%}.rev .c{min-width:46%}.top h1{font-size:20px}
+ .tlhead .sum{margin-left:0;width:100%;justify-content:space-around}
 }
 .scrim{display:none;position:fixed;inset:0;background:rgba(0,0,0,.4);z-index:15}
 .scrim.open{display:block}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);background:#0f172a;color:#fff;padding:11px 20px;border-radius:99px;font-size:13px;font-weight:700;z-index:99;opacity:0;transition:.2s}
+.toast.on{opacity:1}
+/* 서류함(폴더) */
+.docbox{background:linear-gradient(180deg,#fffdf3,#fff);border:1px solid #f0e6c8;border-radius:14px;padding:14px 16px;margin-bottom:16px;position:relative}
+.docbox::before{content:'';position:absolute;top:-8px;left:18px;width:52px;height:10px;background:#f6cf5b;border-radius:6px 6px 0 0}
+.docbox .dh{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.docbox .dh b{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px}
+.docbox .add{background:#fff4cc;color:#a16207;border:1px solid #f0e0a0;padding:5px 11px;border-radius:8px;font-size:12px;font-weight:700;cursor:pointer;white-space:nowrap}
+.docitem{display:flex;align-items:center;gap:9px;padding:8px 10px;background:#fff;border:1px solid #f1ecd9;border-radius:9px;margin-bottom:6px}
+.docitem .nm{flex:1;font-size:13px;font-weight:600;cursor:pointer;min-width:0}
+.docitem .x{color:#c9bda0;cursor:pointer;font-size:13px;font-weight:700}
+.docitem .dl{color:#3b82f6;cursor:pointer;font-weight:700;font-size:14px}
+.docempty{font-size:12.5px;color:#b9a96b;padding:6px 2px;line-height:1.5}
+.docbox .dropzone{margin:8px 0 4px;padding:16px 12px}
+/* 컨설팅 메모 */
+.iarea{width:100%;min-height:180px;font-size:14px;line-height:1.65;padding:12px;border:1.6px solid var(--brand);border-radius:12px;outline:none;font-family:inherit;resize:vertical;background:#fff}
+.notebox{min-height:180px;font-size:14px;line-height:1.65;color:#334155;white-space:pre-wrap;cursor:text;padding:8px 4px;border-radius:10px}
+.notebox:hover{background:#f8fafc}.notebox.empty{color:#94a3b8}
+/* 재무 요약 */
+.fsum .bars{display:flex;align-items:flex-end;gap:10px;height:150px;padding:8px 4px 0;border-bottom:1px solid #eef1f6;margin-bottom:6px}
+.fsum .bar{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;height:100%}
+.fsum .bar .bb{width:100%;border-radius:7px 7px 0 0;display:flex;align-items:flex-start;justify-content:center;color:#fff;font-size:11.5px;font-weight:800;padding-top:5px;min-height:20px}
+.fsum .bar .yl{font-size:11px;color:#94a3b8;margin-top:5px;font-weight:600}
+.fsum .scards{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}
+.fsum .sc{border:1px solid var(--line);border-radius:12px;padding:12px 14px}
+.fsum .sc .t{font-size:12px;color:var(--sub)}.fsum .sc .n{font-size:20px;font-weight:800;margin-top:3px}
+.fsum .warn{background:#fef2f2;color:#b91c1c;border-radius:10px;padding:10px 12px;font-size:12.5px;font-weight:700;margin-bottom:14px}
+.fsum .ltot{font-size:13px;font-weight:800;color:#334155;margin:4px 0 8px}
+.fsum .loan{border:1px solid var(--line);border-radius:11px;padding:11px 13px;margin-bottom:8px}
+.fsum .loan .lr{display:flex;justify-content:space-between;font-weight:800;font-size:13.5px}
+.fsum .loan .ld{font-size:12px;color:var(--sub);margin:3px 0 5px}
+.fsum .loan .lt{display:inline-block;background:#eff6ff;color:#3b82f6;font-size:11px;font-weight:700;padding:3px 8px;border-radius:7px}
+.fsum .credit{background:#ecfdf5;color:#15803d;border-radius:10px;padding:11px 13px;font-size:13px;font-weight:800;text-align:center;margin-top:10px}
+.fsum .empty{text-align:center;color:#94a3b8;padding:24px 8px;font-size:13px;line-height:1.7}
+.spin{width:30px;height:30px;border:3px solid #e2e8f0;border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
+@keyframes spin{to{transform:rotate(360deg)}}
+.jsonarea{width:100%;min-height:230px;font-family:ui-monospace,Consolas,monospace;font-size:12px;padding:12px;border:1.6px solid var(--brand);border-radius:12px;outline:none;background:#0f172a;color:#cbd5e1;resize:vertical}
+/* 모달 */
+.modal{position:fixed;inset:0;background:rgba(15,23,42,.5);z-index:50;display:flex;align-items:center;justify-content:center;padding:18px}
+.modal .mc{background:#fff;border-radius:18px;padding:24px;width:100%;max-width:470px;max-height:90vh;overflow:auto}
+.modal h3{font-size:18px;font-weight:800;margin-bottom:4px}.modal .msub{font-size:12.5px;color:#94a3b8;margin-bottom:16px}
+.modal .opt{display:flex;gap:12px;margin-bottom:14px}
+.modal .ob{flex:1;border:1.5px solid #e2e8f0;border-radius:13px;padding:16px;text-align:center;cursor:pointer;font-weight:700;font-size:13px}
+.modal .ob.on{border-color:var(--brand);background:#eff6ff}.modal .ob .bi{font-size:24px;display:block;margin-bottom:6px}
+.modal label{font-size:12px;color:#64748b;font-weight:700;display:block;margin:10px 0 4px}
+.modal input,.modal select,.modal textarea{width:100%;padding:10px 12px;border:1px solid #e2e8f0;border-radius:10px;font-size:14px;font-family:inherit;outline:none}
+.modal textarea{min-height:80px;resize:vertical;line-height:1.6}
+.modal .mrow{display:flex;gap:10px}.modal .mrow>div{flex:1}
+.modal .mact{display:flex;gap:10px;margin-top:18px}.modal .mact .btn{flex:1;text-align:center}
+.guidebox{background:#f8fafc;border:1px solid #eef1f6;border-radius:12px;padding:14px;font-size:13px;line-height:1.7;color:#475569}.guidebox b{color:#1e293b}
+.notebox.sm{min-height:96px;background:#f8fafc;border:1px solid #eef1f6;padding:10px 12px}
+.dropzone{border:2px dashed #cbd5e1;border-radius:12px;padding:22px 14px;text-align:center;color:#94a3b8;font-size:13px;font-weight:600;background:#f8fafc;transition:.15s;line-height:1.7}
+.dropzone.drag{border-color:var(--brand);background:#eff6ff;color:#3b82f6}
+.filelabel{color:#3b82f6;cursor:pointer;text-decoration:underline}
+.reqfile{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:7px 11px;background:#fff;border:1px solid #eef1f6;border-radius:8px;margin-top:6px;font-weight:600}
+.reqfile .x{cursor:pointer;color:#cbb}
+.feerow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f1f5f9}
+.feerow:last-of-type{border-bottom:none}
+.feerow .fl{flex:1;font-size:13.5px;font-weight:700}
+.feerow .fa{min-width:92px;text-align:right;font-size:13px;cursor:pointer}
+.st.예정{background:#fef3c7;color:#d97706}.st.없음{background:#f1f5f9;color:#94a3b8}
+.feetot{margin-top:12px;padding-top:11px;border-top:1px dashed #e2e8f0;font-size:12.5px;color:#64748b}.feetot b{color:#0f172a}
+/* 고객 DB 월별 탭 */
+.monthbar{display:flex;gap:5px;flex-wrap:wrap;align-items:center;margin-bottom:16px;background:#fff;border:1px solid var(--line);border-radius:14px;padding:10px 12px}
+.monthbar .myear{font-weight:800;color:#0f172a;font-size:13px;padding:6px 8px 6px 2px}
+.mtab{padding:7px 13px;border-radius:9px;font-size:13px;font-weight:700;color:#64748b;cursor:pointer;white-space:nowrap}
+.mtab:hover{background:#f1f5f9}
+.mtab.on{background:var(--brand);color:#fff}
+/* 고객 DB 카드 그리드 */
+.cdbgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
+.cdbcard{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;transition:.15s}
+.cdbcard:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.08);border-color:#dbe3ef}
+.cdbcard .ch{display:flex;align-items:center;gap:12px;margin-bottom:13px}
+.cdbcard .cav{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:18px;flex-shrink:0}
+.cdbcard .cnm{font-size:15.5px;font-weight:800;line-height:1.25}
+.cdbcard .cnm .ty{font-size:11px;color:#94a3b8;font-weight:700;margin-left:4px}
+.cdbcard .cbiz{font-size:12.5px;color:#94a3b8;margin-top:2px}
+.cdbcard .cbadges{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.docbadge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:700;padding:4px 10px;border-radius:8px;background:#f1f5f9;color:#94a3b8;cursor:pointer}
+.docbadge.on{background:#dcfce7;color:#16a34a}
+.cdbcard .cmeta{display:flex;justify-content:space-between;border-top:1px solid var(--line);padding-top:12px}
+.cdbcard .cmeta .lbl{font-size:11px;color:#94a3b8;display:block;margin-bottom:2px}
+.cdbcard .cmeta b{font-size:13px;font-weight:700;color:#334155}
+/* 4분할 */
+.quadgrid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:18px}
+@media(max-width:820px){.quadgrid{grid-template-columns:1fr}}
+.quad{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:18px;min-height:300px;display:flex;flex-direction:column}
+.quad .qh{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.quad .qh b{font-size:14.5px;font-weight:800}
+.qlist{flex:1;overflow:auto}
+.qrow{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid #f4f6fb;cursor:pointer}
+.qrow:last-child{border-bottom:none}.qrow:hover{background:#f8fafc;border-radius:8px}
+.qrow .qav{width:30px;height:30px;border-radius:8px;background:#f1f5f9;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:12px;color:#475569;flex-shrink:0}
+.qrow .qi{flex:1;min-width:0}.qrow .qi b{font-size:13.5px;font-weight:700}.qrow .qi .qs{font-size:11.5px;color:#94a3b8;display:flex;align-items:center;gap:5px;margin-top:1px}
+.pager{display:flex;gap:6px;justify-content:center;margin-top:10px;flex-wrap:wrap}
+.pager button{min-width:26px;height:26px;border-radius:7px;border:1px solid #e2e8f0;background:#fff;font-size:12px;font-weight:700;cursor:pointer;color:#64748b}
+.pager button.on{background:var(--brand);color:#fff;border-color:var(--brand)}
+.dmemo{flex:1;font-size:13.5px;line-height:1.65;white-space:pre-wrap;cursor:text;color:#334155;min-height:220px;padding:4px}
+.dmemo.empty{color:#94a3b8}
+.mtg{display:flex;align-items:center;gap:10px;padding:9px 2px;border-bottom:1px solid #f4f6fb}
+.mtg:last-child{border-bottom:none}
+.mtg .md{background:#eff6ff;color:#3b82f6;border-radius:8px;padding:5px 7px;font-size:11px;font-weight:800;text-align:center;flex-shrink:0;min-width:44px;line-height:1.3}
+.mtg .mi{flex:1;min-width:0}.mtg .mi b{font-size:13px}.mtg .mi .ms{font-size:11.5px;color:#94a3b8}
+.mtg .gc{color:#10b981;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
+.mtg .mx{color:#cbd5e1;cursor:pointer;font-weight:700}
+.bukyul{display:inline-flex;align-items:center;gap:6px;margin-top:14px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:10px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer}
+.stagepill{padding:5px 10px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;color:#64748b;background:#fff}
+.stagepill.on{color:#fff}.stagepill:hover{border-color:#cbd5e1}
 </style>
 </head>
 <body>
-<div id="pwgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif">
-  <div style="color:#fff;font-size:20px;margin-bottom:6px">🔒 컨설팅 대시보드</div>
-  <div style="color:#9fb3d1;font-size:13px;margin-bottom:18px">팀 전용 · 비밀번호를 입력하세요</div>
-  <input id="pwin" type="password" autocomplete="off" style="padding:13px 14px;font-size:16px;border-radius:10px;border:1px solid #2a3b5e;width:240px;background:#1a2540;color:#fff;outline:none" placeholder="비밀번호">
-  <div id="pwerr" style="color:#f87171;margin-top:12px;height:18px;font-size:13px"></div>
-</div>
-<script>(function(){var PW="5생활관!";var g=document.getElementById('pwgate');if(sessionStorage.getItem('cdash_ok')==='1'){g.style.display='none';return;}document.body.style.overflow='hidden';function ok(){sessionStorage.setItem('cdash_ok','1');g.style.display='none';document.body.style.overflow='';}function check(){var v=document.getElementById('pwin').value;if(v===PW){ok();}else{document.getElementById('pwerr').textContent='비밀번호가 틀렸습니다';}}var i=document.getElementById('pwin');i.addEventListener('keydown',function(e){if(e.key==='Enter')check();});setTimeout(function(){i.focus();},100);})();</script>
-
 <div class="app">
   <aside class="side" id="side">
     <div class="brand"><div class="logo">💼</div><div><b>컨설팅 CRM</b><span>정책자금·보험·세무</span></div></div>
@@ -112,151 +225,796 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
     <div class="me"><div class="av">황</div><div><b>황현 대표</b><span>관리자</span></div></div>
   </aside>
   <div class="scrim" id="scrim" onclick="toggleMenu()"></div>
-  <main class="main" id="main"></main>
+  <main class="main" id="main"><div class="panel">⏳ 실시간 데이터 연결 중…</div></main>
 </div>
+<div class="toast" id="toast"></div>
 
 <script>
-/* ===== 데이터 (실운영 시 직원15 DB / 입력값으로 자동 갱신) ===== */
-const STAGE={연락전:'#94a3b8',통화완료:'#3b82f6',서류검토:'#f59e0b',본부장접수:'#8b5cf6',승인완료:'#10b981',재연락:'#ec4899'};
-const SHARERS=[
- {id:'A', name:'김영수 팀장님', org:'정책자금 담당', color:'#3b82f6'},
- {id:'shinbo', name:'이상훈 팀장님', org:'보증·기술보증 담당', color:'#10b981'},
- {id:'capital', name:'박지원 팀장님', org:'대출 실행 담당', color:'#f59e0b'},
- {id:'tax', name:'정민재 팀장님', org:'세무 이관 담당', color:'#8b5cf6'},
-];
-const CUST=[
- {nm:'김상훈',biz:'제조업·성남',stage:'서류검토',amt:'정책자금 2억',memo:'오늘 14:00 통화',type:'개인',sharer:'A',contacted:true},
- {nm:'이지영',biz:'요식업·서울',stage:'본부장접수',amt:'운전자금 8천',memo:'본부장 검토중',type:'개인',sharer:'A',contacted:true},
- {nm:'최민서',biz:'IT서비스·판교',stage:'통화완료',amt:'기술보증 3억',memo:'내일 미팅',type:'법인',sharer:'shinbo',contacted:true},
- {nm:'윤서연',biz:'의료·강남',stage:'통화완료',amt:'시설자금 4억',memo:'오후 콜백',type:'개인',sharer:'A',contacted:true},
- {nm:'한지원',biz:'건설·인천',stage:'서류검토',amt:'시설자금 1.5억',memo:'등기부등본 요청',type:'법인',sharer:'shinbo',contacted:true},
- {nm:'정해성',biz:'건설·수원',stage:'승인완료',amt:'정책자금 5억',memo:'✅ 실행 완료',type:'법인',sharer:'capital',contacted:true},
- {nm:'박준호',biz:'도소매·인천',stage:'연락전',amt:'시설자금 1.5억',memo:'오늘 배정 · 첫 통화 전',type:'법인',sharer:'',contacted:false},
- {nm:'강민서',biz:'교육·대전',stage:'연락전',amt:'창업자금 7천',memo:'오늘 배정 · 첫 통화 전',type:'개인',sharer:'',contacted:false},
- {nm:'오세훈',biz:'프랜차이즈·서울',stage:'연락전',amt:'창업자금 7천',memo:'09:30 신규 유입',type:'개인',sharer:'',contacted:false},
- {nm:'서지안',biz:'식품·안산',stage:'연락전',amt:'운전자금 6천',memo:'09:10 신규 유입',type:'법인',sharer:'',contacted:false},
-];
-const REVENUE={
- consulting:{v:'1.44억', s:'예정 31건 · 실계약 18건'},
- insurance:{v:'1,240만', s:'예정 9건 · 실계약 5건'},
- tax:{personal:8, corp:5, perFee:60, corpFee:90},
+/* ===== Firebase 실시간 DB ===== */
+const firebaseConfig = {
+  apiKey: "AIzaSyCAdQ2KkU5Nui6l2vJxnpZKBM65iJXRLn8",
+  authDomain: "consult-crm-cfef6.firebaseapp.com",
+  databaseURL: "https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "consult-crm-cfef6",
+  storageBucket: "consult-crm-cfef6.firebasestorage.app",
+  messagingSenderId: "519553114688",
+  appId: "1:519553114688:web:d0a4c9bd66e276984275a5"
 };
-/* 공유 링크 베이스 — 배포 후 실제 URL로 교체됨 */
-const SHARE_BASE = location.origin + location.pathname;
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+let storage=null; try{ storage=firebase.storage(); }catch(e){ console.warn('storage init',e); }
 
-const $=s=>document.querySelector(s);
-const chip=s=>`<span class="chip" style="background:${(STAGE[s]||'#94a3b8')}1a;color:${STAGE[s]||'#94a3b8'}">${s}</span>`;
+const STAGE={연락전:'#94a3b8',통화완료:'#3b82f6',심사중:'#f59e0b',자금접수완료:'#8b5cf6',승인완료:'#10b981','부재중·재연락':'#ec4899','부결':'#ef4444'};
+const STAGES=['연락전','통화완료','심사중','자금접수완료','승인완료','부재중·재연락','부결'];
+
+/* ===== 시드(최초 1회 채움) ===== */
+const SEED={
+ sharers:{
+  dowon:{name:'도원 팀장님',org:'정책자금 진행 쉐어',color:'#3b82f6',phone:''},
+  wonwoo:{name:'원우 팀장',org:'정책자금 진행 쉐어',color:'#10b981',phone:''},
+  choi:{name:'최병진 과장님',org:'쉐어 진행 · 세무이관',color:'#f59e0b',phone:''}
+ },
+ customers:{
+  c1:{nm:'미지향',biz:'-',stage:'서류검토',fund:'-',ins:'',insStatus:'대기',memo:'진행중',type:'개인',sharer:'',contacted:true,phone:''},
+  c2:{nm:'윤종선',biz:'제일피앤비',stage:'서류검토',fund:'-',ins:'',insStatus:'대기',memo:'진행중',type:'법인',sharer:'dowon',contacted:true,phone:''},
+  c3:{nm:'가이드컴',biz:'-',stage:'서류검토',fund:'-',ins:'',insStatus:'대기',memo:'진행중',type:'법인',sharer:'dowon',contacted:true,phone:''},
+  c4:{nm:'국도상사',biz:'전라도',stage:'서류검토',fund:'-',ins:'',insStatus:'대기',memo:'진행중',type:'법인',sharer:'wonwoo',contacted:true,phone:''},
+  c5:{nm:'대한홍삼㈜',biz:'-',stage:'서류검토',fund:'-',ins:'',insStatus:'대기',memo:'진행중',type:'법인',sharer:'wonwoo',contacted:true,phone:''},
+  c6:{nm:'아이디씨',biz:'-',stage:'통화완료',fund:'-',ins:'',insStatus:'대기',memo:'대기중',type:'개인',sharer:'',contacted:true,phone:''},
+  c7:{nm:'맥스앤맥스',biz:'-',stage:'본부장접수',fund:'-',ins:'',insStatus:'대기',memo:'대기중 · 심사중',type:'법인',sharer:'',contacted:true,phone:''},
+  c8:{nm:'피앤더블류',biz:'-',stage:'통화완료',fund:'-',ins:'',insStatus:'대기',memo:'대기중',type:'개인',sharer:'',contacted:true,phone:''},
+  c9:{nm:'데코비앤에스',biz:'-',stage:'통화완료',fund:'-',ins:'',insStatus:'대기',memo:'대기중',type:'법인',sharer:'',contacted:true,phone:''},
+  c10:{nm:'박진아',biz:'벤처·특허·기타',stage:'서류검토',fund:'-',ins:'',insStatus:'대기',memo:'[영태 신규] 서류 요청 완료',type:'개인',sharer:'',contacted:true,phone:'010-2908-0576'},
+  c11:{nm:'배정환',biz:'제조업·서울',stage:'재연락',fund:'5~10억',ins:'',insStatus:'대기',memo:'[영태 신규] 해외 출장중, 편할 때 연락 요청',type:'개인',sharer:'',contacted:true,phone:'010-2788-0132'},
+  c12:{nm:'손정익',biz:'광명·성남',stage:'재연락',fund:'36억',ins:'',insStatus:'대기',memo:'[영태 신규] AI · 서류 받음, 갑자기 전화 안됨',type:'개인',sharer:'',contacted:true,phone:'010-8609-8013'},
+  c13:{nm:'김창희',biz:'뚝섬',stage:'서류검토',fund:'6억',ins:'',insStatus:'대기',memo:'[영태 신규] AI · 서류 요청 완료',type:'개인',sharer:'',contacted:true,phone:'010-5396-8933'},
+  c14:{nm:'박정선(㈜한국경공사)',biz:'-',stage:'본부장접수',fund:'-',ins:'',insStatus:'대기',memo:'[영태 신규] 서류 받아 IP 인수보증 접수 · 부:010-2654-0110',type:'법인',sharer:'',contacted:true,phone:'010-2654-0110'},
+  c15:{nm:'여동엽',biz:'도소매업·서울',stage:'통화완료',fund:'10~20억',ins:'',insStatus:'대기',memo:'[최과장 쉐어]',type:'개인',sharer:'choi',contacted:true,phone:'010-3259-5866'},
+  c16:{nm:'아라리',biz:'대전',stage:'승인완료',fund:'-',ins:'',insStatus:'대기',memo:'[최과장 쉐어] 진행중 · 세무이관 완료',type:'법인',sharer:'choi',contacted:true,phone:''},
+  c17:{nm:'한국그린데이터',biz:'IT·서울',stage:'서류검토',fund:'5~10억',ins:'',insStatus:'대기',memo:'[최과장 쉐어] 진행중',type:'법인',sharer:'choi',contacted:true,phone:'010-8862-8778'},
+  c18:{nm:'경상 제조사',biz:'제조업·경상권',stage:'본부장접수',fund:'1~20억',ins:'',insStatus:'대기',memo:'최과장→도원 팀장님 접수',type:'법인',sharer:'dowon',contacted:true,phone:'010-2003-4243'},
+  c19:{nm:'전라 도소매사',biz:'도소매·전라도',stage:'서류검토',fund:'50억',ins:'',insStatus:'대기',memo:'[최과장 쉐어] 서류 요청 완료',type:'법인',sharer:'choi',contacted:true,phone:'010-9082-1797'},
+  c20:{nm:'김태준',biz:'제조업·경상',stage:'서류검토',fund:'5~10억',ins:'',insStatus:'대기',memo:'[최과장 쉐어] 서류 요청 완료',type:'개인',sharer:'choi',contacted:true,phone:'010-5142-7711'}
+ },
+ revenue:{consulting:{v:'—',s:'진행 20건 · 수치 입력 예정'},insurance:{v:'—',s:'보험 정보 입력 시 집계'},tax:{personal:0,corp:1,perFee:60,corpFee:90}}
+};
+
+let DATA={sharers:{},customers:{},revenue:{}};
+let ready=false, offline=false;
 const params=new URLSearchParams(location.search);
 const shareId=params.get('share');
+/* 데모/테스트 분리: ?ns=demo 면 모든 데이터가 /demo 아래로 (실제 고객과 격리) */
+const NS=(params.get('ns')||'').replace(/[^a-z0-9_]/gi,'');
+const RAWREF=db.ref.bind(db);
+function dref(p){ if(NS) return RAWREF(p?NS+'/'+p:NS); return p?RAWREF(p):RAWREF(); }
+const LSKEY=NS?'consultDATA_'+NS:'consultDATA';
+let VIEW = shareId ? {t:'ext'} : {t:'dash'};
 
-/* ===== 네비 ===== */
-const NAVS=[['dash','📊 대시보드'],['db','👥 고객 DB'],['call','📞 오늘 콜'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어'],['rev','💰 수익·정산'],['report','📈 리포트']];
-function buildNav(active){
- $('#nav').innerHTML=NAVS.map(([k,l])=>`<a class="${k===active?'on':''}" onclick="go('${k}')">${l}</a>`).join('');
+/* 연결 실패/잠김이어도 절대 멈추지 않게: 로컬 시드로 부팅 */
+function _lsave(){ try{ if(offline) localStorage.setItem(LSKEY, JSON.stringify(DATA)); }catch(e){} }
+function bootLocal(reason){
+  if(ready && !offline) return;          // 이미 실시간으로 떠 있으면 무시
+  let base=null; try{ const ls=localStorage.getItem(LSKEY); if(ls) base=JSON.parse(ls); }catch(e){}
+  DATA=(base&&base.customers)?base:JSON.parse(JSON.stringify(SEED));
+  ready=true; offline=true; rerender();
+  console.warn('오프라인 모드(이 PC 저장본 사용):', reason);
 }
-function go(k){ if(k==='share'){renderSharers();}else{renderDash(k);} if(window.innerWidth<=860)toggleMenu(true);}
+const bootTimer=setTimeout(()=>bootLocal('연결 시간초과(2.5s)'), 2500);
+
+/* 시드 → 실시간 구독 (실패 시 로컬 폴백) */
+try{
+  dref().once('value').then(s=>{ if(!s.exists()||!s.child('sharers').exists()){
+    let seed=SEED; try{ const ls=localStorage.getItem(LSKEY); if(ls){ const p=JSON.parse(ls); if(p&&p.customers&&Object.keys(p.customers).length) seed=p; } }catch(e){}
+    dref().update(seed).catch(()=>{}); } }).catch(e=>bootLocal(e&&e.message));
+  dref().on('value', s=>{
+    clearTimeout(bootTimer);
+    DATA=s.val()||JSON.parse(JSON.stringify(SEED));
+    ready=true; offline=false; rerender();
+  }, e=>{ bootLocal(e&&e.message); });
+}catch(e){ bootLocal(e&&e.message); }
+
+/* ===== 헬퍼 ===== */
+const $=s=>document.querySelector(s);
+const esc=s=>(''+ (s??'')).replace(/[<>&"]/g,c=>({'<':'&lt;','>':'&gt;','&':'&amp;','"':'&quot;'}[c]));
+const chip=s=>`<span class="chip" style="background:${(STAGE[s]||'#94a3b8')}1a;color:${STAGE[s]||'#94a3b8'}">${esc(s)}</span>`;
+function _csk(c){ if(c.created) return c.created; const m=(''+c.id).match(/c(\d+)/); return m?parseInt(m[1],10):0; }
+function custArr(){ return Object.entries(DATA.customers||{}).map(([id,c])=>({id,...c})).sort((a,b)=>_csk(b)-_csk(a)); }
+function sharerArr(){ return Object.entries(DATA.sharers||{}).map(([id,s])=>({id,...s})); }
+function getCust(id){ const c=(DATA.customers||{})[id]; return c?{id,...c}:null; }
+function getSharer(id){ const s=(DATA.sharers||{})[id]; return s?{id,...s}:null; }
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1400);}
+
+/* ===== 수수료·계약 모델 (보험/컨설팅/세무 각 예정·완료 + 금액 → 자동 합산) ===== */
+const FEE_KEYS=[['insurance','🛡️','보험 계약'],['consulting','🏦','컨설팅 수수료'],['tax','🧾','세무 이관']];
+function won(s){ if(typeof s==='number')return s; s=(''+(s||'')).replace(/[,\s원]/g,''); if(!s)return 0;
+  let v=0,m; m=s.match(/([\d.]+)억/); if(m)v+=parseFloat(m[1])*10000;
+  m=s.match(/([\d.]+)천/); if(m)v+=parseFloat(m[1])*1000;
+  m=s.match(/([\d.]+)만/); if(m)v+=parseFloat(m[1]);
+  if(!/[억천만]/.test(s)){ const n=parseFloat(s); if(!isNaN(n))v+=n; }
+  return Math.round(v); }                                  // 단위: 만원
+function fmtMan(v){ v=Math.round(v||0); if(!v)return '0'; if(v>=10000){ return (Math.round(v/100)/100).toLocaleString()+'억'; } return v.toLocaleString()+'만'; }
+function fee(c,k){ const f=((c&&c.fees)||{})[k];
+  if(f) return {status:f.status||'없음', amt:f.amt||''};
+  if(k==='insurance'&&c){ const st=c.insStatus==='완료'?'완료':(c.ins?'예정':'없음'); return {status:st, amt:c.ins||''}; }
+  return {status:'없음', amt:''}; }
+function setFee(id,k,patch){ const c=getCust(id)||{}; const fees=Object.assign({},c.fees);
+  const cur=Object.assign({status:'없음',amt:''}, fees[k]||{}); fees[k]=Object.assign(cur,patch); setCust(id,{fees}); }
+const PRODUCT_TYPES=['미지정','관리계약(벤처·특허·연구소)','재무 관리','정책자금-시설자금','정책자금-운영자금'];
+const PT_CUSTOM='✍️ 직접 입력…';
+function iProductType(box,id){
+  if(box.querySelector('select,input'))return;
+  const cur=(((getCust(id)||{}).fees||{}).product||{}).type||'';
+  let opts=PRODUCT_TYPES.map(o=>`<option ${o===(cur||'미지정')?'selected':''}>${esc(o)}</option>`);
+  if(cur && !PRODUCT_TYPES.includes(cur)) opts.unshift(`<option selected>${esc(cur)}</option>`);  // 직접 입력값 표시
+  opts.push(`<option>${PT_CUSTOM}</option>`);
+  box.innerHTML=`<select class="iedit">${opts.join('')}</select>`;
+  const sel=box.querySelector('select'); sel.focus();
+  let handled=false;
+  const done=()=>{ if(handled)return; handled=true;
+    if(sel.value===PT_CUSTOM) return promptCustomType(box,id);
+    setFee(id,'product',{type:sel.value==='미지정'?'':sel.value}); };
+  sel.onchange=done; sel.onblur=done;
+}
+function promptCustomType(box,id){
+  const cur=(((getCust(id)||{}).fees||{}).product||{}).type||'';
+  box.innerHTML=`<input class="iedit" value="${esc(PRODUCT_TYPES.includes(cur)?'':cur)}" placeholder="예: 시설자금+운영자금 / 기업 인증">`;
+  const inp=box.querySelector('input'); inp.focus(); inp.select();
+  let h=false; const ok=()=>{ if(h)return; h=true; setFee(id,'product',{type:inp.value.trim()}); };
+  inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();inp.blur();} else if(e.key==='Escape'){h=true;rerender();} };
+  inp.onblur=ok;
+}
+function custTotal(c,status){ return ['insurance','consulting','tax'].reduce((a,k)=>{const f=fee(c,k);return f.status===status?a+won(f.amt):a;},0); }
+function aggFees(){ const cs=custArr(); const out={};
+  ['insurance','consulting','tax'].forEach(k=>{ let dA=0,dN=0,pA=0,pN=0;
+    cs.forEach(c=>{ const f=fee(c,k); const a=won(f.amt);
+      if(f.status==='완료'){dA+=a;dN++;} else if(f.status==='예정'){pA+=a;pN++;} });
+    out[k]={dA,dN,pA,pN}; });
+  return out; }
+function docState(c){ return c.docStatus || ((c&&c.docs&&c.docs.length)?'접수완료':'접수전'); }
+function toggleDocStatus(id){ const c=getCust(id)||{}; const next=docState(c)==='접수완료'?'접수전':'접수완료'; const patch={docStatus:next}; if(next==='접수완료'&&!c.docDate) patch.docDate=today(); setCust(id,patch); }
+function today(){ try{ return new Date().toISOString().slice(0,10); }catch(e){ return ''; } }
+function iFeeStatus(box,id,k){ if(box.querySelector('select'))return;
+  const cur=fee(getCust(id),k).status; const opts=['예정','완료','없음'];
+  box.innerHTML=`<select class="iedit">${opts.map(o=>`<option ${o===cur?'selected':''}>${o}</option>`).join('')}</select>`;
+  const sel=box.querySelector('select'); sel.focus();
+  const done=()=>{ if(box.dataset.done)return; box.dataset.done='1'; setFee(id,k,{status:sel.value}); };
+  sel.onchange=done; sel.onblur=done; }
+function iFeeAmt(box,id,k){ if(box.querySelector('input'))return;
+  const cur=fee(getCust(id),k).amt;
+  box.innerHTML=`<input class="iedit" value="${esc(cur)}" placeholder="예: 500만 / 1.1억">`;
+  const inp=box.querySelector('input'); inp.focus(); inp.select();
+  const done=()=>{ if(box.dataset.done)return; box.dataset.done='1'; setFee(id,k,{amt:inp.value.trim()}); };
+  inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();inp.blur();} else if(e.key==='Escape'){box.dataset.done='1';rerender();} };
+  inp.onblur=done; }
+/* 스트림별 쉐어 팀장 (보험 쉐어 ≠ 세무 쉐어 가능, 다자 쉐어) */
+function feeShr(c,k){ const f=((c&&c.fees)||{})[k]; return (f&&f.shr) || (c&&c.sharer) || ''; }   // 명시 없으면 메인 담당으로 폴백
+function shrShort(name){ return (name||'').replace(/\s*(팀장님|과장님|팀장|대표님)\s*$/,''); }
+function iFeeSharer(box,id,k){
+  if(box.querySelector('select'))return;
+  const cur=(((getCust(id)||{}).fees||{})[k]||{}).shr||'';
+  const opts=[['','메인 담당']].concat(sharerArr().map(s=>[s.id,s.name]));
+  box.innerHTML=`<select class="iedit">${opts.map(([v,l])=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
+  const sel=box.querySelector('select'); sel.focus();
+  const done=()=>{ if(box.dataset.done)return; box.dataset.done='1'; setFee(id,k,{shr:sel.value}); };
+  sel.onchange=done; sel.onblur=done;
+}
+
+/* 쓰기 → RTDB (모두에게 실시간 반영) · 잠김/오프라인이면 로컬 즉시 반영 */
+function setCust(id,patch){
+  DATA.customers=DATA.customers||{};
+  DATA.customers[id]={...(DATA.customers[id]||{}),...patch};   // 낙관적 로컬 반영
+  rerender(); _lsave();
+  if(offline){ toast('저장됨 ✓ (이 PC)'); return; }
+  dref('customers/'+id).update(patch)
+    .then(()=>toast('저장됨 ✓'))
+    .catch(()=>{ offline=true; _lsave(); toast('저장됨 ✓ (이 PC)'); });
+}
+/* ===== 인라인 편집: 팝업 없이 그 자리에서 클릭→입력 ===== */
+function _commit(box,id,key,val,save){
+  if(box.dataset.done) return; box.dataset.done='1';
+  if(save){ const patch={[key]:(''+val).trim()}; if(key==='stage'){ patch.contacted = patch.stage!=='연락전'; } setCust(id,patch); }
+  else { rerender(); }
+}
+function iText(box,id,key){
+  if(box.querySelector('input,select')) return;
+  const cur=(getCust(id)||{})[key]||'';
+  box.innerHTML=`<input class="iedit" value="${esc(cur)}" placeholder="입력 후 Enter">`;
+  const inp=box.querySelector('input'); inp.focus(); inp.select();
+  inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault(); inp.blur();} else if(e.key==='Escape'){ box.dataset.done='1'; rerender(); } };
+  inp.onblur=()=>_commit(box,id,key,inp.value,true);
+}
+function iSel(box,id,key,opts){
+  if(box.querySelector('input,select')) return;
+  const cur=(getCust(id)||{})[key]||opts[0];
+  box.innerHTML=`<select class="iedit">${opts.map(o=>`<option ${o===cur?'selected':''}>${esc(o)}</option>`).join('')}</select>`;
+  const sel=box.querySelector('select'); sel.focus();
+  sel.onchange=()=>_commit(box,id,key,sel.value,true);
+  sel.onblur=()=>_commit(box,id,key,sel.value,true);
+}
+function iStage(box,id){ iSel(box,id,'stage',STAGES); }
+function iStatus(box,id){ iSel(box,id,'insStatus',['대기','완료','취소']); }
+const SHARER_COLORS=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#ef4444','#14b8a6'];
+function addSharer(name,org){
+  name=(name||'').trim(); if(!name) return null;
+  const id='s'+Date.now();
+  const n=Object.keys(DATA.sharers||{}).length;
+  const sh={name, org:org||'쉐어 진행', color:SHARER_COLORS[n%SHARER_COLORS.length], phone:''};
+  DATA.sharers=DATA.sharers||{}; DATA.sharers[id]=sh;
+  if(offline){ _lsave(); } else { dref('sharers/'+id).set(sh).catch(()=>{ offline=true; _lsave(); }); }
+  return id;
+}
+function iSharer(box,id){
+  if(box.querySelector('select,input')) return;
+  const cur=(getCust(id)||{}).sharer||'';
+  const opts=[['','미배정']].concat(sharerArr().map(s=>[s.id,s.name])).concat([['__new__','＋ 새 팀장 추가…']]);
+  box.innerHTML=`<select class="iedit">${opts.map(([v,l])=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
+  const sel=box.querySelector('select'); sel.focus();
+  let handled=false;
+  const done=()=>{ if(handled) return; handled=true;
+    if(sel.value==='__new__') return newSharerInline(box,id);
+    setCust(id,{sharer:sel.value}); };
+  sel.onchange=done; sel.onblur=done;
+}
+function newSharerInline(box,id){
+  box.innerHTML=`<input class="iedit" placeholder="새 팀장 이름 입력 후 Enter (예: 김철수 팀장님)">`;
+  const inp=box.querySelector('input'); inp.focus();
+  let h=false;
+  const ok=()=>{ if(h) return; h=true; const nm=inp.value.trim();
+    if(nm){ const sid=addSharer(nm); setCust(id,{sharer:sid}); toast('팀장 추가 ✓'); } else rerender(); };
+  inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();inp.blur();} else if(e.key==='Escape'){h=true;rerender();} };
+  inp.onblur=ok;
+}
+
+/* ===== 서류함 (D:\컨설팅_서류 로컬 파일서버 연동) ===== */
+const FILESRV='http://127.0.0.1:8799';
+function _b64(f){ return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f);}); }
+async function docUpload(id,fileList){
+  const c=getCust(id)||{}; const nm=c.nm||id; const files=[...fileList]; if(!files.length)return;
+  toast('업로드 중… '+files.length+'개'); let last=null;
+  for(const f of files){
+    if(f.size>40*1024*1024){ toast(f.name+' 40MB 초과 — 제외'); continue; }
+    try{ const data=await _b64(f);
+      const r=await fetch(FILESRV+'/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer:nm,name:f.name,data})});
+      last=await r.json();
+    }catch(e){ toast('⚠ 데탑 파일서버 꺼짐 — 데탑에서 대시보드 열어야 업로드돼요'); return; }
+  }
+  if(last&&last.files){ const cc=getCust(id)||{}; setCust(id,{docs:last.files.map(x=>({name:x.name})),docStatus:'접수완료',...(cc.docDate?{}:{docDate:today()})}); toast('저장 완료 ✓ (D드라이브)'); }
+}
+function docDrop(e,id){ e.preventDefault(); e.currentTarget.classList.remove('drag'); if(e.dataTransfer&&e.dataTransfer.files) docUpload(id,e.dataTransfer.files); }
+function dlZip(nm){ window.open(FILESRV+'/zip?customer='+encodeURIComponent(nm),'_blank'); }
+function dlFile(nm,name){ window.open(FILESRV+'/file?customer='+encodeURIComponent(nm)+'&name='+encodeURIComponent(name),'_blank'); }
+function viewFile(nm,name){ window.open(FILESRV+'/file?customer='+encodeURIComponent(nm)+'&name='+encodeURIComponent(name)+'&inline=1','_blank'); }
+function openFolder(nm){ fetch(FILESRV+'/open?customer='+encodeURIComponent(nm)).then(()=>toast('폴더 열림')).catch(()=>toast('데탑 파일서버 꺼짐')); }
+async function docDelete(id,nm,name){
+  if(!confirm(name+' 삭제할까요? (D드라이브에서도 삭제됩니다)')) return;
+  try{ const r=await fetch(FILESRV+'/delete?customer='+encodeURIComponent(nm)+'&name='+encodeURIComponent(name)); const j=await r.json();
+    setCust(id,{docs:(j.files||[]).map(x=>({name:x.name}))}); toast('삭제됨');
+  }catch(e){ toast('데탑 파일서버 꺼짐'); }
+}
+async function docDeleteAll(id,nm){
+  const c=getCust(id)||{}; const names=(c.docs||[]).map(d=>d.name);
+  if(!names.length) return;
+  if(!confirm('서류 '+names.length+'개를 전부 삭제할까요? (D드라이브에서도 모두 삭제)')) return;
+  try{ for(const n of names){ await fetch(FILESRV+'/delete?customer='+encodeURIComponent(nm)+'&name='+encodeURIComponent(n)); }
+    setCust(id,{docs:[]}); toast('전체 삭제됨');
+  }catch(e){ toast('데탑 파일서버 꺼짐'); }
+}
+/* 서류함 ↔ D드라이브 실제 파일 동기화 (유령 이름 제거) */
+let _docSync={};
+function syncDocs(id,nm){
+  if(!nm || _docSync[id]) return; _docSync[id]=1;
+  fetch(FILESRV+'/list?customer='+encodeURIComponent(nm)).then(r=>r.json()).then(j=>{
+    const real=(j.files||[]).map(f=>f.name);
+    const cur=((getCust(id)||{}).docs||[]).map(d=>d.name);
+    if(JSON.stringify(real)!==JSON.stringify(cur)){
+      const patch={docs:real.map(n=>({name:n}))};
+      if(!real.length) patch.docStatus='접수전';
+      setCust(id,patch);
+    }
+  }).catch(()=>{});  // 파일서버 off → 클라우드 이름 유지
+}
+function docsHtml(id,c){
+  const docs=c.docs||[]; const dd=docState(c)==='접수완료'; const nm=c.nm||id;
+  const items=docs.map(d=>`<div class="docitem">📄<span class="nm" style="cursor:pointer" title="미리보기" onclick="viewFile('${esc(nm)}','${esc(d.name)}')">${esc(d.name||'서류')}</span>
+     <span class="dl" title="다운로드" onclick="dlFile('${esc(nm)}','${esc(d.name)}')">⬇</span>
+     <span class="x" title="삭제" onclick="docDelete('${id}','${esc(nm)}','${esc(d.name)}')">✕</span></div>`).join('');
+  return `<div class="docbox"><div class="dh"><b>📁 서류함 <span style="color:#b9a96b;font-weight:600">(${docs.length})</span></b>
+    <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="docbadge ${dd?'on':''}" onclick="toggleDocStatus('${id}')">${dd?'✅ 접수완료':'⏳ 접수전'}</span>
+      ${docs.length?`<span class="add" onclick="dlZip('${esc(nm)}')">📦 전체 zip</span><span class="add" onclick="openFolder('${esc(nm)}')">📂 폴더</span><span class="add" style="background:#fef2f2;color:#dc2626;border-color:#fecaca" onclick="docDeleteAll('${id}','${esc(nm)}')">🗑 전체삭제</span>`:''}</div></div>
+    <div class="dropzone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="docDrop(event,'${id}')">
+      📎 파일 끌어다 놓기 <b>(알집 OK · 자동 분리저장)</b><br><label class="filelabel">또는 파일 선택<input type="file" multiple style="display:none" onchange="docUpload('${id}',this.files)"></label></div>
+    ${items||'<div class="docempty">아직 등록된 서류가 없습니다. 끌어다 놓으면 D:\\컨설팅_서류\\에 저장됩니다.</div>'}</div>`;
+}
+
+/* ===== 컨설팅 메모(멀티라인) ===== */
+function iArea(box,id,key){
+  if(box.querySelector('textarea'))return;
+  const cur=(getCust(id)||{})[key]||'';
+  box.innerHTML=`<textarea class="iarea" placeholder="상담 내용·재무 특이사항·제안 방향 등 자유롭게 (Ctrl+Enter 저장, Esc 취소)">${esc(cur)}</textarea>`;
+  const ta=box.querySelector('textarea'); ta.focus();
+  const done=(save)=>{ if(box.dataset.done)return; box.dataset.done='1'; if(save)setCust(id,{[key]:ta.value}); else rerender(); };
+  ta.onkeydown=e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();ta.blur();} else if(e.key==='Escape'){box.dataset.done='1';rerender();} };
+  ta.onblur=()=>done(true);
+}
+
+/* ===== 재무 요약 ===== */
+function summaryHtml(id,c){
+  const sm=c.summary;
+  const pending=Object.values(DATA.requests||{}).some(r=>r && r.customerId===id && (r.status==='pending'||r.status==='processing'));
+  if(pending){
+    return `<div class="fsum"><div class="empty"><div class="spin"></div><b style="color:#3b82f6;font-size:14px">직원2가 재무 요약 생성 중…</b><br><br>분석이 끝나면 이 자리에 자동으로 채워집니다.<br><span style="color:#94a3b8">⏳ 창을 닫거나 뒤로 가도 계속 생성됩니다 (클라우드 처리)</span></div></div>`;
+  }
+  if(!sm||!Object.keys(sm).length){
+    return `<div class="fsum"><div class="empty">📊 재무 요약 없음<br><br><b>📁 서류함에 파일을 넣으면</b> 직원2가 자동 분석해<br>매출추이·부채비율·대출현황을 이 자리에 채웁니다.<br><br><span class="add" onclick="editSummary('${id}')" style="display:inline-block;margin-top:6px">✍️ 수동으로 만들기</span></div></div>`;
+  }
+  const sales=sm.sales||[]; const mx=Math.max(1,...sales.map(s=>+s.v||0));
+  const cols=['#9aa6b8','#7db3ec','#3b82f6','#1d4ed8'];
+  const bars=sales.map((s,i)=>{const h=Math.round((+s.v||0)/mx*100);return `<div class="bar"><div class="bb" style="height:${h}%;background:${cols[i%4]}">${esc(s.v)}억</div><div class="yl">${esc(s.y)}</div></div>`;}).join('');
+  const sc=(t,n,red)=>`<div class="sc"><div class="t">${t}</div><div class="n" style="${red?'color:#b91c1c':''}">${esc(n||'-')}</div></div>`;
+  const loans=(sm.loans||[]).map(l=>`<div class="loan"><div class="lr"><span>${esc(l.bank)}</span><span>${esc(l.amt)}</span></div>${l.desc?`<div class="ld">${esc(l.desc)}</div>`:''}${l.tag?`<span class="lt">${esc(l.tag)}</span>`:''}</div>`).join('');
+  const rv = sm._meta && sm._meta.reviewed===false;
+  return `<div class="fsum">
+    ${rv?`<div class="warn" style="background:#fffbeb;color:#b45309;display:flex;justify-content:space-between;align-items:center;gap:8px">🤖 직원2 자동분석 · <b>미검수</b> <button class="btn b" style="padding:4px 11px;font-size:11.5px;flex-shrink:0" onclick="markReviewed('${id}')">✅ 검수완료</button></div>`:''}
+    ${sales.length?`<div class="sechead" style="margin-bottom:4px">매출 추이 ${sm.salesNote?`<span style="font-weight:500;color:#94a3b8">· ${esc(sm.salesNote)}</span>`:''}</div><div class="bars">${bars}</div>`:''}
+    <div class="scards">${sc('자산총계',sm.asset)}${sc('부채총계',sm.liab)}${sc('자본총계',sm.cap)}${sc('부채비율',sm.debtRatio,true)}</div>
+    ${sm.warn?`<div class="warn">⚠ ${esc(sm.warn)}</div>`:''}
+    ${(sm.loans&&sm.loans.length)?`<div class="ltot">대출 현황${sm.loanTotal?` · 총 잔액 ${esc(sm.loanTotal)}`:''}</div>${loans}`:''}
+    ${sm.credit?`<div class="credit">✓ ${esc(sm.credit)}</div>`:''}
+    <div style="text-align:right;margin-top:10px"><span class="add" onclick="editSummary('${id}')">✏️ 요약 수정</span></div></div>`;
+}
+function editSummary(id){
+  const c=getCust(id)||{};
+  const box=document.getElementById('sumPanel');
+  box.innerHTML=`<div class="ph"><b>📊 재무 요약 — 수동으로 만들기</b></div>
+    <div style="font-size:12px;color:#64748b;line-height:1.6;margin:2px 0 8px">입력한 내용을 토대로 직원2가 요약을 만들어드립니다. <b>📁서류함에 파일이 있으면 함께 종합 분석</b>됩니다. (양식 불필요 — 메모처럼 적으세요)</div>
+    <textarea class="iarea" id="sumNote" style="min-height:150px" placeholder="예: 매출 작년 6억·올해 8억, 부채 5억, 하나은행 대출 1.1억, 신용점수 800, 자본잠식 우려… 아는 만큼 자유롭게">${esc(c.summaryNote||'')}</textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn b" onclick="genSummary('${id}')">📊 재무 요약 생성하기</button><button class="btn g" onclick="rerender()">취소</button><button class="btn g" style="margin-left:auto" onclick="editSummaryJson('${id}')">JSON 직접</button></div>`;
+}
+function genSummary(id){
+  const note=(document.getElementById('sumNote')||{value:''}).value||'';
+  const c=getCust(id)||{};
+  if(!note.trim() && !(c.docs&&c.docs.length)){ toast('메모를 적거나 서류를 먼저 넣어주세요'); return; }
+  setCust(id,{summaryNote:note, memo:'📥 직원2 재무요약 생성 대기중'});
+  if(offline){ toast('실시간(규칙) 켜야 자동 생성 — 지금은 메모만 저장됨'); return; }
+  const reqId='req'+Date.now();
+  DATA.requests=DATA.requests||{}; DATA.requests[reqId]={customerId:id,status:'pending'}; rerender();  // 즉시 로딩 표시
+  dref('requests/'+reqId).set({customerId:id, customerName:c.nm||'', note:note, useExistingDocs:true, status:'pending', ts:Date.now()})
+    .then(()=>toast('요청 전송 ✓ — 직원2가 곧 재무요약 생성'))
+    .catch(()=>toast('전송 실패: 규칙 확인'));
+}
+function editSummaryJson(id){
+  const c=getCust(id)||{};
+  const tmpl=(c.summary&&Object.keys(c.summary).length)?c.summary:{salesNote:'부가세 과표 기준',sales:[{y:2022,v:1.71},{y:2023,v:3.25},{y:2024,v:6.34},{y:2025,v:8.34}],asset:'5.44억',liab:'5.13억',cap:'0.03억',debtRatio:'~1,600%',warn:'',loanTotal:'1.43억',loans:[{bank:'하나은행',amt:'1.10억',desc:'운전자금 4건',tag:'지역재단 보증·한도 소진'}],credit:'연체·당좌부도 전무 — 신용 깨끗'};
+  const box=document.getElementById('sumPanel');
+  box.innerHTML=`<div class="ph"><b>📊 재무 요약 (JSON 직접)</b><span class="sub">고급: 직원2/T봇이 준 JSON 붙여넣기</span></div>
+    <textarea class="jsonarea" id="sumJson">${esc(JSON.stringify(tmpl,null,2))}</textarea>
+    <div style="display:flex;gap:8px;margin-top:10px"><button class="btn b" onclick="saveSummary('${id}')">저장</button><button class="btn g" onclick="rerender()">취소</button></div>`;
+}
+function saveSummary(id){
+  try{ const v=JSON.parse(document.getElementById('sumJson').value); setCust(id,{summary:v}); }
+  catch(e){ toast('JSON 형식 오류 — 쉼표/따옴표 확인'); }
+}
+function markReviewed(id){ const c=getCust(id)||{}; const sm=Object.assign({},c.summary); sm._meta=Object.assign({},sm._meta,{reviewed:true}); setCust(id,{summary:sm}); toast('검수 완료 ✓'); }
+
+/* ===== + 신규 고객 ===== */
+function openNew(){
+  const m=document.createElement('div'); m.className='modal'; m.id='newModal';
+  m.innerHTML=`<div class="mc"><h3>+ 신규 고객</h3><div class="msub">등록 방법을 선택하세요</div>
+    <div class="opt"><div class="ob on" id="optM" onclick="newMode('m')"><span class="bi">✍️</span>수동 입력</div>
+      <div class="ob" id="optC" onclick="newMode('c')"><span class="bi">🤖</span>클로드(T봇)에 부탁</div></div>
+    <div id="newBody"></div></div>`;
+  m.onclick=e=>{ if(e.target===m) closeNew(); };
+  document.body.appendChild(m); newMode('m');
+}
+function shrOptions(){ return `<option value="">미배정</option>${sharerArr().map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}<option value="__new__">＋ 새 팀장 추가…</option>`; }
+function newMode(mode){
+  document.getElementById('optM').classList.toggle('on',mode==='m');
+  document.getElementById('optC').classList.toggle('on',mode==='c');
+  const b=document.getElementById('newBody');
+  if(mode==='m'){
+    b.innerHTML=`<label>이름 (대표/담당자)</label><input id="nNm" placeholder="예: 홍길동">
+      <label>사업자 / 상호명 (선택)</label><input id="nBizName" placeholder="예: ㈜한국상사">
+      <div class="mrow"><div><label>연락처</label><input id="nPh" placeholder="010-0000-0000"></div>
+      <div><label>최초 접수일</label><input id="nRecv" type="date" value="${today()}"></div></div>
+      <div class="mrow"><div><label>유형</label><select id="nType"><option>개인</option><option>법인</option></select></div>
+      <div><label>신청 금액</label><input id="nFund" placeholder="5~10억"></div></div>
+      <label>업종·지역</label><input id="nBiz" placeholder="제조업·서울">
+      <label>담당 팀장(쉐어)</label><select id="nShr" onchange="if(this.value==='__new__')newSharerField()">${shrOptions()}</select><div id="nShrNew"></div>
+      <label>메모</label><textarea id="nMemo" rows="3" placeholder="첫 통화 전 / 서류 요청 등 (여러 줄 가능)"></textarea>
+      <div class="mact"><button class="btn g" onclick="closeNew()">취소</button><button class="btn b" onclick="addNew()">추가</button></div>`;
+  } else {
+    REQFILES=[];
+    b.innerHTML=`<label>고객명 / 업체</label><input id="reqNm" placeholder="예: ㈜한국상사 (모르면 비워도 됨)">
+      <label>서류 첨부 <span style="color:#94a3b8;font-weight:500">· 재무제표·부채현황·사업자등록증 등</span></label>
+      <div id="dropZone" class="dropzone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="reqDrop(event)">
+        📎 여기로 파일을 <b>끌어다 놓기</b><br><label class="filelabel">또는 파일 선택<input type="file" multiple style="display:none" onchange="reqAddFiles(this.files)"></label></div>
+      <div id="reqList"></div>
+      <label>요청 내용 (간략히)</label><input id="reqNote" placeholder="예: 재무 분석해서 가능 자금·추천 상품 정리">
+      <div class="guidebox" style="margin-top:14px;font-size:12.5px">📌 분석은 <b>경영컨설팅 직원2(전문)</b>가 합니다. [요청 만들기]는 고객·서류목록을 <b>등록</b>까지만 해요(웹페이지는 파일을 직접 못 보냄).<br>→ 그 다음 <b>같은 파일을 T봇 채팅에 첨부</b>하고 "○○ 고객 직원2 시켜 재무요약"이라고 하면, T봇이 직원2에 넘겨 분석→이 카드에 채웁니다.</div>
+      <div class="mact"><button class="btn g" onclick="closeNew()">취소</button><button class="btn b" onclick="craftRequest()">요청 만들기</button></div>`;
+  }
+}
+function newSharerField(){
+  const sp=document.getElementById('nShrNew');
+  sp.innerHTML=`<div style="display:flex;gap:8px;margin-top:6px"><input id="nShrName" placeholder="새 팀장 이름" style="flex:1"><button class="btn b" onclick="confirmNewSharer()">추가</button></div>`;
+  document.getElementById('nShrName').focus();
+}
+function confirmNewSharer(){
+  const nm=document.getElementById('nShrName').value.trim(); if(!nm){ toast('이름 입력'); return; }
+  const sid=addSharer(nm);
+  const sel=document.getElementById('nShr');
+  const o=document.createElement('option'); o.value=sid; o.textContent=nm;
+  sel.insertBefore(o, sel.querySelector('option[value="__new__"]')); sel.value=sid;
+  document.getElementById('nShrNew').innerHTML=''; toast('팀장 추가됨 ✓');
+}
+let REQFILES=[];
+function reqAddFiles(fl){ for(const f of fl){ REQFILES.push(f); } reqRenderList(); }   // 실제 File 객체 보관(업로드용)
+function reqDrop(e){ e.preventDefault(); e.currentTarget.classList.remove('drag'); if(e.dataTransfer&&e.dataTransfer.files) reqAddFiles(e.dataTransfer.files); }
+function reqRenderList(){ const el=document.getElementById('reqList'); if(!el)return;
+  el.innerHTML=REQFILES.map((f,i)=>`<div class="reqfile">📄 ${esc(f.name)}<span class="x" onclick="REQFILES.splice(${i},1);reqRenderList()">✕</span></div>`).join(''); }
+function fileToDataURL(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
+async function craftRequest(){
+  const nm=document.getElementById('reqNm').value.trim();
+  const note=document.getElementById('reqNote').value.trim();
+  const files=REQFILES.slice();
+  if(!nm && !files.length){ toast('고객명 또는 서류를 추가하세요'); return; }
+  const id='c'+Date.now();
+  setCust(id,{nm:nm||'(이름 미정)', docs:files.map(f=>({name:f.name})), cnote:note?('[요약 요청] '+note):'',
+    received:today(), docStatus:files.length?'접수완료':'접수전', docDate:files.length?today():'',
+    stage:'연락전', insStatus:'대기', contacted:false, memo:'📥 직원2 재무요약 요청', biz:'-', fund:'-', type:'개인', sharer:'', created:Date.now()});
+  closeNew(); go('customer',id);
+  // 완전자동(무료): 온라인이면 파일을 base64로 RTDB 요청큐에 기록 → 워치독이 직원2 호출
+  if(!offline && files.length){
+    toast('서류 전송 중…');
+    try{
+      const enc=[];
+      for(const f of files){
+        if(f.size>8*1024*1024){ toast(f.name+' 8MB 초과 — 제외'); continue; }
+        enc.push({name:f.name, data:await fileToDataURL(f)});
+      }
+      const reqId='req'+Date.now();
+      await dref('requests/'+reqId).set({customerId:id, customerName:nm||'(이름 미정)', note, files:enc, status:'pending', ts:Date.now()});
+      setCust(id,{memo:'📥 직원2 자동분석 대기중'});
+      toast('요청 전송 완료 ✓ — 직원2 자동 처리 대기');
+    }catch(e){ toast('전송 실패: '+(e&&e.message||'')); }
+  } else if(files.length){
+    toast('요청 등록(로컬) — 실시간 켜면 자동 전송됩니다');
+  } else { toast('고객 등록됨'); }
+}
+function addSharerPrompt(){
+  const m=document.createElement('div'); m.className='modal'; m.id='shrModal';
+  m.innerHTML=`<div class="mc"><h3>+ 쉐어(팀장) 추가</h3><div class="msub">함께 진행하는 팀장님/쉐어처 등록</div>
+    <label>이름</label><input id="shName" placeholder="예: 김철수 팀장님">
+    <label>역할 / 소속</label><input id="shOrg" placeholder="예: 정책자금 진행 · OO캐피탈">
+    <div class="mact"><button class="btn g" onclick="document.getElementById('shrModal').remove()">취소</button><button class="btn b" onclick="confirmSharerAdd()">추가</button></div></div>`;
+  m.onclick=e=>{ if(e.target===m) m.remove(); };
+  document.body.appendChild(m); document.getElementById('shName').focus();
+}
+function confirmSharerAdd(){
+  const nm=document.getElementById('shName').value.trim(); if(!nm){ toast('이름 입력'); return; }
+  addSharer(nm, document.getElementById('shOrg').value.trim());
+  document.getElementById('shrModal').remove(); rerender(); toast('팀장 추가됨 ✓');
+}
+function closeNew(){ const m=document.getElementById('newModal'); if(m)m.remove(); }
+function addNew(){
+  const g=i=>document.getElementById(i);
+  const nm=g('nNm').value.trim(); if(!nm){ toast('이름/업체를 입력하세요'); return; }
+  const id='c'+Date.now();
+  setCust(id,{nm,bizName:g('nBizName').value.trim(),phone:g('nPh').value.trim(),type:g('nType').value,biz:g('nBiz').value.trim()||'-',fund:g('nFund').value.trim()||'-',sharer:g('nShr').value==='__new__'?'':g('nShr').value,memo:g('nMemo').value.trim(),received:g('nRecv').value||today(),docStatus:'접수전',stage:'연락전',ins:'',insStatus:'대기',contacted:false,created:Date.now()});
+  closeNew(); go('customer',id);
+}
+
+/* ===== 라우팅 ===== */
+let HISTORY=[];
+function go(t,id){ if(VIEW && !(VIEW.t===t && VIEW.id===id)){ HISTORY.push(VIEW); if(HISTORY.length>50)HISTORY.shift(); } VIEW={t,id}; if(t==='customer') delete _docSync[id]; if(window.innerWidth<=860)toggleMenu(true); rerender(); }
+function goBack(){ VIEW = HISTORY.length ? HISTORY.pop() : {t:'dash'}; if(window.innerWidth<=860)toggleMenu(true); rerender(); }
 function toggleMenu(force){const s=$('#side'),c=$('#scrim');const open=force===true?false:!s.classList.contains('open');s.classList.toggle('open',open);c.classList.toggle('open',open);}
+const NAVS=[['dash','📊 대시보드'],['call','📞 연락 전(신규DB)'],['db','👥 고객 DB'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어'],['rev','💰 수익·정산'],['report','📈 리포트']];
+function buildNav(active){ $('#nav').innerHTML=NAVS.map(([k,l])=>`<a class="${k===active?'on':''}" onclick="go('${k}')">${l}</a>`).join(''); }
 
-/* ===== 메인 대시보드 ===== */
-function renderDash(active='dash'){
+function rerender(){
+ if(!ready){ return; }
+ if(shareId){ return renderExt(); }
+ const t=VIEW.t;
+ if(t==='share') renderSharers();
+ else if(t==='sharer') renderSharerDetail(VIEW.id);
+ else if(t==='customer') renderCustomer(VIEW.id);
+ else if(t==='db') renderDB();
+ else if(t==='flt') renderFiltered(VIEW.id);
+ else if(t==='call') renderFiltered('연락전','call');
+ else if(['docs','meet','rev','report'].includes(t)) renderStub(t);
+ else renderDash();
+}
+
+/* ===== 공통 헬퍼 (날짜·전역저장) ===== */
+function daysSince(d){ if(!d) return 0; try{ return Math.floor((Date.now()-new Date(d).getTime())/86400000); }catch(e){ return 0; } }
+function setNode(key,val){ DATA[key]=val; rerender(); _lsave(); if(!offline) dref(key).set(val).catch(()=>{ offline=true; _lsave(); }); }
+
+/* ===== 액션카드 클릭 → 필터 리스트 ===== */
+function renderFiltered(key,nav){
+ buildNav(nav||'dash');
+ const cs=custArr();
+ const TITLE={'연락전':'📞 연락 전 고객 (신규 DB · 첫 통화 전)','부재중·재연락':'🔄 부재중·재연락 고객','심사중':'📥 심사중 고객','자금접수완료':'🏦 자금접수완료 고객','old7':'⏰ 접수 7일+ (심사중·서류접수 7일 경과·방치주의)','부결':'🚫 부결 고객'};
+ let list;
+ if(key==='old7') list=cs.filter(c=>c.stage==='심사중'&&docState(c)==='접수완료'&&daysSince(c.docDate||c.received)>=7);
+ else list=cs.filter(c=>c.stage===key);
+ const rows=list.map(c=>{
+   const ago = c.received?` · 접수 ${daysSince(c.received)}일 전`:'';
+   return `<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
+     <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz||'')}</span></b><div class="memo">${esc(c.memo||'')}${ago}</div></div>
+     <div class="amt">${esc(c.fund||'')}</div>${chip(c.stage)}</div>`;
+ }).join('')||'<div class="row" style="color:#94a3b8">해당 고객 없음</div>';
+ $('#main').innerHTML=`<span class="back" onclick="goBack()">← 뒤로</span>
+   <div class="top"><h1>${TITLE[key]||key} <span style="color:#94a3b8;font-size:15px;font-weight:600">${list.length}명</span></h1></div>
+   <div class="panel">${rows}</div>`;
+}
+
+/* ===== 4분할: 개인메모 ===== */
+function quadMemo(){
+ const m=DATA.dashMemo||''; const empty=!m.trim();
+ return `<div class="quad"><div class="qh"><b>📝 개인 메모장</b><span style="font-size:11px;color:#94a3b8">클릭해서 작성</span></div>
+   <div class="dmemo ${empty?'empty':''}" onclick="editDashMemo(this)">${empty?'여기를 클릭해 메모를 남기세요. (Ctrl+Enter 저장)':esc(m)}</div></div>`;
+}
+function editDashMemo(box){
+ if(box.querySelector('textarea')) return;
+ box.innerHTML=`<textarea class="iarea" style="min-height:230px" placeholder="개인 메모 (Ctrl+Enter 저장 · Esc 취소)">${esc(DATA.dashMemo||'')}</textarea>`;
+ const ta=box.querySelector('textarea'); ta.focus();
+ let h=false; const done=(s)=>{ if(h)return; h=true; if(s)setNode('dashMemo',ta.value); else rerender(); };
+ ta.onkeydown=e=>{ if(e.key==='Enter'&&(e.ctrlKey||e.metaKey)){e.preventDefault();ta.blur();} else if(e.key==='Escape'){h=true;rerender();} };
+ ta.onblur=()=>done(true);
+}
+
+/* ===== 4분할: 미팅(구글캘린더 연동) ===== */
+function quadMeetings(){
+ const M=DATA.meetings||{};
+ const arr=Object.entries(M).map(([id,m])=>({id,...m})).sort((a,b)=>((a.date||'')+(a.time||'')).localeCompare((b.date||'')+(b.time||'')));
+ const rows=arr.map(m=>`<div class="mtg"><div class="md">${esc((m.date||'').slice(5)||'—')}<br>${esc(m.time||'')}</div>
+   <div class="mi"><b>${esc(m.title||'미팅')}</b><div class="ms">${esc(m.memo||'')}</div></div>
+   <span class="gc" onclick="gcal('${esc(m.title||'미팅')}','${esc(m.date||'')}','${esc(m.time||'')}','${esc(m.memo||'')}')">📅 캘린더</span>
+   <span class="mx" onclick="delMeeting('${m.id}')">✕</span></div>`).join('')||'<div style="font-size:12.5px;color:#94a3b8;padding:12px 0">예정된 미팅이 없습니다.</div>';
+ return `<div class="quad"><div class="qh"><b>📅 미팅 일정</b><span class="add" onclick="addMeeting()">＋ 미팅</span></div>
+   <div class="qlist">${rows}</div></div>`;
+}
+function gcal(title,date,time,memo){
+ const d=(date||'').replace(/-/g,''); if(!d){ toast('날짜 없음'); return; }
+ const hh=(time||'09:00').slice(0,2), mm=(time||'09:00').slice(3,5);
+ const start=d+'T'+hh+mm+'00';
+ const eh=String((parseInt(hh)+1)%24).padStart(2,'0'); const end=d+'T'+eh+mm+'00';
+ window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+start+'/'+end+'&details='+encodeURIComponent(memo||''),'_blank');
+}
+function addMeeting(){
+ const mm=document.createElement('div'); mm.className='modal'; mm.id='mtgModal';
+ const opts=custArr().map(c=>`<option value="${esc(c.nm)}">`).join('');
+ mm.innerHTML=`<div class="mc"><h3>+ 미팅 추가</h3><div class="msub">저장 후 📅캘린더로 구글캘린더에 등록</div>
+   <label>고객 / 제목</label><input id="mTitle" list="mCust" placeholder="고객명 또는 미팅 제목"><datalist id="mCust">${opts}</datalist>
+   <div class="mrow"><div><label>날짜</label><input id="mDate" type="date" value="${today()}"></div><div><label>시간</label><input id="mTime" type="time" value="10:00"></div></div>
+   <label>메모 (장소·안건)</label><input id="mMemo" placeholder="예: 사무실 / 서류 검토">
+   <div class="mact"><button class="btn g" onclick="document.getElementById('mtgModal').remove()">취소</button><button class="btn b" onclick="saveMeeting()">추가</button></div></div>`;
+ mm.onclick=e=>{ if(e.target===mm) mm.remove(); };
+ document.body.appendChild(mm); document.getElementById('mTitle').focus();
+}
+function saveMeeting(){
+ const g=i=>document.getElementById(i); const title=g('mTitle').value.trim(); if(!title){ toast('고객/제목 입력'); return; }
+ const M=Object.assign({},DATA.meetings); M['mt'+Date.now()]={title,date:g('mDate').value,time:g('mTime').value,memo:g('mMemo').value.trim()};
+ setNode('meetings',M); document.getElementById('mtgModal').remove(); toast('미팅 추가 ✓');
+}
+function delMeeting(id){ const M=Object.assign({},DATA.meetings); delete M[id]; setNode('meetings',M); }
+
+/* ===== 4분할: 서류 완료/대기 리스트 (10줄 페이지네이션) ===== */
+let PG={'접수완료':0,'접수전':0};
+function setPage(state,i){ PG[state]=i; rerender(); }
+function quadDocList(state){
+ const cs=custArr().filter(c=>docState(c)===state);
+ const per=10, pages=Math.max(1,Math.ceil(cs.length/per)); let pg=Math.min(PG[state]||0,pages-1); if(pg<0)pg=0;
+ const slice=cs.slice(pg*per,pg*per+per);
+ const title= state==='접수완료'?'📁 서류 접수 완료':'⏳ 서류 대기중';
+ const rows=slice.map(c=>`<div class="qrow" onclick="go('customer','${c.id}')"><div class="qav">${esc((c.nm||'·')[0])}</div>
+   <div class="qi"><b>${esc(c.nm)}</b><div class="qs">${esc(c.biz||'-')} ${chip(c.stage)}</div></div></div>`).join('')||'<div style="font-size:12.5px;color:#94a3b8;padding:12px 0">없음</div>';
+ let pager='';
+ if(pages>1){ pager='<div class="pager">'+Array.from({length:pages},(_,i)=>`<button class="${i===pg?'on':''}" onclick="setPage('${state}',${i})">${i+1}</button>`).join('')+'</div>'; }
+ return `<div class="quad"><div class="qh"><b>${title} <span style="color:#94a3b8">(${cs.length})</span></b></div>
+   <div class="qlist">${rows}</div>${pager}</div>`;
+}
+
+/* ===== 대시보드 ===== */
+function renderDash(){
  buildNav('dash');
- const t=REVENUE.tax, taxPer=t.personal*t.perFee, taxCorp=t.corp*t.corpFee, taxSum=taxPer+taxCorp;
- const today=CUST.filter(c=>c.contacted);
- const waiting=CUST.filter(c=>!c.contacted);
- const acts=[['📞','오늘 통화',8,'#f97316'],['🔄','재연락 대상',5,'#ec4899'],['📅','오늘 미팅',3,'#06b6d4'],['📁','서류 검토',6,'#8b5cf6']];
- const listRow=c=>`<div class="row"><div class="av">${c.nm[0]}</div>
-   <div class="info"><b>${c.nm} <span>· ${c.biz}</span></b><div class="memo">${c.memo}</div></div>
-   <div class="amt">${c.amt}</div>${chip(c.stage)}</div>`;
- const waitRow=c=>`<div class="row"><div class="av">${c.nm[0]}</div>
-   <div class="info"><b>${c.nm} <span>· ${c.biz}</span></b><div class="memo">${c.memo}</div></div>
-   <div class="amt">${c.amt}</div><div class="call">📞 연락</div></div>`;
+ const cs=custArr();
+ const ag=aggFees();
+ const totDone=ag.insurance.dA+ag.consulting.dA+ag.tax.dA, totPlan=ag.insurance.pA+ag.consulting.pA+ag.tax.pA;
+ const totDoneN=ag.insurance.dN+ag.consulting.dN+ag.tax.dN, totPlanN=ag.insurance.pN+ag.consulting.pN+ag.tax.pN;
+ const today=cs.filter(c=>c.contacted), waiting=cs.filter(c=>!c.contacted);
+ const cnt=st=>cs.filter(c=>c.stage===st).length;
+ const acts=[
+   {ic:'🔄',l:'부재중 재연락',k:'부재중·재연락',c:'#ec4899'},
+   {ic:'📥',l:'심사중',k:'심사중',c:'#06b6d4'},
+   {ic:'🏦',l:'자금접수완료',k:'자금접수완료',c:'#8b5cf6'},
+   {ic:'⏰',l:'접수 7일+',k:'old7',c:'#f97316'},
+   {ic:'🚫',l:'부결',k:'부결',c:'#ef4444'}];
+ const actCount=k=> k==='old7' ? cs.filter(c=>c.stage==='심사중'&&docState(c)==='접수완료'&&daysSince(c.docDate||c.received)>=7).length : cs.filter(c=>c.stage===k).length;
+ const listRow=c=>`<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
+   <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz)}</span></b><div class="memo">${esc(c.memo)}</div></div>
+   <div class="amt">${esc(c.fund)}</div>${chip(c.stage)}</div>`;
+ const waitRow=c=>`<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
+   <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz)}</span></b><div class="memo">${esc(c.memo)}</div></div>
+   <div class="amt">${esc(c.fund)}</div><div class="call">📞 연락</div></div>`;
  $('#main').innerHTML=`
- <div class="top">
-   <div style="display:flex;align-items:center;gap:10px">
-     <button class="btn g menubtn" onclick="toggleMenu()">☰</button>
-     <div><h1>대시보드</h1><div class="date">2026년 6월 29일 · 안녕하세요, 황현 대표님 👋</div></div>
-   </div>
-   <div class="tbtns"><button class="btn g">🔍 검색</button><button class="btn b">+ 신규 고객</button></div>
- </div>
-
+ <div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
+   <div><h1>대시보드</h1><div class="date">안녕하세요, 황현 대표님 👋 · ${offline?'오프라인 모드 🔴 (규칙 열면 실시간 켜짐)':'실시간 동기화 중 🟢'}</div></div></div>
+   <div class="tbtns"><button class="btn g">🔍 검색</button><button class="btn b" onclick="openNew()">+ 신규 고객</button></div></div>
  <div class="sechead">💰 이번달 수익 현황</div>
  <div class="rev">
    <div class="c"><div class="h"><div class="ic" style="background:#ecfdf5">🛡️</div><div class="lb">보험 계약</div></div>
-     <div class="v">${REVENUE.insurance.v}<small>원</small></div><div class="s" style="color:#10b981">${REVENUE.insurance.s}</div></div>
+     <div class="v">${fmtMan(ag.insurance.dA)}<small>원</small></div><div class="s" style="color:#10b981">완료 ${ag.insurance.dN}건 · 예정 ${ag.insurance.pN}건${ag.insurance.pA?` (${fmtMan(ag.insurance.pA)})`:''}</div></div>
    <div class="c"><div class="h"><div class="ic" style="background:#eff6ff">🏦</div><div class="lb">컨설팅 수수료</div></div>
-     <div class="v">${REVENUE.consulting.v}<small>원</small></div><div class="s" style="color:#3b82f6">${REVENUE.consulting.s}</div></div>
+     <div class="v">${fmtMan(ag.consulting.dA)}<small>원</small></div><div class="s" style="color:#3b82f6">완료 ${ag.consulting.dN}건 · 예정 ${ag.consulting.pN}건${ag.consulting.pA?` (${fmtMan(ag.consulting.pA)})`:''}</div></div>
    <div class="c"><div class="h"><div class="ic" style="background:#f5f3ff">🧾</div><div class="lb">세무 이관</div></div>
-     <div class="v">${(taxSum).toLocaleString()}만<small>원</small></div><div class="s" style="color:#8b5cf6">${t.personal+t.corp}건 · 개인${t.personal}·법인${t.corp}</div></div>
+     <div class="v">${fmtMan(ag.tax.dA)}<small>원</small></div><div class="s" style="color:#8b5cf6">완료 ${ag.tax.dN}건 · 예정 ${ag.tax.pN}건${ag.tax.pA?` (${fmtMan(ag.tax.pA)})`:''}</div></div>
  </div>
-
  <div class="midrow">
-   <div class="tax">
-     <div class="h"><b>🧾 세무사 이관 (이번달)</b><div class="sum">총 ${taxSum.toLocaleString()}만원 · ${t.personal+t.corp}건</div></div>
-     <div class="grid">
-       <div class="box" style="background:#f5f3ff"><div class="t">개인사업자</div><div class="n">${t.personal}<small> 건</small></div><div class="m" style="color:#8b5cf6">× ${t.perFee}만 = ${taxPer.toLocaleString()}만원</div></div>
-       <div class="box" style="background:#ecfdf5"><div class="t">법인사업자</div><div class="n">${t.corp}<small> 건</small></div><div class="m" style="color:#10b981">× ${t.corpFee}만 = ${taxCorp.toLocaleString()}만원</div></div>
-     </div>
-   </div>
-   <div class="acts">${acts.map(([ic,l,n,c])=>`<div class="act" style="background:linear-gradient(135deg,${c},${c}cc);box-shadow:0 6px 16px ${c}40"><div class="ic">${ic}</div><div class="n">${n}</div><div class="l">${l}</div></div>`).join('')}</div>
+   <div class="tax" style="flex:1"><div class="h"><b>💰 수수료·계약 합계 (이번달)</b><div class="sum">확정 ${fmtMan(totDone)}원</div></div>
+     <div class="grid"><div class="box" style="background:#ecfdf5"><div class="t">✅ 완료(확정)</div><div class="n">${fmtMan(totDone)}<small></small></div><div class="m" style="color:#10b981">${totDoneN}건 확정 수익</div></div>
+       <div class="box" style="background:#fffbeb"><div class="t">⏳ 예정(예상)</div><div class="n">${fmtMan(totPlan)}<small></small></div><div class="m" style="color:#d97706">${totPlanN}건 진행 예상</div></div></div></div>
+   <div class="acts" style="flex:2.7">${acts.map(a=>`<div class="act" style="background:linear-gradient(135deg,${a.c},${a.c}cc);box-shadow:0 6px 16px ${a.c}40;cursor:pointer" onclick="go('flt','${a.k}')"><div class="ic">${a.ic}</div><div class="n">${actCount(a.k)}</div><div class="l">${a.l}</div></div>`).join('')}</div>
  </div>
-
- <div class="panel">
-   <div class="ph"><b>📞 오늘 처리할 고객</b><span class="more">전체 →</span></div>
-   ${today.map(listRow).join('')}
+ <div class="quadgrid">
+   ${quadMemo()}
+   ${quadMeetings()}
+   ${quadDocList('접수완료')}
+   ${quadDocList('접수전')}
  </div>
-
- <div class="panel">
-   <div class="ph"><div><b>🆕 신규 연락 대기</b><span class="sub">오늘 받은 DB · 첫 통화 전 ${waiting.length}명</span></div><span class="more">전체 →</span></div>
-   ${waiting.map(waitRow).join('')}
- </div>`;
+ <div class="bukyul" onclick="go('flt','부결')">🚫 부결 고객 ${cs.filter(c=>c.stage==='부결').length}명 — 사유·재도전 따로 관리 →</div>`;
 }
 
-/* ===== 쉐어처 ===== */
+/* ===== 쉐어 목록 ===== */
 function renderSharers(){
  buildNav('share');
- const cards=SHARERS.map(s=>{
-   const deals=CUST.filter(c=>c.sharer===s.id);
-   const amtSum=deals.length;
-   const link=`${SHARE_BASE}?share=${s.id}`;
-   return `<div class="shc" style="border-top-color:${s.color}">
-     <div class="hh"><div class="av" style="background:${s.color}">${s.name[0]}</div><div><b>${s.name}</b><br><span>${s.org}</span></div></div>
+ const cards=sharerArr().map(s=>{
+   const deals=custArr().filter(c=>c.sharer===s.id);
+   return `<div class="shc" style="border-top-color:${s.color}" onclick="go('sharer','${s.id}')">
+     <div class="hh"><div class="av" style="background:${s.color}">${esc(s.name[0])}</div><div><b>${esc(s.name)}</b><br><span>${esc(s.org)}</span></div></div>
      <div class="stat"><div><b style="color:${s.color}">${deals.length}</b><span>관련 진행 건</span></div>
+       <div><b>${deals.filter(d=>d.insStatus==='완료').length}</b><span>보험 완료</span></div>
        <div><b>${deals.filter(d=>d.stage==='승인완료').length}</b><span>실행 완료</span></div></div>
-     <div class="link"><input value="${link}" readonly onclick="this.select()"><button class="cp" onclick="copyLink('${link}',this)">링크 복사</button></div>
-     <div style="font-size:11.5px;color:#94a3b8;margin-top:8px">🔒 이 링크는 <b>${s.name}</b> 관련 건만 보여요 (읽기 전용)</div>
+     <div style="font-size:11.5px;color:#94a3b8;margin-top:12px">👆 클릭하면 ${esc(s.name)} 협업 관리 화면</div></div>`;
+ }).join('');
+ $('#main').innerHTML=`<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
+   <div><h1>쉐어 협업 관리</h1><div class="date">팀장님 카드를 누르면 함께 진행 중인 건·보험 계약을 관리해요</div></div></div>
+   <button class="btn b" onclick="addSharerPrompt()">+ 쉐어 추가</button></div><div class="shx">${cards}</div>`;
+}
+
+/* ===== 팀장 상세 (시안1) ===== */
+function renderSharerDetail(id){
+ buildNav('share');
+ const s=getSharer(id); if(!s){ $('#main').innerHTML='<div class="panel">없는 팀장입니다.</div>'; return; }
+ const all=custArr();
+ const deals=all.filter(c=>c.sharer===id || feeShr(c,'insurance')===id || feeShr(c,'consulting')===id || feeShr(c,'tax')===id);
+ const insDeals=all.filter(c=>feeShr(c,'insurance')===id);
+ const taxDeals=all.filter(c=>feeShr(c,'tax')===id);
+ const insDone=insDeals.filter(d=>fee(d,'insurance').status==='완료').length;
+ const taxDone=taxDeals.filter(d=>fee(d,'tax').status==='완료').length;
+ const link=`${location.origin+location.pathname}?share=${id}`;
+ const dealRow=c=>`<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
+   <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz)}</span></b><div class="memo">${esc(c.fund)}</div></div>${chip(c.stage)}</div>`;
+ const feeRow=(c,k)=>`<div class="ins"><div><span class="nm">${esc(c.nm)}</span><span class="fd">${esc(c.fund)}</span></div>
+   <div style="display:flex;align-items:center;gap:10px"><span class="val" onclick="iFeeAmt(this,'${c.id}','${k}')">${fee(c,k).amt?esc(fee(c,k).amt)+'원':'＋ 금액'}</span>
+   <span class="st ${fee(c,k).status}" onclick="iFeeStatus(this,'${c.id}','${k}')">${fee(c,k).status} ▾</span></div></div>`;
+ $('#main').innerHTML=`
+ <span class="back" onclick="goBack()">← 뒤로</span>
+ <div class="tlhead"><div class="av" style="background:${s.color}">${esc(s.name[0])}</div>
+   <div><div class="nm">${esc(s.name)}</div><div class="og">${esc(s.org)} · 📞 ${esc(s.phone||'-')}</div></div>
+   <div class="sum"><div><b style="color:${s.color}">${deals.length}</b><span>함께 진행</span></div>
+     <div><b style="color:#f59e0b">${insDone}</b><span>보험완료</span></div>
+     <div><b style="color:#8b5cf6">${taxDone}</b><span>세무완료</span></div></div></div>
+ <div class="grid2">
+   <div class="panel"><div class="ph"><b>📋 함께 진행 중인 고객</b><span class="sub">클릭 → 고객 관리</span></div>${deals.length?deals.map(dealRow).join(''):'<div class="row">진행 건 없음</div>'}</div>
+   <div style="display:flex;flex-direction:column;gap:18px">
+     <div class="panel"><div class="ph"><b>🛡️ 보험 계약 쉐어</b><span class="sub">금액·상태 클릭 수정</span></div>${insDeals.length?insDeals.map(c=>feeRow(c,'insurance')).join(''):'<div class="ins">대상 없음</div>'}</div>
+     <div class="panel"><div class="ph"><b>🧾 세무 이관 쉐어</b><span class="sub">금액·상태 클릭 수정</span></div>${taxDeals.length?taxDeals.map(c=>feeRow(c,'tax')).join(''):'<div class="ins">대상 없음</div>'}</div>
+     <div class="panel"><div class="ph"><b>🔗 전용 공유 링크</b></div>
+       <div style="font-size:12px;color:#64748b;margin:6px 0 10px">이 링크를 ${esc(s.name)}께 보내면 본인 관련 건만 보고 <b>같이 수정</b>할 수 있어요 (실시간 동기화)</div>
+       <button class="btn b" style="width:100%" onclick="navigator.clipboard.writeText('${link}');toast('링크 복사됨 ✓')">🔗 ${esc(s.name)} 전용 링크 복사</button></div>
+   </div></div>`;
+}
+
+/* ===== 고객 관리 페이지 ===== */
+function renderCustomer(id){
+ buildNav('db');
+ const c=getCust(id); if(!c){ $('#main').innerHTML='<div class="panel">없는 고객입니다.</div>'; return; }
+ const s=c.sharer?getSharer(c.sharer):null;
+ $('#main').innerHTML=`
+ <span class="back" onclick="goBack()">← 뒤로</span>
+ <div class="tlhead"><div class="av" style="background:#3b82f6">${esc((c.nm||'·')[0])}</div>
+   <div><div class="nm">${esc(c.nm)} <span style="font-size:13px;color:#94a3b8;font-weight:600">${esc(c.type)}</span></div><div class="og">${esc(c.biz)} · 📞 ${esc(c.phone||'-')}</div></div>
+   <div class="sum" style="flex-wrap:wrap;justify-content:flex-end;max-width:60%;gap:6px">
+     ${STAGES.map(st=>`<span class="stagepill ${c.stage===st?'on':''}" style="${c.stage===st?`background:${STAGE[st]};border-color:${STAGE[st]}`:''}" onclick="setCust('${id}',{stage:'${st}',contacted:${st!=='연락전'}})">${esc(st)}</span>`).join('')}
+   </div></div>
+ <div class="grid2">
+   <div class="panel">
+     ${docsHtml(id,c)}
+     <div class="ph"><b>📋 진행 정보</b><span class="sub">값을 클릭하면 수정</span></div>
+     <div class="fld"><label>진행 단계</label><div class="ev" onclick="iStage(this,'${id}')">${esc(c.stage)} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
+     <div class="fld"><label>사업자 / 상호명</label><div class="ev" onclick="iText(this,'${id}','bizName')">${esc(c.bizName)||'(입력)'}</div></div>
+     <div class="mrow" style="display:flex;gap:10px"><div class="fld" style="flex:1"><label>최초 접수일</label><div class="ev" onclick="iText(this,'${id}','received')">${esc(c.received)||'(예: 2026-06-30)'}</div></div>
+       <div class="fld" style="flex:1"><label>서류 접수일 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 서류완료 시 자동</span></label><div class="ev" onclick="iText(this,'${id}','docDate')">${esc(c.docDate)||'(자동 기록)'}</div></div></div>
+     <div class="fld"><label>신청 금액</label><div class="ev" onclick="iText(this,'${id}','fund')">${esc(c.fund)||'(입력)'}</div></div>
+     <div class="fld"><label>담당 팀장(쉐어)</label><div class="ev" onclick="iSharer(this,'${id}')">${s?esc(s.name):'미배정'} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
+     <div class="fld"><label>연락처</label><div class="ev" onclick="iText(this,'${id}','phone')">${esc(c.phone)||'(입력)'}</div></div>
+     <div class="fld"><label>메모</label><div class="notebox sm ${(c.memo&&c.memo.trim())?'':'empty'}" onclick="iArea(this,'${id}','memo')">${(c.memo&&c.memo.trim())?esc(c.memo):'클릭해서 메모 입력 (여러 줄 가능)'}</div></div>
+   </div>
+   <div style="display:flex;flex-direction:column;gap:18px">
+     <div class="panel"><div class="ph"><b>💰 수수료·계약 현황</b><span class="sub">상태·금액 클릭 수정</span></div>
+       ${FEE_KEYS.map(([k,ic,lb])=>{const f=fee(c,k); const esh=((c.fees||{})[k]||{}).shr; const shn=esh?shrShort((getSharer(esh)||{}).name||''):''; return `<div class="feerow"><div class="fl">${ic} ${lb} <span class="ev" style="font-size:10.5px;padding:2px 7px;color:${shn?'#3b82f6':'#94a3b8'};margin-left:3px;font-weight:700" title="쉐어 팀장 지정" onclick="iFeeSharer(this,'${id}','${k}')">🤝 ${shn?esc(shn):'쉐어'}</span></div>
+         <span class="st ${f.status}" onclick="iFeeStatus(this,'${id}','${k}')">${f.status} ▾</span>
+         <span class="ev fa" onclick="iFeeAmt(this,'${id}','${k}')">${f.amt?esc(f.amt)+'원':'＋ 금액'}</span></div>`;}).join('')}
+       ${(()=>{const pf=fee(c,'product'); const pt=((c.fees||{}).product||{}).type||''; return `<div class="feerow" style="border-top:1.5px dashed #e2e8f0;padding-top:13px"><div class="fl" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">📋 <span class="ev" style="padding:4px 9px;font-size:12.5px;font-weight:700" onclick="iProductType(this,'${id}')">${esc(pt)||'서비스 유형 ▾'}</span></div>
+         <span class="st ${pf.status}" onclick="iFeeStatus(this,'${id}','product')">${pf.status} ▾</span>
+         <span class="ev fa" onclick="iFeeAmt(this,'${id}','product')">${pf.amt?esc(pf.amt)+'원':'＋ 금액'}</span></div>`;})()}
+       <div class="feetot">합계 — 완료 <b>${fmtMan(custTotal(c,'완료'))}원</b> · 예정 ${fmtMan(custTotal(c,'예정'))}원</div>
+     </div>
+     <div class="panel" id="sumPanel"><div class="ph"><b>📊 재무 요약</b><span class="sub">서류 기반 한눈 요약</span></div>
+       ${summaryHtml(id,c)}
+     </div>
+   </div></div>`;
+ syncDocs(id,c.nm);
+}
+
+/* ===== 고객 DB ===== */
+let DBMONTH=0, DBPAGE=0;
+function setDBMonth(m){ DBMONTH=m; DBPAGE=0; rerender(); }
+function setDBPage(i){ DBPAGE=i; rerender(); }
+function renderDB(){
+ buildNav('db');
+ const avc=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#ef4444','#0ea5e9'];
+ let cs=custArr();
+ if(DBMONTH) cs=cs.filter(c=>{ const r=c.received||''; return r.length>=7 && parseInt(r.slice(5,7),10)===DBMONTH; });
+ const months=['전체'].concat(Array.from({length:12},(_,i)=>(i+1)+'월'));
+ const monthBar=`<div class="monthbar"><span class="myear">2026년</span>${months.map((mn,i)=>`<span class="mtab ${DBMONTH===i?'on':''}" onclick="setDBMonth(${i})">${mn}</span>`).join('')}</div>`;
+ const per=15, pages=Math.max(1,Math.ceil(cs.length/per)); let pg=Math.min(DBPAGE,pages-1); if(pg<0)pg=0;
+ const slice=cs.slice(pg*per,pg*per+per);
+ const cards=slice.map((c,i)=>{
+   const dd=docState(c)==='접수완료';
+   const bizline=[c.bizName?esc(c.bizName):'', (c.biz&&c.biz!=='-')?esc(c.biz):''].filter(Boolean).join(' · ')||'-';
+   return `<div class="cdbcard" onclick="go('customer','${c.id}')">
+     <div class="ch"><div class="cav" style="background:${avc[i%avc.length]}">${esc((c.nm||'·')[0])}</div>
+       <div><div class="cnm">${esc(c.nm)}${c.type?`<span class="ty">${esc(c.type)}</span>`:''}</div><div class="cbiz">${bizline}</div></div></div>
+     <div class="cbadges"><span class="docbadge ${dd?'on':''}" style="cursor:default">${dd?'✅ 서류 접수 완료':'⏳ 서류 접수 전'}</span>${chip(c.stage)}</div>
+     <div class="cmeta"><div><span class="lbl">📅 최초 접수</span><b>${esc(c.received||'-')}</b></div>
+       <div style="text-align:right"><span class="lbl">📞 연락처</span><b>${esc(c.phone||'-')}</b></div></div>
    </div>`;
  }).join('');
- $('#main').innerHTML=`
- <div class="top">
-   <div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
-   <div><h1>쉐어 공유 관리</h1><div class="date">쉐어마다 본인 관련 건만 보이는 전용 링크 · 읽기 전용</div></div></div>
-   <button class="btn b">+ 쉐어 추가</button>
- </div>
- <div class="shx">${cards}</div>`;
+ const pager= pages>1 ? '<div class="pager" style="margin-top:18px">'+Array.from({length:pages},(_,i)=>`<button class="${i===pg?'on':''}" onclick="setDBPage(${i})">${i+1}</button>`).join('')+'</div>' : '';
+ $('#main').innerHTML=`<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
+   <div><h1>고객 DB</h1><div class="date">전체 ${custArr().length}명${DBMONTH?` · ${DBMONTH}월 접수 ${cs.length}명`:''} · 카드를 누르면 관리</div></div></div>
+   <button class="btn b" onclick="openNew()">+ 신규 고객</button></div>
+   ${monthBar}
+   <div class="cdbgrid">${cards||'<div class="panel" style="color:#94a3b8">해당 월 접수 고객이 없습니다.</div>'}</div>
+   ${pager}`;
 }
-function copyLink(url,btn){navigator.clipboard.writeText(url).then(()=>{const o=btn.textContent;btn.textContent='✅ 복사됨';setTimeout(()=>btn.textContent=o,1500);});}
+function renderStub(t){
+ const T={call:'📞 오늘 콜',docs:'📁 서류함',meet:'📅 미팅',rev:'💰 수익·정산',report:'📈 리포트'}[t];
+ buildNav(t);
+ $('#main').innerHTML=`<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button><h1>${T}</h1></div></div><div class="panel" style="text-align:center;color:#94a3b8;padding:50px">${T} 화면은 다음 단계에서 구성합니다.</div>`;
+}
 
-/* ===== 쉐어처 공유 뷰 (?share=ID) ===== */
-function renderShareView(){
- const s=SHARERS.find(x=>x.id===shareId);
+/* ===== 외부 공유 뷰 (?share=ID) — 본인 건만 + 같이 수정 ===== */
+function renderExt(){
+ const s=getSharer(shareId);
  document.querySelector('.side').classList.add('hide');
- const m=$('#main'); m.style.marginLeft='0'; m.style.maxWidth='820px'; m.style.margin='0 auto';
- if(!s){m.innerHTML='<div class="panel">유효하지 않은 공유 링크입니다.</div>';return;}
- const deals=CUST.filter(c=>c.sharer===s.id);
- const row=c=>`<div class="row"><div class="av">${c.nm[0]}</div>
-   <div class="info"><b>${c.nm} <span>· ${c.biz}</span></b><div class="memo">${c.memo}</div></div>
-   <div class="amt">${c.amt}</div>${chip(c.stage)}</div>`;
+ const m=$('#main'); m.style.marginLeft='0'; m.style.maxWidth='760px'; m.style.margin='0 auto';
+ if(!s){ m.innerHTML='<div class="panel">유효하지 않은 공유 링크입니다.</div>'; return; }
+ const all=custArr();
+ const insDeals=all.filter(c=>feeShr(c,'insurance')===shareId);
+ const taxDeals=all.filter(c=>feeShr(c,'tax')===shareId);
+ const feeRow=(c,k)=>`<div class="ins"><div><span class="nm">${esc(c.nm)}</span><span class="fd">${esc(c.biz)} · ${esc(c.fund)}</span><div style="margin-top:3px">${chip(c.stage)}</div></div>
+   <div style="display:flex;align-items:center;gap:10px"><span class="val" onclick="iFeeAmt(this,'${c.id}','${k}')">${fee(c,k).amt?esc(fee(c,k).amt)+'원':'＋ 금액'}</span>
+   <span class="st ${fee(c,k).status}" onclick="iFeeStatus(this,'${c.id}','${k}')">${fee(c,k).status} ▾</span></div></div>`;
  m.innerHTML=`
- <div class="sharebar"><div class="badge">공유 뷰</div>
-   <div><b style="font-size:16px">${s.name}님께 공유된 진행 건</b><div style="font-size:12px;color:#a5b4fc">황현 컨설팅 · ${s.org} · 읽기 전용</div></div></div>
- <div class="panel"><div class="ph"><b>🤝 ${s.name} 관련 진행 건</b><span class="sub">총 ${deals.length}건</span></div>
-   ${deals.length?deals.map(row).join(''):'<div class="row">표시할 진행 건이 없습니다.</div>'}
- </div>
- <div style="text-align:center;color:#94a3b8;font-size:12px;margin-top:14px">본 페이지는 ${s.name}님 관련 건만 표시됩니다. 다른 고객 정보·수익 정보는 보이지 않습니다.</div>`;
+ <div class="sharebar"><div class="badge">실시간 협업</div><div><b style="font-size:16px">${esc(s.name)}님 협업 보드</b><div style="font-size:12px;color:#a5b4fc">황현 컨설팅 · ${esc(s.org)} · 변경하면 실시간 반영됩니다</div></div></div>
+ <div class="panel"><div class="ph"><b>🛡️ 보험 계약 (${insDeals.length}건)</b><span class="sub">금액·상태 눌러 수정</span></div>${insDeals.length?insDeals.map(c=>feeRow(c,'insurance')).join(''):'<div class="ins">진행 건이 없습니다.</div>'}</div>
+ <div class="panel"><div class="ph"><b>🧾 세무 이관 (${taxDeals.length}건)</b><span class="sub">금액·상태 눌러 수정</span></div>${taxDeals.length?taxDeals.map(c=>feeRow(c,'tax')).join(''):'<div class="ins">진행 건이 없습니다.</div>'}</div>
+ <div style="text-align:center;color:#94a3b8;font-size:12px;margin-top:14px">${esc(s.name)}님 관련 건만 표시 · 다른 고객/수익 정보는 보이지 않습니다</div>`;
 }
-
-/* ===== 시작 ===== */
-if(shareId){renderShareView();}else{renderDash();}
 </script>
 </body>
 </html>
