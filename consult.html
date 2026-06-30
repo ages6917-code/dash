@@ -1261,9 +1261,9 @@ function aiSettings(){
     <div class="aim-h"><b>🤖 AI 설정</b><span onclick="document.getElementById('aiSet').remove()" style="cursor:pointer;color:#94a3b8">✕</span></div>
     <div class="aim-sub">사용할 AI를 고르고 키를 <b>한 번만</b> 넣으면 됩니다. 키는 <b>이 브라우저에만</b> 저장돼요(공유·전송 안 함). 키가 없으면 <b>Gemini 무료 발급</b>을 추천!</div>
     <div class="aim-provs">
-      <label class="${p==='gemini'?'on':''}"><input type="radio" name="aip" value="gemini" ${p==='gemini'?'checked':''}>Gemini<span class="free">무료</span></label>
-      <label class="${p==='openai'?'on':''}"><input type="radio" name="aip" value="openai" ${p==='openai'?'checked':''}>GPT</label>
-      <label class="${p==='claude'?'on':''}"><input type="radio" name="aip" value="claude" ${p==='claude'?'checked':''}>Claude</label>
+      <label class="${p==='gemini'?'on':''}" onclick="aiPick(this)"><input type="radio" name="aip" value="gemini" ${p==='gemini'?'checked':''}>Gemini<span class="free">무료</span></label>
+      <label class="${p==='openai'?'on':''}" onclick="aiPick(this)"><input type="radio" name="aip" value="openai" ${p==='openai'?'checked':''}>GPT</label>
+      <label class="${p==='claude'?'on':''}" onclick="aiPick(this)"><input type="radio" name="aip" value="claude" ${p==='claude'?'checked':''}>Claude</label>
     </div>
     <div class="aim-f"><label>Gemini 키 <a href="https://aistudio.google.com/app/apikey" target="_blank">무료 발급 →</a></label><input id="kGem" value="${esc(k.gemini||'')}" placeholder="AIza..."></div>
     <div class="aim-f"><label>OpenAI(GPT) 키 <a href="https://platform.openai.com/api-keys" target="_blank">발급 →</a></label><input id="kOai" value="${esc(k.openai||'')}" placeholder="sk-..."></div>
@@ -1271,8 +1271,12 @@ function aiSettings(){
     <button class="btn b" style="width:100%;margin-top:6px" onclick="aiSaveSettings()">저장</button>
   </div>`;
   ov.onclick=()=>ov.remove();
-  document.querySelectorAll('.aim-provs label').forEach(l=>l.onclick=()=>{ document.querySelectorAll('.aim-provs label').forEach(x=>x.classList.remove('on')); l.classList.add('on'); l.querySelector('input').checked=true; });
   document.body.appendChild(ov);
+}
+function aiPick(l){
+  document.querySelectorAll('.aim-provs label').forEach(x=>x.classList.remove('on'));
+  l.classList.add('on');
+  const r=l.querySelector('input'); if(r) r.checked=true;
 }
 function aiSaveSettings(){
   const sel=document.querySelector('input[name=aip]:checked');
