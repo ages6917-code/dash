@@ -103,39 +103,7 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
   <input id="pwin" type="password" autocomplete="off" style="padding:13px 14px;font-size:16px;border-radius:10px;border:1px solid #2a3b5e;width:240px;background:#1a2540;color:#fff;outline:none" placeholder="비밀번호">
   <div id="pwerr" style="color:#f87171;margin-top:12px;height:18px;font-size:13px"></div>
 </div>
-<script>
-(function(){
-  var PW="5생활관!";
-  var g=document.getElementById('pwgate');
-  if(sessionStorage.getItem('cdash_ok')==='1'){g.style.display='none';return;}
-  document.body.style.overflow='hidden';
-  function ok(){sessionStorage.setItem('cdash_ok','1');g.style.display='none';document.body.style.overflow='';}
-  function check(){var v=document.getElementById('pwin').value;if(v===PW){ok();}else{document.getElementById('pwerr').textContent='비밀번호가 틀렸습니다';}}
-  var i=document.getElementById('pwin');
-  i.addEventListener('keydown',function(e){if(e.key==='Enter')check();});
-  setTimeout(function(){i.focus();},100);
-})();
-</script>
-
-<div id="pwgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif">
-  <div style="color:#fff;font-size:20px;margin-bottom:6px">🔒 컨설팅 대시보드</div>
-  <div style="color:#9fb3d1;font-size:13px;margin-bottom:18px">팀 전용 · 비밀번호를 입력하세요</div>
-  <input id="pwin" type="password" autocomplete="off" style="padding:13px 14px;font-size:16px;border-radius:10px;border:1px solid #2a3b5e;width:240px;background:#1a2540;color:#fff;outline:none" placeholder="비밀번호">
-  <div id="pwerr" style="color:#f87171;margin-top:12px;height:18px;font-size:13px"></div>
-</div>
-<script>
-(function(){
-  var PW="5생활관!";
-  var g=document.getElementById('pwgate');
-  if(sessionStorage.getItem('cdash_ok')==='1'){g.style.display='none';return;}
-  document.body.style.overflow='hidden';
-  function ok(){sessionStorage.setItem('cdash_ok','1');g.style.display='none';document.body.style.overflow='';}
-  function check(){var v=document.getElementById('pwin').value;if(v===PW){ok();}else{document.getElementById('pwerr').textContent='비밀번호가 틀렸습니다';}}
-  var i=document.getElementById('pwin');
-  i.addEventListener('keydown',function(e){if(e.key==='Enter')check();});
-  setTimeout(function(){i.focus();},100);
-})();
-</script>
+<script>(function(){var PW="5생활관!";var g=document.getElementById('pwgate');if(sessionStorage.getItem('cdash_ok')==='1'){g.style.display='none';return;}document.body.style.overflow='hidden';function ok(){sessionStorage.setItem('cdash_ok','1');g.style.display='none';document.body.style.overflow='';}function check(){var v=document.getElementById('pwin').value;if(v===PW){ok();}else{document.getElementById('pwerr').textContent='비밀번호가 틀렸습니다';}}var i=document.getElementById('pwin');i.addEventListener('keydown',function(e){if(e.key==='Enter')check();});setTimeout(function(){i.focus();},100);})();</script>
 
 <div class="app">
   <aside class="side" id="side">
@@ -151,10 +119,10 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 /* ===== 데이터 (실운영 시 직원15 DB / 입력값으로 자동 갱신) ===== */
 const STAGE={연락전:'#94a3b8',통화완료:'#3b82f6',서류검토:'#f59e0b',본부장접수:'#8b5cf6',승인완료:'#10b981',재연락:'#ec4899'};
 const SHARERS=[
- {id:'A', name:'A 본부장', org:'정책자금 접수', color:'#3b82f6'},
- {id:'shinbo', name:'신용보증재단', org:'보증 접수처', color:'#10b981'},
- {id:'capital', name:'B 캐피탈', org:'대출 실행처', color:'#f59e0b'},
- {id:'tax', name:'세무회계 파트너', org:'세무 이관처', color:'#8b5cf6'},
+ {id:'A', name:'김영수 팀장님', org:'정책자금 담당', color:'#3b82f6'},
+ {id:'shinbo', name:'이상훈 팀장님', org:'보증·기술보증 담당', color:'#10b981'},
+ {id:'capital', name:'박지원 팀장님', org:'대출 실행 담당', color:'#f59e0b'},
+ {id:'tax', name:'정민재 팀장님', org:'세무 이관 담당', color:'#8b5cf6'},
 ];
 const CUST=[
  {nm:'김상훈',biz:'제조업·성남',stage:'서류검토',amt:'정책자금 2억',memo:'오늘 14:00 통화',type:'개인',sharer:'A',contacted:true},
@@ -182,7 +150,7 @@ const params=new URLSearchParams(location.search);
 const shareId=params.get('share');
 
 /* ===== 네비 ===== */
-const NAVS=[['dash','📊 대시보드'],['db','👥 고객 DB'],['call','📞 오늘 콜'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어처'],['rev','💰 수익·정산'],['report','📈 리포트']];
+const NAVS=[['dash','📊 대시보드'],['db','👥 고객 DB'],['call','📞 오늘 콜'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어'],['rev','💰 수익·정산'],['report','📈 리포트']];
 function buildNav(active){
  $('#nav').innerHTML=NAVS.map(([k,l])=>`<a class="${k===active?'on':''}" onclick="go('${k}')">${l}</a>`).join('');
 }
@@ -261,8 +229,8 @@ function renderSharers(){
  $('#main').innerHTML=`
  <div class="top">
    <div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
-   <div><h1>쉐어처 공유 관리</h1><div class="date">쉐어처마다 본인 관련 건만 보이는 전용 링크 · 읽기 전용</div></div></div>
-   <button class="btn b">+ 쉐어처 추가</button>
+   <div><h1>쉐어 공유 관리</h1><div class="date">쉐어마다 본인 관련 건만 보이는 전용 링크 · 읽기 전용</div></div></div>
+   <button class="btn b">+ 쉐어 추가</button>
  </div>
  <div class="shx">${cards}</div>`;
 }
