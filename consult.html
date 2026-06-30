@@ -16,6 +16,7 @@
 <meta name="apple-mobile-web-app-title" content="컨설팅 CRM">
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent}
@@ -289,6 +290,18 @@ select.iedit{cursor:pointer}
 .adm-item{display:flex;align-items:center;gap:11px;font-size:14px;color:#e2e8f0;font-weight:600;padding:13px 14px;border-radius:11px;background:#1e293b;border:1px solid #334155;margin-bottom:9px;cursor:pointer}
 .adm-item:hover{border-color:#6366f1;background:rgba(99,102,241,.12)}
 .adm-item span{flex:1}
+.adm-item.out{background:#2a1418;border-color:#7f1d1d;color:#fca5a5}
+.adm-item.out:hover{border-color:#dc2626;background:rgba(220,38,38,.15)}
+.loginscreen{position:fixed;inset:0;z-index:9500;background:radial-gradient(1200px 600px at 50% -10%,#1e293b,#0b1220 60%);display:flex;align-items:center;justify-content:center;padding:24px}
+.login-card{background:#0f172a;border:1px solid #1e293b;border-radius:22px;padding:38px 30px;width:100%;max-width:380px;text-align:center;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+.login-logo{width:62px;height:62px;border-radius:18px;background:linear-gradient(135deg,#6366f1,#8b5cf6);display:flex;align-items:center;justify-content:center;font-size:32px;margin:0 auto 16px}
+.login-t{font-size:22px;font-weight:900;color:#f1f5f9}
+.login-s{font-size:12.5px;color:#94a3b8;margin:6px 0 22px}
+.login-g{width:100%;display:flex;align-items:center;justify-content:center;gap:10px;background:#fff;color:#1f2937;border:none;border-radius:13px;padding:14px;font-size:15px;font-weight:700;cursor:pointer}
+.login-g:hover{filter:brightness(.96)}
+.login-g .gicon{display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;border-radius:50%;background:conic-gradient(#ea4335 0 25%,#fbbc05 0 50%,#34a853 0 75%,#4285f4 0);color:#fff;font-weight:900;font-size:13px}
+.login-note{font-size:11.5px;color:#64748b;margin-top:16px}
+.login-deny{background:#2a1418;border:1px solid #7f1d1d;color:#fca5a5;border-radius:12px;padding:12px;font-size:12.5px;line-height:1.6;margin-bottom:16px}
 </style>
 </head>
 <body>
@@ -373,19 +386,65 @@ function bootLocal(reason){
   ready=true; offline=true; rerender();
   console.warn('오프라인 모드(이 PC 저장본 사용):', reason);
 }
-const bootTimer=setTimeout(()=>bootLocal('연결 시간초과(2.5s)'), 2500);
+function startApp(){
+  const bootTimer=setTimeout(()=>bootLocal('연결 시간초과(2.5s)'), 2500);
+  /* 시드 → 실시간 구독 (실패 시 로컬 폴백) */
+  try{
+    dref().once('value').then(s=>{ if(!s.exists()||!s.child('sharers').exists()){
+      let seed=SEED; try{ const ls=localStorage.getItem(LSKEY); if(ls){ const p=JSON.parse(ls); if(p&&p.customers&&Object.keys(p.customers).length) seed=p; } }catch(e){}
+      dref().update(seed).catch(()=>{}); } }).catch(e=>bootLocal(e&&e.message));
+    dref().on('value', s=>{
+      clearTimeout(bootTimer);
+      DATA=s.val()||JSON.parse(JSON.stringify(SEED));
+      ready=true; offline=false; rerender();
+    }, e=>{ bootLocal(e&&e.message); });
+  }catch(e){ bootLocal(e&&e.message); }
+}
 
-/* 시드 → 실시간 구독 (실패 시 로컬 폴백) */
-try{
-  dref().once('value').then(s=>{ if(!s.exists()||!s.child('sharers').exists()){
-    let seed=SEED; try{ const ls=localStorage.getItem(LSKEY); if(ls){ const p=JSON.parse(ls); if(p&&p.customers&&Object.keys(p.customers).length) seed=p; } }catch(e){}
-    dref().update(seed).catch(()=>{}); } }).catch(e=>bootLocal(e&&e.message));
-  dref().on('value', s=>{
-    clearTimeout(bootTimer);
-    DATA=s.val()||JSON.parse(JSON.stringify(SEED));
-    ready=true; offline=false; rerender();
-  }, e=>{ bootLocal(e&&e.message); });
-}catch(e){ bootLocal(e&&e.message); }
+/* ===== 🔐 로그인 게이트 (실데이터 보호) ===== */
+/* AUTH_REQUIRED=false 면 지금과 100% 동일(게이트 OFF). 콘솔 셋업+이메일 확정 후 true 로. */
+const AUTH_REQUIRED=false;          // ← 준비 끝나면 true
+const AUTH_WHITELIST=[];            // ← 허용 Gmail 목록 (비우면 로그인한 전원 허용)
+let ME_EMAIL='';
+function authNeeded(){ return AUTH_REQUIRED && !shareId && NS!=='demo'; }   // 데모/공유뷰는 로그인 불필요
+if(authNeeded()){
+  let _auth=null; try{ _auth=firebase.auth(); }catch(e){ _auth=null; }
+  if(!_auth){ startApp(); }
+  else{
+    showLogin('checking');
+    _auth.onAuthStateChanged(u=>{
+      if(!u){ showLogin('signin'); return; }
+      const em=(u.email||'').toLowerCase();
+      if(AUTH_WHITELIST.length && AUTH_WHITELIST.map(e=>e.toLowerCase()).indexOf(em)<0){
+        showLogin('denied', em); try{_auth.signOut();}catch(e){} return;
+      }
+      ME_EMAIL=em; hideLogin(); startApp();
+    });
+  }
+} else { startApp(); }
+function showLogin(mode, em){
+  let ov=document.getElementById('loginScreen');
+  if(!ov){ ov=document.createElement('div'); ov.id='loginScreen'; ov.className='loginscreen'; document.body.appendChild(ov); }
+  if(mode==='checking'){ ov.innerHTML='<div class="login-card"><div class="spin2" style="margin:0 auto 14px"></div><div style="color:#94a3b8;font-size:13px">로그인 확인 중…</div></div>'; return; }
+  const denied = mode==='denied' ? `<div class="login-deny">⚠ <b>${esc(em||'')}</b> 계정은 접근 권한이 없습니다.<br>관리자에게 등록을 요청하세요.</div>` : '';
+  ov.innerHTML=`<div class="login-card">
+    <div class="login-logo">💼</div>
+    <div class="login-t">컨설팅 CRM</div>
+    <div class="login-s">정책자금 · 보험 · 세무 · 팀 협업 보드</div>
+    ${denied}
+    <button class="login-g" onclick="doGoogleLogin()"><span class="gicon">G</span> Google로 로그인</button>
+    <div class="login-note">🔒 등록된 팀원만 접근할 수 있습니다</div>
+  </div>`;
+}
+function hideLogin(){ const o=document.getElementById('loginScreen'); if(o)o.remove(); }
+function doGoogleLogin(){
+  let auth; try{ auth=firebase.auth(); }catch(e){ alert('로그인 모듈 로드 실패'); return; }
+  const prov=new firebase.auth.GoogleAuthProvider();
+  const isMobile=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  if(isMobile){ auth.signInWithRedirect(prov); return; }      // 모바일: 팝업 차단 多 → 리다이렉트
+  auth.signInWithPopup(prov).catch(e=>{ try{ auth.signInWithRedirect(prov); }catch(_){ alert('로그인 실패: '+(e&&e.message||'')); } });
+}
+function doSignOut(){ try{ firebase.auth().signOut().then(()=>location.reload()); }catch(e){ location.reload(); } }
 
 /* ===== 헬퍼 ===== */
 const $=s=>document.querySelector(s);
@@ -1309,6 +1368,7 @@ function openAdmin(){
     <div class="adm-item" onclick="editMe()">✏️ <span>이름·직함 수정</span><span style="flex:0;color:#64748b">›</span></div>
     <div class="adm-item" onclick="admClose();aiSettings()">🤖 <span>AI 설정 (키 입력)</span><span style="flex:0;color:#64748b">›</span></div>
     <div class="adm-item" onclick="copyShare()">🔗 <span>공유 링크 복사</span><span style="flex:0;color:#64748b">›</span></div>
+    ${(typeof AUTH_REQUIRED!=='undefined'&&AUTH_REQUIRED&&ME_EMAIL)?`<div class="adm-item out" onclick="doSignOut()">🚪 <span>로그아웃 (${esc(ME_EMAIL)})</span><span style="flex:0">›</span></div>`:''}
     <div style="font-size:11px;color:#64748b;text-align:center;margin-top:14px">컨설팅 CRM · ${typeof offline!=='undefined'&&offline?'오프라인 🔴':'실시간 동기화 🟢'}</div>
   </div>`;
   ov.onclick=()=>ov.remove();
