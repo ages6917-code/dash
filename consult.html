@@ -812,12 +812,16 @@ function newMode(mode){
       <label>메모</label><textarea id="nMemo" rows="3" placeholder="첫 통화 전 / 서류 요청 등 (여러 줄 가능)"></textarea>
       <div class="mact"><button class="btn g" onclick="closeNew()">취소</button><button class="btn b" onclick="addNew()">추가</button></div>`;
   } else {
-    REQFILES=[];
+    REQFILES=[]; REQAUDIO=[];
     b.innerHTML=`<label>고객명 / 업체</label><input id="reqNm" placeholder="예: ㈜한국상사 (모르면 비워도 됨)">
       <label>서류 첨부 <span style="color:#94a3b8;font-weight:500">· 재무제표·부채현황·사업자등록증 등</span></label>
       <div id="dropZone" class="dropzone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="reqDrop(event)">
         📎 여기로 파일을 <b>끌어다 놓기</b><br><label class="filelabel">또는 파일 선택<input type="file" multiple style="display:none" onchange="reqAddFiles(this.files)"></label></div>
       <div id="reqList"></div>
+      <label style="margin-top:8px">🎙️ 음성·통화 녹음 첨부 <span style="color:#94a3b8;font-weight:500">· 폰에서 누르면 통화 녹음 선택</span></label>
+      <label class="reczone"><input type="file" accept="audio/*" multiple style="display:none" onchange="reqAddAudio(this.files)">
+        <div class="recz-ic">🎙️</div><div><b>음성 파일 추가</b><div class="recz-sub">📞 폰: 통화 녹음 선택 · 데탑: 파일 선택</div></div></label>
+      <div id="reqAudioList"></div>
       <label>요청 내용 (간략히)</label><input id="reqNote" placeholder="예: 재무 분석해서 가능 자금·추천 상품 정리">
       <div class="guidebox" style="margin-top:14px;font-size:12.5px">📌 분석은 <b>경영컨설팅 직원2(전문)</b>가 합니다. [요청 만들기]는 고객·서류목록을 <b>등록</b>까지만 해요(웹페이지는 파일을 직접 못 보냄).<br>→ 그 다음 <b>같은 파일을 T봇 채팅에 첨부</b>하고 "○○ 고객 직원2 시켜 재무요약"이라고 하면, T봇이 직원2에 넘겨 분석→이 카드에 채웁니다.</div>
       <div class="mact"><button class="btn g" onclick="closeNew()">취소</button><button class="btn b" onclick="craftRequest()">요청 만들기</button></div>`;
@@ -836,19 +840,29 @@ function confirmNewSharer(){
   sel.insertBefore(o, sel.querySelector('option[value="__new__"]')); sel.value=sid;
   document.getElementById('nShrNew').innerHTML=''; toast('팀장 추가됨 ✓');
 }
-let REQFILES=[];
+let REQFILES=[]; let REQAUDIO=[];
 function reqAddFiles(fl){ for(const f of fl){ REQFILES.push(f); } reqRenderList(); }   // 실제 File 객체 보관(업로드용)
 function reqDrop(e){ e.preventDefault(); e.currentTarget.classList.remove('drag'); if(e.dataTransfer&&e.dataTransfer.files) reqAddFiles(e.dataTransfer.files); }
 function reqRenderList(){ const el=document.getElementById('reqList'); if(!el)return;
   el.innerHTML=REQFILES.map((f,i)=>`<div class="reqfile">📄 ${esc(f.name)}<span class="x" onclick="REQFILES.splice(${i},1);reqRenderList()">✕</span></div>`).join(''); }
+function reqAddAudio(fl){ for(const f of fl){ REQAUDIO.push(f); } reqRenderAudio(); }
+function reqRenderAudio(){ const el=document.getElementById('reqAudioList'); if(!el)return;
+  el.innerHTML=REQAUDIO.map((f,i)=>`<div class="reqfile">🎙️ ${esc(f.name)}<span class="x" onclick="REQAUDIO.splice(${i},1);reqRenderAudio()">✕</span></div>`).join(''); }
 function fileToDataURL(f){ return new Promise((res,rej)=>{ const r=new FileReader(); r.onload=()=>res(r.result); r.onerror=rej; r.readAsDataURL(f); }); }
 async function craftRequest(){
   const nm=document.getElementById('reqNm').value.trim();
   const note=document.getElementById('reqNote').value.trim();
   const files=REQFILES.slice();
-  if(!nm && !files.length){ toast('고객명 또는 서류를 추가하세요'); return; }
+  const audios=REQAUDIO.slice();
+  if(!nm && !files.length && !audios.length){ toast('고객명·서류·음성 중 하나는 추가하세요'); return; }
+  // 음성 → base64(클라우드) 변환 (cap 9MB)
+  const arec=[];
+  for(const f of audios){
+    if(f.size>9*1024*1024){ toast(f.name+' 9MB 초과 — 긴 녹음은 데탑에서'); continue; }
+    try{ arec.push({name:f.name, ts:Date.now(), mode:'c', data:await fileToDataURL(f)}); }catch(e){}
+  }
   const id='c'+Date.now();
-  setCust(id,{nm:nm||'(이름 미정)', docs:files.map(f=>({name:f.name})), cnote:note?('[요약 요청] '+note):'',
+  setCust(id,{nm:nm||'(이름 미정)', docs:files.map(f=>({name:f.name})), ...(arec.length?{arec}:{}), cnote:note?('[요약 요청] '+note):'',
     received:today(), docStatus:files.length?'접수완료':'접수전', docDate:files.length?today():'',
     stage:'연락전', insStatus:'대기', contacted:false, memo:'📥 직원2 재무요약 요청', biz:'-', fund:'-', type:'개인', sharer:'', created:Date.now()});
   closeNew(); go('customer',id);
