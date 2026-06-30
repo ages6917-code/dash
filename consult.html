@@ -185,7 +185,12 @@ select.iedit{cursor:pointer}
 .mtab.on{background:var(--brand);color:#fff}
 /* 고객 DB 카드 그리드 */
 .cdbgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(290px,1fr));gap:16px}
-.cdbcard{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;transition:.15s}
+.cdbcard{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;cursor:pointer;transition:.15s;position:relative}
+.cmenu{position:absolute;top:8px;right:10px;font-size:20px;line-height:1;color:#cbd5e1;cursor:pointer;padding:2px 8px;border-radius:6px;font-weight:700;z-index:2}
+.cmenu:hover{background:#f1f5f9;color:#475569}
+.cardmenu-pop{position:fixed;z-index:80;background:#fff;border:1px solid var(--line);border-radius:11px;box-shadow:0 10px 28px rgba(0,0,0,.16);overflow:hidden;min-width:130px}
+.cardmenu-pop div{padding:11px 16px;font-size:13.5px;font-weight:700;cursor:pointer;color:#334155}
+.cardmenu-pop div:hover{background:#f1f5f9}.cardmenu-pop div.del{color:#dc2626}.cardmenu-pop div.del:hover{background:#fef2f2}
 .cdbcard:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.08);border-color:#dbe3ef}
 .cdbcard .ch{display:flex;align-items:center;gap:12px;margin-bottom:13px}
 .cdbcard .cav{width:46px;height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:18px;flex-shrink:0}
@@ -220,6 +225,23 @@ select.iedit{cursor:pointer}
 .mtg .mi{flex:1;min-width:0}.mtg .mi b{font-size:13px}.mtg .mi .ms{font-size:11.5px;color:#94a3b8}
 .mtg .gc{color:#10b981;font-size:11px;font-weight:700;cursor:pointer;white-space:nowrap}
 .mtg .mx{color:#cbd5e1;cursor:pointer;font-weight:700}
+.mtgsplit{display:flex;gap:14px;flex:1;min-height:0}
+.mtgleft{flex:1;min-width:0;overflow:auto}
+.mtgright{width:228px;flex-shrink:0;border-left:1px solid #f1f5f9;padding-left:14px}
+@media(max-width:620px){.mtgsplit{flex-direction:column}.mtgright{width:100%;border-left:none;border-top:1px solid #f1f5f9;padding-left:0;padding-top:14px}}
+.minical{font-size:11px}
+.mc-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+.mc-head b{font-size:13px;font-weight:800}
+.mc-head span{cursor:pointer;padding:1px 9px;color:#64748b;font-weight:800;font-size:17px;border-radius:6px}
+.mc-head span:hover{background:#f1f5f9}
+.mc-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.mc-w{text-align:center;font-size:10px;font-weight:700;padding:2px 0}
+.mc-d{position:relative;aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:11px;border-radius:6px;cursor:pointer;color:#475569}
+.mc-d:hover{background:#eef2ff}.mc-d.empty{cursor:default}.mc-d.empty:hover{background:none}
+.mc-d.has{font-weight:800;color:var(--brand)}
+.mc-d.today{background:var(--brand);color:#fff;font-weight:800}
+.mc-d .dot{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#ec4899}
+.mc-d.today .dot{background:#fff}
 .bukyul{display:inline-flex;align-items:center;gap:6px;margin-top:14px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;border-radius:10px;padding:9px 14px;font-size:12.5px;font-weight:700;cursor:pointer}
 .stagepill{padding:5px 10px;border-radius:8px;font-size:11.5px;font-weight:700;cursor:pointer;border:1.5px solid #e2e8f0;color:#64748b;background:#fff}
 .stagepill.on{color:#fff}.stagepill:hover{border-color:#cbd5e1}
@@ -782,8 +804,26 @@ function quadMeetings(){
    <span class="gc" onclick="gcal('${esc(m.title||'미팅')}','${esc(m.date||'')}','${esc(m.time||'')}','${esc(m.memo||'')}')">📅 캘린더</span>
    <span class="mx" onclick="delMeeting('${m.id}')">✕</span></div>`).join('')||'<div style="font-size:12.5px;color:#94a3b8;padding:12px 0">예정된 미팅이 없습니다.</div>';
  return `<div class="quad"><div class="qh"><b>📅 미팅 일정</b><span class="add" onclick="addMeeting()">＋ 미팅</span></div>
-   <div class="qlist">${rows}</div></div>`;
+   <div class="mtgsplit"><div class="mtgleft">${rows}</div><div class="mtgright">${miniCal(arr)}</div></div></div>`;
 }
+let CALYM=null;
+function _cm(){ try{ const d=new Date(); return {y:d.getFullYear(),m:d.getMonth(),d:d.getDate()}; }catch(e){ return {y:2026,m:5,d:30}; } }
+function miniCal(meetings){
+ if(!CALYM){ const c=_cm(); CALYM={y:c.y,m:c.m}; }
+ const y=CALYM.y, m=CALYM.m;
+ const first=new Date(y,m,1).getDay(), days=new Date(y,m+1,0).getDate();
+ const cur=_cm(), isCur=cur.y===y&&cur.m===m;
+ const md={}; (meetings||[]).forEach(mt=>{ if(mt.date){ const p=(''+mt.date).split('-'); if(+p[0]===y&&+p[1]===m+1) md[+p[2]]=1; } });
+ const wd=['일','월','화','수','목','금','토']; let cells='';
+ for(let i=0;i<first;i++) cells+='<div class="mc-d empty"></div>';
+ for(let d=1;d<=days;d++){ const ds=`${y}-${String(m+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+   cells+=`<div class="mc-d${md[d]?' has':''}${isCur&&d===cur.d?' today':''}" onclick="calDay('${ds}')">${d}${md[d]?'<span class="dot"></span>':''}</div>`; }
+ return `<div class="minical"><div class="mc-head"><span onclick="calNav(-1)">‹</span><b>${y}.${m+1}</b><span onclick="calNav(1)">›</span></div>
+   <div class="mc-grid">${wd.map((w,i)=>`<div class="mc-w" style="color:${i===0?'#ef4444':i===6?'#3b82f6':'#94a3b8'}">${w}</div>`).join('')}${cells}</div></div>`;
+}
+function calNav(d){ if(!CALYM){const c=_cm();CALYM={y:c.y,m:c.m};} let m=CALYM.m+d,y=CALYM.y; if(m<0){m=11;y--;} if(m>11){m=0;y++;} CALYM={y,m}; rerender(); }
+function calDay(ds){ const M=DATA.meetings||{}; const on=Object.values(M).filter(mt=>mt.date===ds);
+ if(on.length) toast(ds+' 미팅: '+on.map(mt=>mt.title).join(', ')); else addMeeting(ds); }
 function gcal(title,date,time,memo){
  const d=(date||'').replace(/-/g,''); if(!d){ toast('날짜 없음'); return; }
  const hh=(time||'09:00').slice(0,2), mm=(time||'09:00').slice(3,5);
@@ -791,12 +831,12 @@ function gcal(title,date,time,memo){
  const eh=String((parseInt(hh)+1)%24).padStart(2,'0'); const end=d+'T'+eh+mm+'00';
  window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text='+encodeURIComponent(title)+'&dates='+start+'/'+end+'&details='+encodeURIComponent(memo||''),'_blank');
 }
-function addMeeting(){
+function addMeeting(defDate){
  const mm=document.createElement('div'); mm.className='modal'; mm.id='mtgModal';
  const opts=custArr().map(c=>`<option value="${esc(c.nm)}">`).join('');
  mm.innerHTML=`<div class="mc"><h3>+ 미팅 추가</h3><div class="msub">저장 후 📅캘린더로 구글캘린더에 등록</div>
    <label>고객 / 제목</label><input id="mTitle" list="mCust" placeholder="고객명 또는 미팅 제목"><datalist id="mCust">${opts}</datalist>
-   <div class="mrow"><div><label>날짜</label><input id="mDate" type="date" value="${today()}"></div><div><label>시간</label><input id="mTime" type="time" value="10:00"></div></div>
+   <div class="mrow"><div><label>날짜</label><input id="mDate" type="date" value="${defDate||today()}"></div><div><label>시간</label><input id="mTime" type="time" value="10:00"></div></div>
    <label>메모 (장소·안건)</label><input id="mMemo" placeholder="예: 사무실 / 서류 검토">
    <div class="mact"><button class="btn g" onclick="document.getElementById('mtgModal').remove()">취소</button><button class="btn b" onclick="saveMeeting()">추가</button></div></div>`;
  mm.onclick=e=>{ if(e.target===mm) mm.remove(); };
@@ -997,6 +1037,25 @@ function renderCustomer(id){
  syncDocs(id,c.nm);
 }
 
+/* ===== 카드 ⋮ 메뉴 (수정·삭제) ===== */
+function cardMenu(e,id){
+  e.stopPropagation(); closeCardMenu();
+  const m=document.createElement('div'); m.id='cardMenu'; m.className='cardmenu-pop';
+  m.style.left=Math.min(e.clientX,(window.innerWidth-160))+'px'; m.style.top=(e.clientY)+'px';
+  m.innerHTML=`<div onclick="closeCardMenu();go('customer','${id}')">✏️ 수정·관리</div><div class="del" onclick="delCustomer('${id}')">🗑 삭제</div>`;
+  document.body.appendChild(m);
+  setTimeout(()=>document.addEventListener('click',closeCardMenu,{once:true}),20);
+}
+function closeCardMenu(){ const m=document.getElementById('cardMenu'); if(m)m.remove(); }
+function delCustomer(id){
+  closeCardMenu();
+  const c=getCust(id)||{};
+  if(!confirm('고객 "'+(c.nm||'')+'" 삭제할까요?\n(요약·메모·수수료 영구 삭제 / 서류 파일은 D드라이브에 남습니다)')) return;
+  if(DATA.customers) delete DATA.customers[id];
+  if(offline){ _lsave(); } else { dref('customers/'+id).remove().catch(()=>{}); }
+  toast('삭제됨'); rerender();
+}
+
 /* ===== 고객 DB ===== */
 let DBMONTH=0, DBPAGE=0;
 function setDBMonth(m){ DBMONTH=m; DBPAGE=0; rerender(); }
@@ -1014,6 +1073,7 @@ function renderDB(){
    const dd=docState(c)==='접수완료';
    const bizline=[c.bizName?esc(c.bizName):'', (c.biz&&c.biz!=='-')?esc(c.biz):''].filter(Boolean).join(' · ')||'-';
    return `<div class="cdbcard" onclick="go('customer','${c.id}')">
+     <div class="cmenu" onclick="cardMenu(event,'${c.id}')" title="수정·삭제">⋮</div>
      <div class="ch"><div class="cav" style="background:${avc[i%avc.length]}">${esc((c.nm||'·')[0])}</div>
        <div><div class="cnm">${esc(c.nm)}${c.type?`<span class="ty">${esc(c.type)}</span>`:''}</div><div class="cbiz">${bizline}</div></div></div>
      <div class="cbadges"><span class="docbadge ${dd?'on':''}" style="cursor:default">${dd?'✅ 서류 접수 완료':'⏳ 서류 접수 전'}</span>${chip(c.stage)}</div>
