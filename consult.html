@@ -730,6 +730,7 @@ function rerender(){
  else if(t==='db') renderDB();
  else if(t==='flt') renderFiltered(VIEW.id);
  else if(t==='call') renderFiltered('연락전','call');
+ else if(t==='search') renderSearch();
  else if(['docs','meet','rev','report'].includes(t)) renderStub(t);
  else renderDash();
 }
@@ -824,6 +825,35 @@ function quadDocList(state){
    <div class="qlist">${rows}</div>${pager}</div>`;
 }
 
+/* ===== 검색 (이름·상호·전화번호 일부·업종) ===== */
+let SEARCHQ='';
+function searchResultsHtml(q){
+  q=(''+(q||'')).trim().toLowerCase();
+  if(!q) return '<div class="row" style="color:#94a3b8;padding:14px 4px">이름·상호·전화번호 일부·업종을 입력하세요</div>';
+  const qd=q.replace(/\D/g,'');
+  const res=custArr().filter(c=>{
+    const hay=[c.nm,c.bizName,c.biz,c.fund,c.memo,c.stage,c.summaryNote].map(x=>(''+(x||'')).toLowerCase()).join(' ');
+    const ph=(''+(c.phone||'')).replace(/\D/g,'');
+    return hay.includes(q) || (qd.length>=2 && ph.includes(qd));
+  });
+  if(!res.length) return '<div class="row" style="color:#94a3b8;padding:14px 4px">검색 결과 없음</div>';
+  return res.map(c=>`<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
+    <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.bizName||c.biz||'')}</span></b><div class="memo">📞 ${esc(c.phone||'-')}${c.fund&&c.fund!=='-'?' · '+esc(c.fund):''}</div></div>${chip(c.stage)}</div>`).join('');
+}
+function searchUpdate(v){ SEARCHQ=v; const el=document.getElementById('searchResults'); if(el) el.innerHTML=searchResultsHtml(v); }
+function renderSearch(){
+  buildNav('db');
+  $('#main').innerHTML=`<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
+    <div><h1>🔍 검색</h1><div class="date">이름·상호·전화번호(일부)·업종으로 찾기</div></div></div>
+    <button class="btn g" onclick="go('db')">전체 고객 →</button></div>
+   <div class="panel">
+     <input id="searchInput" value="${esc(SEARCHQ)}" oninput="searchUpdate(this.value)" placeholder="예: 김 / 2908 / 제조업 / ㈜한국" autocomplete="off"
+       style="width:100%;padding:13px 16px;font-size:15px;border:1.6px solid var(--brand);border-radius:12px;outline:none;margin-bottom:8px;font-family:inherit">
+     <div id="searchResults">${searchResultsHtml(SEARCHQ)}</div>
+   </div>`;
+  setTimeout(()=>{ const el=document.getElementById('searchInput'); if(el){ el.focus(); el.setSelectionRange(el.value.length,el.value.length); } },10);
+}
+
 /* ===== 대시보드 ===== */
 function renderDash(){
  buildNav('dash');
@@ -849,7 +879,7 @@ function renderDash(){
  $('#main').innerHTML=`
  <div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
    <div><h1>대시보드</h1><div class="date">안녕하세요, 황현 대표님 👋 · ${offline?'오프라인 모드 🔴 (규칙 열면 실시간 켜짐)':'실시간 동기화 중 🟢'}</div></div></div>
-   <div class="tbtns"><button class="btn g">🔍 검색</button><button class="btn b" onclick="openNew()">+ 신규 고객</button></div></div>
+   <div class="tbtns"><button class="btn g" onclick="go('search')">🔍 검색</button><button class="btn b" onclick="openNew()">+ 신규 고객</button></div></div>
  <div class="sechead">💰 이번달 수익 현황</div>
  <div class="rev">
    <div class="c"><div class="h"><div class="ic" style="background:#ecfdf5">🛡️</div><div class="lb">보험 계약</div></div>
