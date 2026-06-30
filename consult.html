@@ -286,6 +286,9 @@ select.iedit{cursor:pointer}
 .aim-f label a{color:#818cf8;font-weight:600;font-size:11px;margin-left:5px;text-decoration:none}
 .aim-f input{width:100%;border:1px solid #334155;background:#1e293b;border-radius:10px;padding:10px 12px;font-size:13px;color:#fff;outline:none}
 .aim-f input:focus{border-color:#6366f1}
+.adm-item{display:flex;align-items:center;gap:11px;font-size:14px;color:#e2e8f0;font-weight:600;padding:13px 14px;border-radius:11px;background:#1e293b;border:1px solid #334155;margin-bottom:9px;cursor:pointer}
+.adm-item:hover{border-color:#6366f1;background:rgba(99,102,241,.12)}
+.adm-item span{flex:1}
 </style>
 </head>
 <body>
@@ -293,7 +296,7 @@ select.iedit{cursor:pointer}
   <aside class="side" id="side">
     <div class="brand"><div class="logo">💼</div><div><b>컨설팅 CRM</b><span>정책자금·보험·세무</span></div></div>
     <nav class="nav" id="nav"></nav>
-    <div class="me"><div class="av">황</div><div><b>황현 대표</b><span>관리자</span></div></div>
+    <div class="me" onclick="openAdmin()" style="cursor:pointer" title="관리자 메뉴"><div class="av">황</div><div style="flex:1"><b>황현 대표</b><span>관리자</span></div><span style="color:#64748b;font-size:14px">⚙</span></div>
   </aside>
   <div class="scrim" id="scrim" onclick="toggleMenu()"></div>
   <main class="main" id="main"><div class="panel">⏳ 실시간 데이터 연결 중…</div></main>
@@ -1287,6 +1290,49 @@ function aiSaveSettings(){
   const ov=document.getElementById('aiSet'); if(ov)ov.remove();
   toast('AI 설정 저장됨'); rerender();
 }
+
+/* ===== 👤 관리자(프로필) 메뉴 ===== */
+const ME_LS='consult_me';
+function myInfo(){ try{return JSON.parse(localStorage.getItem(ME_LS))||{};}catch(e){return {};} }
+function applyMe(){ const m=myInfo(); const el=document.querySelector('.me'); if(!el)return; const b=el.querySelector('b'),s=el.querySelector('span'),av=el.querySelector('.av'); if(b&&m.name)b.textContent=m.name; if(s&&m.role)s.textContent=m.role; if(av&&m.name)av.textContent=(m.name||'황')[0]; }
+function admClose(){ const o=document.getElementById('admOv'); if(o)o.remove(); }
+function openAdmin(){
+  if(typeof toggleMenu==='function' && window.innerWidth<=900){ /* 모바일: 메뉴 열린 상태 유지 */ }
+  const m=myInfo(); admClose();
+  const ov=document.createElement('div'); ov.id='admOv'; ov.className='ai-ov';
+  ov.innerHTML=`<div class="ai-modal" onclick="event.stopPropagation()">
+    <div class="aim-h"><b>⚙️ 관리자 메뉴</b><span onclick="admClose()" style="cursor:pointer;color:#94a3b8">✕</span></div>
+    <div style="display:flex;align-items:center;gap:12px;margin:8px 0 16px">
+      <div style="width:46px;height:46px;border-radius:13px;background:#6366f1;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800">${esc((m.name||'황')[0])}</div>
+      <div><div style="font-size:16px;font-weight:800;color:#f1f5f9">${esc(m.name||'황현 대표')}</div><div style="font-size:12px;color:#94a3b8">${esc(m.role||'관리자')}</div></div>
+    </div>
+    <div class="adm-item" onclick="editMe()">✏️ <span>이름·직함 수정</span><span style="flex:0;color:#64748b">›</span></div>
+    <div class="adm-item" onclick="admClose();aiSettings()">🤖 <span>AI 설정 (키 입력)</span><span style="flex:0;color:#64748b">›</span></div>
+    <div class="adm-item" onclick="copyShare()">🔗 <span>공유 링크 복사</span><span style="flex:0;color:#64748b">›</span></div>
+    <div style="font-size:11px;color:#64748b;text-align:center;margin-top:14px">컨설팅 CRM · ${typeof offline!=='undefined'&&offline?'오프라인 🔴':'실시간 동기화 🟢'}</div>
+  </div>`;
+  ov.onclick=()=>ov.remove();
+  document.body.appendChild(ov);
+}
+function editMe(){
+  const m=myInfo(); const box=document.querySelector('#admOv .ai-modal'); if(!box)return;
+  box.innerHTML=`<div class="aim-h"><b>✏️ 내 정보</b><span onclick="admClose()" style="cursor:pointer;color:#94a3b8">✕</span></div>
+    <div class="aim-sub">사이드바에 표시되는 이름과 직함입니다. (이 브라우저에 저장)</div>
+    <div class="aim-f"><label>이름</label><input id="meNm" value="${esc(m.name||'황현 대표')}"></div>
+    <div class="aim-f"><label>직함</label><input id="meRole" value="${esc(m.role||'관리자')}"></div>
+    <button class="btn b" style="width:100%;margin-top:6px" onclick="saveMe()">저장</button>`;
+}
+function saveMe(){
+  localStorage.setItem(ME_LS,JSON.stringify({name:aiVal('meNm')||'황현 대표',role:aiVal('meRole')||'관리자'}));
+  applyMe(); admClose(); toast('저장됨');
+}
+function copyShare(){
+  const url=location.origin+location.pathname+'?ns=demo';
+  const done=()=>{ admClose(); toast('데모(안전) 공유 링크 복사됨'); };
+  if(navigator.clipboard&&navigator.clipboard.writeText){ navigator.clipboard.writeText(url).then(done,()=>{prompt('아래 링크를 복사하세요',url);admClose();}); }
+  else { prompt('아래 링크를 복사하세요',url); admClose(); }
+}
+applyMe();
 </script>
 </body>
 </html>
