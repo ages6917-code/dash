@@ -926,6 +926,7 @@ function buildNav(active){ $('#nav').innerHTML=NAVS.map(([k,l])=>`<a class="${k=
 
 function rerender(){
  if(!ready){ return; }
+ if(typeof applyMe==='function') applyMe();   // Firebase 프로필 사이드바 반영
  if(shareId){ return renderExt(); }
  const t=VIEW.t;
  if(t==='share') renderSharers();
@@ -1101,7 +1102,7 @@ function renderDash(){
    <div class="amt">${esc(c.fund)}</div><div class="call">📞 연락</div></div>`;
  $('#main').innerHTML=`
  <div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
-   <div><h1>대시보드</h1><div class="date">안녕하세요, 황현 대표님 👋 · ${offline?'오프라인 모드 🔴 (규칙 열면 실시간 켜짐)':'실시간 동기화 중 🟢'}</div></div></div>
+   <div><h1>대시보드</h1><div class="date">안녕하세요, ${esc(meName())}님 👋 · ${offline?'오프라인 모드 🔴 (규칙 열면 실시간 켜짐)':'실시간 동기화 중 🟢'}</div></div></div>
    <div class="tbtns"><button class="btn g" onclick="go('search')">🔍 검색</button><button class="btn b" onclick="openNew()">+ 신규 고객</button></div></div>
  <div class="sechead">💰 이번달 수익 현황</div>
  <div class="rev">
@@ -1463,17 +1464,20 @@ function aiSaveSettings(){
 /* ===== 👤 관리자(프로필) 메뉴 ===== */
 const ME_LS='consult_me';
 function myInfo(){ try{return JSON.parse(localStorage.getItem(ME_LS))||{};}catch(e){return {};} }
-function applyMe(){ const m=myInfo(); const el=document.querySelector('.me'); if(!el)return; const b=el.querySelector('b'),s=el.querySelector('span'),av=el.querySelector('.av'); if(b&&m.name)b.textContent=m.name; if(s&&m.role)s.textContent=m.role; if(av&&m.name)av.textContent=(m.name||'황')[0]; }
+/* 프로필은 Firebase(DATA._profile)에 저장 → 팀 전체 공유. 없으면 로컬, 그것도 없으면 기본값 */
+function meName(){ try{ if(DATA&&DATA._profile&&DATA._profile.name) return DATA._profile.name; }catch(e){} return myInfo().name||'황현 대표'; }
+function meRole(){ try{ if(DATA&&DATA._profile&&DATA._profile.role) return DATA._profile.role; }catch(e){} return myInfo().role||'관리자'; }
+function applyMe(){ const nm=meName(),ro=meRole(); const el=document.querySelector('.me'); if(!el)return; const b=el.querySelector('b'),s=el.querySelector('span'),av=el.querySelector('.av'); if(b)b.textContent=nm; if(s)s.textContent=ro; if(av)av.textContent=(nm||'황')[0]; }
 function admClose(){ const o=document.getElementById('admOv'); if(o)o.remove(); }
 function openAdmin(){
   if(typeof toggleMenu==='function' && window.innerWidth<=900){ /* 모바일: 메뉴 열린 상태 유지 */ }
-  const m=myInfo(); admClose();
+  const nm=meName(),ro=meRole(); admClose();
   const ov=document.createElement('div'); ov.id='admOv'; ov.className='ai-ov';
   ov.innerHTML=`<div class="ai-modal" onclick="event.stopPropagation()">
     <div class="aim-h"><b>⚙️ 관리자 메뉴</b><span onclick="admClose()" style="cursor:pointer;color:#94a3b8">✕</span></div>
     <div style="display:flex;align-items:center;gap:12px;margin:8px 0 16px">
-      <div style="width:46px;height:46px;border-radius:13px;background:#6366f1;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800">${esc((m.name||'황')[0])}</div>
-      <div><div style="font-size:16px;font-weight:800;color:#f1f5f9">${esc(m.name||'황현 대표')}</div><div style="font-size:12px;color:#94a3b8">${esc(m.role||'관리자')}</div></div>
+      <div style="width:46px;height:46px;border-radius:13px;background:#6366f1;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;font-weight:800">${esc((nm||'황')[0])}</div>
+      <div><div style="font-size:16px;font-weight:800;color:#f1f5f9">${esc(nm)}</div><div style="font-size:12px;color:#94a3b8">${esc(ro)}</div></div>
     </div>
     <div class="adm-item" onclick="editMe()">✏️ <span>이름·직함 수정</span><span style="flex:0;color:#64748b">›</span></div>
     <div class="adm-item" onclick="admClose();aiSettings()">🤖 <span>AI 설정 (키 입력)</span><span style="flex:0;color:#64748b">›</span></div>
@@ -1485,16 +1489,19 @@ function openAdmin(){
   document.body.appendChild(ov);
 }
 function editMe(){
-  const m=myInfo(); const box=document.querySelector('#admOv .ai-modal'); if(!box)return;
+  const box=document.querySelector('#admOv .ai-modal'); if(!box)return;
   box.innerHTML=`<div class="aim-h"><b>✏️ 내 정보</b><span onclick="admClose()" style="cursor:pointer;color:#94a3b8">✕</span></div>
-    <div class="aim-sub">사이드바에 표시되는 이름과 직함입니다. (이 브라우저에 저장)</div>
-    <div class="aim-f"><label>이름</label><input id="meNm" value="${esc(m.name||'황현 대표')}"></div>
-    <div class="aim-f"><label>직함</label><input id="meRole" value="${esc(m.role||'관리자')}"></div>
+    <div class="aim-sub">대시보드 전체에 표시되는 이름·직함입니다. ${(typeof offline!=='undefined'&&offline)?'(오프라인 — 이 PC에만 저장)':'(저장하면 팀 전체에 실시간 반영 🟢)'}</div>
+    <div class="aim-f"><label>이름</label><input id="meNm" value="${esc(meName())}"></div>
+    <div class="aim-f"><label>직함</label><input id="meRole" value="${esc(meRole())}"></div>
     <button class="btn b" style="width:100%;margin-top:6px" onclick="saveMe()">저장</button>`;
 }
 function saveMe(){
-  localStorage.setItem(ME_LS,JSON.stringify({name:aiVal('meNm')||'황현 대표',role:aiVal('meRole')||'관리자'}));
-  applyMe(); admClose(); toast('저장됨');
+  const prof={name:aiVal('meNm')||'황현 대표',role:aiVal('meRole')||'관리자'};
+  localStorage.setItem(ME_LS,JSON.stringify(prof));          // 로컬 백업
+  try{ DATA._profile=prof; }catch(e){}
+  if(typeof offline!=='undefined' && !offline){ dref('_profile').set(prof).catch(()=>{}); } // 팀 공유
+  applyMe(); admClose(); if(typeof rerender==='function')rerender(); toast(offline?'저장됨 (이 PC)':'저장됨 — 팀 전체 반영 ✓');
 }
 function copyShare(){
   const url=location.origin+location.pathname+'?ns=demo';
