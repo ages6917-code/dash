@@ -1001,7 +1001,10 @@ function renderCustomer(id){
  const c=getCust(id); if(!c){ $('#main').innerHTML='<div class="panel">없는 고객입니다.</div>'; return; }
  const s=c.sharer?getSharer(c.sharer):null;
  $('#main').innerHTML=`
- <span class="back" onclick="goBack()">← 뒤로</span>
+ <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+   <span class="back" onclick="goBack()" style="margin:0">← 뒤로</span>
+   <button class="btn" style="background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;font-size:13px;padding:8px 15px;font-weight:700" onclick="delCustomer('${id}')">🗑 고객 삭제</button>
+ </div>
  <div class="tlhead"><div class="av" style="background:#3b82f6">${esc((c.nm||'·')[0])}</div>
    <div><div class="nm">${esc(c.nm)} <span style="font-size:13px;color:#94a3b8;font-weight:600">${esc(c.type)}</span></div><div class="og">${esc(c.biz)} · 📞 ${esc(c.phone||'-')}</div></div>
    <div class="sum" style="flex-wrap:wrap;justify-content:flex-end;max-width:60%;gap:6px">
@@ -1050,10 +1053,10 @@ function closeCardMenu(){ const m=document.getElementById('cardMenu'); if(m)m.re
 function delCustomer(id){
   closeCardMenu();
   const c=getCust(id)||{};
-  if(!confirm('고객 "'+(c.nm||'')+'" 삭제할까요?\n(요약·메모·수수료 영구 삭제 / 서류 파일은 D드라이브에 남습니다)')) return;
+  if(!confirm('정말 삭제하시겠습니까?\n\n고객 "'+(c.nm||'')+'"의 정보(요약·메모·수수료)가 영구 삭제됩니다.\n(서류 파일은 D드라이브에 남습니다)')) return;
   if(DATA.customers) delete DATA.customers[id];
   if(offline){ _lsave(); } else { dref('customers/'+id).remove().catch(()=>{}); }
-  toast('삭제됨'); rerender();
+  toast('삭제됨'); VIEW={t:'db'}; rerender();
 }
 
 /* ===== 고객 DB ===== */
