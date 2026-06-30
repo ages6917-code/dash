@@ -137,8 +137,8 @@ const CUST=[
  {nm:'서지안',biz:'식품·안산',stage:'연락전',amt:'운전자금 6천',memo:'09:10 신규 유입',type:'법인',sharer:'',contacted:false},
 ];
 const REVENUE={
- consulting:{v:'1.44억', s:'계약 31건 · 수수료 3%'},
- insurance:{v:'1,240만', s:'신규 9건 · 월 환산'},
+ consulting:{v:'1.44억', s:'예정 31건 · 실계약 18건'},
+ insurance:{v:'1,240만', s:'예정 9건 · 실계약 5건'},
  tax:{personal:8, corp:5, perFee:60, corpFee:90},
 };
 /* 공유 링크 베이스 — 배포 후 실제 URL로 교체됨 */
@@ -181,10 +181,10 @@ function renderDash(active='dash'){
 
  <div class="sechead">💰 이번달 수익 현황</div>
  <div class="rev">
-   <div class="c"><div class="h"><div class="ic" style="background:#eff6ff">🏦</div><div class="lb">컨설팅 수수료 계약</div></div>
-     <div class="v">${REVENUE.consulting.v}<small>원</small></div><div class="s" style="color:#3b82f6">${REVENUE.consulting.s}</div></div>
    <div class="c"><div class="h"><div class="ic" style="background:#ecfdf5">🛡️</div><div class="lb">보험 계약</div></div>
      <div class="v">${REVENUE.insurance.v}<small>원</small></div><div class="s" style="color:#10b981">${REVENUE.insurance.s}</div></div>
+   <div class="c"><div class="h"><div class="ic" style="background:#eff6ff">🏦</div><div class="lb">컨설팅 수수료</div></div>
+     <div class="v">${REVENUE.consulting.v}<small>원</small></div><div class="s" style="color:#3b82f6">${REVENUE.consulting.s}</div></div>
    <div class="c"><div class="h"><div class="ic" style="background:#f5f3ff">🧾</div><div class="lb">세무 이관</div></div>
      <div class="v">${(taxSum).toLocaleString()}만<small>원</small></div><div class="s" style="color:#8b5cf6">${t.personal+t.corp}건 · 개인${t.personal}·법인${t.corp}</div></div>
  </div>
