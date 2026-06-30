@@ -287,6 +287,15 @@ select.iedit{cursor:pointer}
 .aim-f label a{color:#818cf8;font-weight:600;font-size:11px;margin-left:5px;text-decoration:none}
 .aim-f input{width:100%;border:1px solid #334155;background:#1e293b;border-radius:10px;padding:10px 12px;font-size:13px;color:#fff;outline:none}
 .aim-f input:focus{border-color:#6366f1}
+.gem-card{background:linear-gradient(135deg,rgba(16,185,129,.12),rgba(99,102,241,.1));border:1.5px solid rgba(52,211,153,.4);border-radius:15px;padding:16px;margin-bottom:14px}
+.gem-top{display:flex;align-items:center;gap:7px;font-size:15px;font-weight:800;color:#f1f5f9;margin-bottom:11px}
+.gem-badge{font-size:10px;background:#16a34a;color:#fff;padding:2px 8px;border-radius:20px;font-weight:700}
+.gem-get{display:block;text-align:center;background:rgba(255,255,255,.06);border:1px dashed #34d399;color:#6ee7b7;border-radius:11px;padding:11px;font-size:13px;font-weight:700;text-decoration:none;margin-bottom:10px}
+.gem-get:hover{background:rgba(52,211,153,.15)}
+.gem-card input{width:100%;border:1px solid #334155;background:#0b1220;border-radius:10px;padding:12px;font-size:13px;color:#fff;outline:none}
+.gem-card input:focus{border-color:#34d399}
+.adv-toggle{font-size:12.5px;color:#94a3b8;text-align:center;padding:9px;cursor:pointer;border-radius:9px;background:#111a2e;border:1px solid #1e293b;margin-bottom:10px}
+.adv-toggle:hover{color:#cbd5e1}
 .adm-item{display:flex;align-items:center;gap:11px;font-size:14px;color:#e2e8f0;font-weight:600;padding:13px 14px;border-radius:11px;background:#1e293b;border:1px solid #334155;margin-bottom:9px;cursor:pointer}
 .adm-item:hover{border-color:#6366f1;background:rgba(99,102,241,.12)}
 .adm-item span{flex:1}
@@ -1390,21 +1399,39 @@ function aiSettings(){
   const c=aiCfg(), k=c.keys||{}, p=aiProv();
   const ex=document.getElementById('aiSet'); if(ex)ex.remove();
   const ov=document.createElement('div'); ov.id='aiSet'; ov.className='ai-ov';
+  const have=k.gemini?'✓ 키 등록됨':'';
   ov.innerHTML=`<div class="ai-modal" onclick="event.stopPropagation()">
     <div class="aim-h"><b>🤖 AI 설정</b><span onclick="document.getElementById('aiSet').remove()" style="cursor:pointer;color:#94a3b8">✕</span></div>
-    <div class="aim-sub">사용할 AI를 고르고 키를 <b>한 번만</b> 넣으면 됩니다. 키는 <b>이 브라우저에만</b> 저장돼요(공유·전송 안 함). 키가 없으면 <b>Gemini 무료 발급</b>을 추천!</div>
-    <div class="aim-provs">
-      <label class="${p==='gemini'?'on':''}" onclick="aiPick(this)"><input type="radio" name="aip" value="gemini" ${p==='gemini'?'checked':''}>Gemini<span class="free">무료</span></label>
-      <label class="${p==='openai'?'on':''}" onclick="aiPick(this)"><input type="radio" name="aip" value="openai" ${p==='openai'?'checked':''}>GPT</label>
-      <label class="${p==='claude'?'on':''}" onclick="aiPick(this)"><input type="radio" name="aip" value="claude" ${p==='claude'?'checked':''}>Claude</label>
+    <div class="aim-sub">폰에서는 <b style="color:#34d399">Gemini(무료)</b>가 제일 쉬워요. 아래 버튼으로 키 받아 붙여넣기만 하면 끝! <b style="color:#cbd5e1">Claude·GPT 콘솔은 안 봐도 됩니다.</b></div>
+
+    <div class="gem-card">
+      <div class="gem-top">🟢 Gemini <span class="gem-badge">무료 · 추천</span> <span style="margin-left:auto;color:#34d399;font-size:11px;font-weight:700">${have}</span></div>
+      <a class="gem-get" href="https://aistudio.google.com/app/apikey" target="_blank">🔑 무료 키 받기 (폰에서도 1분) →</a>
+      <input id="kGem" value="${esc(k.gemini||'')}" placeholder="받은 키( AIza… ) 여기 붙여넣기">
+      <button class="btn b" style="width:100%;margin-top:10px;font-size:15px;padding:13px" onclick="aiUseGemini()">${have?'Gemini로 계속':'이 키로 시작하기'}</button>
     </div>
-    <div class="aim-f"><label>Gemini 키 <a href="https://aistudio.google.com/app/apikey" target="_blank">무료 발급 →</a></label><input id="kGem" value="${esc(k.gemini||'')}" placeholder="AIza..."></div>
-    <div class="aim-f"><label>OpenAI(GPT) 키 <a href="https://platform.openai.com/api-keys" target="_blank">발급 →</a></label><input id="kOai" value="${esc(k.openai||'')}" placeholder="sk-..."></div>
-    <div class="aim-f"><label>Claude 키 <a href="https://console.anthropic.com/settings/keys" target="_blank">발급 →</a></label><input id="kCla" value="${esc(k.claude||'')}" placeholder="sk-ant-..."></div>
-    <button class="btn b" style="width:100%;margin-top:6px" onclick="aiSaveSettings()">저장</button>
+
+    <div class="adv-toggle" onclick="aiToggleAdv()">⚙ 고급 — GPT · Claude 직접 키 <span style="color:#64748b">(데스크탑 권장) ▾</span></div>
+    <div id="advBox" style="display:none">
+      <div class="aim-provs">
+        <label class="${p==='gemini'?'on':''}" onclick="aiPick(this)"><input type="radio" name="aip" value="gemini" ${p==='gemini'?'checked':''}>Gemini</label>
+        <label class="${p==='openai'?'on':''}" onclick="aiPick(this)"><input type="radio" name="aip" value="openai" ${p==='openai'?'checked':''}>GPT</label>
+        <label class="${p==='claude'?'on':''}" onclick="aiPick(this)"><input type="radio" name="aip" value="claude" ${p==='claude'?'checked':''}>Claude</label>
+      </div>
+      <div class="aim-f"><label>OpenAI(GPT) 키 <a href="https://platform.openai.com/api-keys" target="_blank">발급(PC) →</a></label><input id="kOai" value="${esc(k.openai||'')}" placeholder="sk-..."></div>
+      <div class="aim-f"><label>Claude 키 <a href="https://console.anthropic.com/settings/keys" target="_blank">발급(PC) →</a></label><input id="kCla" value="${esc(k.claude||'')}" placeholder="sk-ant-..."></div>
+      <button class="btn b" style="width:100%" onclick="aiSaveSettings()">선택한 AI로 저장</button>
+    </div>
+    <div class="login-note" style="text-align:center;margin-top:14px">🚀 팀원 전원 <b>키 없이</b> 쓰게 하려면 → 사장님께 "팀 공용 모드" 요청</div>
   </div>`;
   ov.onclick=()=>ov.remove();
   document.body.appendChild(ov);
+}
+function aiToggleAdv(){ const b=document.getElementById('advBox'); if(b) b.style.display=(b.style.display==='none'?'block':'none'); }
+function aiUseGemini(){
+  const key=aiVal('kGem'); if(!key){ toast('키를 붙여넣어 주세요'); return; }
+  const c=aiCfg(); c.provider='gemini'; c.keys=Object.assign({}, c.keys||{}, {gemini:key}); aiSaveCfg(c);
+  const ov=document.getElementById('aiSet'); if(ov)ov.remove(); toast('Gemini 연결 완료 ✓'); rerender();
 }
 function aiPick(l){
   document.querySelectorAll('.aim-provs label').forEach(x=>x.classList.remove('on'));
