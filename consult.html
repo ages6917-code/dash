@@ -18,6 +18,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent}
 :root{--bg:#f4f6fb;--card:#fff;--ink:#0f172a;--sub:#64748b;--line:#eef1f6;--brand:#3b82f6;--dark:#101a36}
@@ -780,8 +781,11 @@ function iArea(box,id,key){
 /* ===== 재무 요약 ===== */
 function summaryHtml(id,c){
   const sm=c.summary;
+  if(GENNING.has(id)){
+    return `<div class="fsum"><div class="empty"><div class="spin"></div><b style="color:#3b82f6;font-size:14px">🤖 제미나이가 재무요약 생성 중…</b><br><br>첨부한 서류를 읽고 있어요. 잠시만요.</div></div>`;
+  }
   if(!sm||!Object.keys(sm).length){
-    return `<div class="fsum"><div class="empty">📊 재무 요약 없음<br><br>매출추이·부채비율·대출현황 등을<br>직접 입력해 한눈에 정리할 수 있습니다.<br><br><span class="add" onclick="editSummary('${id}')" style="display:inline-block;margin-top:6px">✍️ 직접 입력</span></div></div>`;
+    return `<div class="fsum"><div class="empty">📊 재무 요약 없음<br><br>서류(PDF·이미지)를 올리면 <b>제미나이가 자동으로</b><br>매출추이·자산/부채·대출현황을 채웁니다.<br><br><span class="add" onclick="pickAndSummarize('${id}')" style="display:inline-block;margin-top:6px;margin-right:6px">🤖 서류로 자동요약</span><span class="add" onclick="editSummary('${id}')" style="display:inline-block;margin-top:6px">✍️ 직접 입력</span></div></div>`;
   }
   if(sm.note && !(sm.sales&&sm.sales.length)){
     return `<div class="fsum"><div style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:#334155">${esc(sm.note)}</div><div style="text-align:right;margin-top:10px"><span class="add" onclick="editSummary('${id}')">✏️ 요약 수정</span></div></div>`;
@@ -832,7 +836,9 @@ function markReviewed(id){ const c=getCust(id)||{}; const sm=Object.assign({},c.
 /* ===== + 신규 고객 ===== */
 function openNew(){
   const m=document.createElement('div'); m.className='modal'; m.id='newModal';
-  m.innerHTML=`<div class="mc"><h3>+ 신규 고객</h3><div class="msub">고객 정보를 입력하세요</div>
+  m.innerHTML=`<div class="mc"><h3>+ 신규 고객</h3><div class="msub">등록 방법을 선택하세요</div>
+    <div class="opt"><div class="ob on" id="optM" onclick="newMode('m')"><span class="bi">✍️</span>수동 입력</div>
+      <div class="ob" id="optC" onclick="newMode('c')"><span class="bi">🤖</span>AI 자동요약</div></div>
     <div id="newBody"></div></div>`;
   m.onclick=e=>{ if(e.target===m) closeNew(); };
   document.body.appendChild(m); newMode('m');
@@ -866,7 +872,7 @@ function newMode(mode){
         <div class="recz-ic">🎙️</div><div><b>음성 파일 추가</b><div class="recz-sub">📞 폰: 통화 녹음 선택 · 💻 데탑: 끌어다 놓기 또는 파일 선택</div></div></label>
       <div id="reqAudioList"></div>
       <label>요청 내용 (간략히)</label><input id="reqNote" placeholder="예: 재무 분석해서 가능 자금·추천 상품 정리">
-      <div class="guidebox" style="margin-top:14px;font-size:12.5px">📌 <b>[요청 만들기]</b>를 누르면 고객·서류가 등록되고, <b>AI가 재무 분석을 도와드려요</b>.<br>→ 분석이 끝나면 이 카드에 <b>자동으로 채워집니다</b>. (별도 비용·키 없이 진행돼요)</div>
+      <div class="guidebox" style="margin-top:14px;font-size:12.5px">📌 <b>[요청 만들기]</b>를 누르면 고객이 등록되고, 첨부한 <b>PDF·이미지 서류를 제미나이(무료 AI)가 즉시 읽어</b> 매출추이·자산/부채·대출현황을 <b>이 카드에 자동으로 채웁니다</b>.<br><span style="color:#94a3b8">· 지원: PDF·사진·스캔 이미지·zip(안의 PDF/이미지). hwp·엑셀 원본은 미지원 → PDF로 저장해 첨부.</span></div>
       <div class="mact"><button class="btn g" onclick="closeNew()">취소</button><button class="btn b" onclick="craftRequest()">요청 만들기</button></div>`;
   }
 }
@@ -907,25 +913,11 @@ async function craftRequest(){
   const id='c'+Date.now();
   setCust(id,{nm:nm||'(이름 미정)', docs:files.map(f=>({name:f.name})), ...(arec.length?{arec}:{}), cnote:note?('[요약 요청] '+note):'',
     received:today(), docStatus:files.length?'접수완료':'접수전', docDate:files.length?today():'',
-    stage:'연락전', insStatus:'대기', contacted:false, memo:'📥 AI 재무요약 요청', biz:'-', fund:'-', type:'개인', sharer:'', created:Date.now()});
+    stage:'연락전', insStatus:'대기', contacted:false, memo:files.length?'🤖 제미나이 자동요약 진행중':'', biz:'-', fund:'-', type:'개인', sharer:'', created:Date.now()});
   closeNew(); go('customer',id);
-  // 완전자동(무료): 온라인이면 파일을 base64로 RTDB 요청큐에 기록 → 워치독이 AI 호출
-  if(!offline && files.length){
-    toast('서류 전송 중…');
-    try{
-      const enc=[];
-      for(const f of files){
-        if(f.size>8*1024*1024){ toast(f.name+' 8MB 초과 — 제외'); continue; }
-        enc.push({name:f.name, data:await fileToDataURL(f)});
-      }
-      const reqId='req'+Date.now();
-      await dref('requests/'+reqId).set({customerId:id, customerName:nm||'(이름 미정)', note, files:enc, status:'pending', ts:Date.now()});
-      setCust(id,{memo:'📥 AI 자동분석 대기중'});
-      toast('요청 전송 완료 ✓ — AI 자동 처리 대기');
-    }catch(e){ toast('전송 실패: '+(e&&e.message||'')); }
-  } else if(files.length){
-    toast('요청 등록(로컬) — 실시간 켜면 자동 전송됩니다');
-  } else { toast('고객 등록됨'); }
+  // 브라우저에서 제미나이 멀티모달 직접 호출 → 그 자리에서 재무요약(양식) 채움 (외부 워커 불필요)
+  if(files.length){ autoSummarize(id, files, note); }
+  else { toast('고객 등록됨'); }
 }
 function addSharerPrompt(){
   const m=document.createElement('div'); m.className='modal'; m.id='shrModal';
@@ -1461,6 +1453,70 @@ async function aiCall(p,key,ctx,q){
     return ((j.content||[])[0]||{}).text||'(응답 없음)';
   }
   throw new Error('알 수 없는 AI');
+}
+
+/* ===== 🤖 서류 → 재무요약(양식) 자동 생성 · 제미나이 멀티모달 (브라우저 직접호출) ===== */
+const GENNING=new Set();  // 요약 생성중 고객 id (로컬 표시용 · 저장 안 함 → 무한로딩 불가)
+const SUM_SYS='당신은 한국의 정책자금·대출 컨설팅 재무분석가입니다. 첨부된 사업체 서류(재무제표·부가세 과표·대출내역·사업자등록증 등)를 읽고 아래 JSON 스키마로 "서류에 실제로 있는 값만" 정확히 추출하세요. 금액 단위는 억원(억). sales.v 는 억 단위 숫자(예 8.34). asset/liab/cap 은 "0.00억" 문자열. debtRatio 는 "~0,000%" 형식. loans 각 항목: bank(은행/기관)/amt("0.00억" 또는 "0,000만")/desc(대출종류·건수)/tag(특이사항). loanTotal 은 대출 총잔액. credit 은 연체·당좌부도·신용 상태 한 줄. warn 은 자본잠식 등 위험 한 줄. salesNote 는 "부가세 과표 기준" 등 근거. 서류에 없는 값은 빈 문자열/빈 배열로 두고 절대 추측하지 마세요.';
+const SUM_SCHEMA={type:'OBJECT',properties:{
+  salesNote:{type:'STRING'},
+  sales:{type:'ARRAY',items:{type:'OBJECT',properties:{y:{type:'STRING'},v:{type:'NUMBER'}}}},
+  asset:{type:'STRING'},liab:{type:'STRING'},cap:{type:'STRING'},debtRatio:{type:'STRING'},
+  warn:{type:'STRING'},loanTotal:{type:'STRING'},
+  loans:{type:'ARRAY',items:{type:'OBJECT',properties:{bank:{type:'STRING'},amt:{type:'STRING'},desc:{type:'STRING'},tag:{type:'STRING'}}}},
+  credit:{type:'STRING'}
+}};
+const SUM_MIMES={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',gif:'image/gif',heic:'image/heic'};
+function extOf(n){ return (''+n).split('.').pop().toLowerCase(); }
+async function fileToB64(f){ return (''+await fileToDataURL(f)).split(',')[1]||''; }
+function blobToB64(b){ return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res((''+r.result).split(',')[1]||'');r.onerror=rej;r.readAsDataURL(b);}); }
+async function collectDocParts(files){
+  const parts=[],used=[],skipped=[]; let total=0; const CAP=15*1024*1024;
+  const push=async(name,mime,getB64,size)=>{ if(total+size>CAP){skipped.push(name+'(용량초과)');return;} const b=await getB64(); if(!b){skipped.push(name);return;} parts.push({inline_data:{mime_type:mime,data:b}}); used.push(name); total+=size; };
+  for(const f of files){
+    const e=extOf(f.name);
+    if(e==='zip'){
+      if(!window.JSZip){ skipped.push(f.name+'(zip 미지원 — 새로고침)'); continue; }
+      try{ const zip=await JSZip.loadAsync(f);
+        for(const path in zip.files){ const ent=zip.files[path]; if(ent.dir) continue; const en=extOf(path); const mime=SUM_MIMES[en]; if(!mime){ skipped.push(path.split('/').pop()); continue; }
+          const blob=await ent.async('blob'); await push(path.split('/').pop(),mime,()=>blobToB64(blob),blob.size); }
+      }catch(err){ skipped.push(f.name+'(zip 해제 실패 — .alz/.egg는 zip으로 저장)'); }
+    } else if(SUM_MIMES[e]){ await push(f.name,SUM_MIMES[e],()=>fileToB64(f),f.size); }
+    else { skipped.push(f.name+'(미지원)'); }
+  }
+  return {parts,used,skipped};
+}
+async function geminiSummarizeDocs(fileParts, hintNote, custText){
+  const key=aiKey('gemini')||teamKey();
+  if(!key) throw new Error('공용 제미나이 키 없음 — 관리자 메뉴 › 팀 공용 AI 켜기에서 등록하세요');
+  const tp=[{text:'다음 서류들을 분석해 재무요약 JSON을 만들어라.'}];
+  if(custText) tp.push({text:custText});
+  if(hintNote) tp.push({text:'[담당자 요청] '+hintNote});
+  const body={system_instruction:{parts:[{text:SUM_SYS}]},contents:[{parts:[...tp,...fileParts]}],generationConfig:{responseMimeType:'application/json',responseSchema:SUM_SCHEMA,temperature:0.1}};
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const j=await r.json(); if(!r.ok) throw new Error((j.error&&j.error.message)||'제미나이 오류');
+  let txt=((((j.candidates||[])[0]||{}).content||{}).parts||[{}])[0].text||''; txt=txt.trim().replace(/^```json\s*/i,'').replace(/```$/,'').trim();
+  let sm; try{ sm=JSON.parse(txt); }catch(e){ throw new Error('요약 파싱 실패 (서류가 흐리거나 재무자료가 아닐 수 있음)'); }
+  sm._meta={reviewed:false,by:'gemini',ts:Date.now()};
+  return sm;
+}
+async function autoSummarize(id, files, hintNote){
+  if(!files||!files.length){ toast('서류(PDF·이미지)를 넣어주세요'); return; }
+  GENNING.add(id); rerender();
+  try{
+    const {parts,used,skipped}=await collectDocParts(files);
+    if(!parts.length){ throw new Error('읽을 수 있는 서류가 없습니다 (PDF·이미지만)'+(skipped.length?' · 제외: '+skipped.slice(0,3).join(', '):'')); }
+    toast('제미나이가 '+used.length+'개 서류 분석 중…');
+    const sm=await geminiSummarizeDocs(parts, hintNote, 'PDF/이미지 '+used.length+'건 첨부');
+    GENNING.delete(id);
+    setCust(id,{summary:sm, memo:'🤖 제미나이 자동요약 완료 — 검수 필요'});
+    toast('재무요약 생성 완료 ✓'+(skipped.length?' (건너뜀 '+skipped.length+')':''));
+  }catch(e){ GENNING.delete(id); rerender(); toast('요약 실패: '+(e&&e.message||'')); }
+}
+function pickAndSummarize(id){
+  const inp=document.createElement('input'); inp.type='file'; inp.multiple=true; inp.accept='.pdf,image/*,.zip';
+  inp.onchange=()=>{ const fs=Array.from(inp.files||[]); if(fs.length) autoSummarize(id, fs, ''); };
+  inp.click();
 }
 function aiSettings(){
   const c=aiCfg(), k=c.keys||{}, p=aiProv();
