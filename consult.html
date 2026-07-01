@@ -88,6 +88,7 @@ body{background:var(--bg);color:var(--ink);min-height:100vh}
 .tlhead{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:24px 26px;margin-bottom:18px;display:flex;align-items:center;gap:18px;flex-wrap:wrap}
 .tlhead .av{width:60px;height:60px;border-radius:16px;color:#fff;display:flex;align-items:center;justify-content:center;font-size:24px;font-weight:800}
 .tlhead .nm{font-size:22px;font-weight:800}.tlhead .og{color:var(--sub);font-size:14px;margin-top:2px}
+.hedit{cursor:pointer;border-radius:6px;padding:0 4px;transition:background .12s}.hedit:hover{background:#eef2ff;outline:1px dashed #c7d2fe}
 .tlhead .sum{display:flex;gap:24px;text-align:center;margin-left:auto}
 .tlhead .sum div b{font-size:24px;font-weight:800;display:block}.tlhead .sum div span{font-size:12px;color:#94a3b8}
 .grid2{display:grid;grid-template-columns:1.4fr 1fr;gap:18px}
@@ -1223,7 +1224,7 @@ function renderCustomer(id){
    <button class="btn" style="background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;font-size:13px;padding:8px 15px;font-weight:700" onclick="delCustomer('${id}')">🗑 고객 삭제</button>
  </div>
  <div class="tlhead"><div class="av" style="background:#3b82f6">${esc((c.nm||'·')[0])}</div>
-   <div><div class="nm">${esc(c.nm)} <span style="font-size:13px;color:#94a3b8;font-weight:600">${esc(c.type)}</span></div><div class="og">${esc(c.biz)} · 📞 ${esc(c.phone||'-')}</div></div>
+   <div style="flex:1;min-width:170px"><div class="nm"><span class="hedit" onclick="iText(this,'${id}','nm')" title="이름 수정 (클릭)">${esc(c.nm)||'(이름 입력)'}</span> <span class="hedit" style="font-size:13px;color:#94a3b8;font-weight:600" onclick="iText(this,'${id}','type')" title="유형 수정">${esc(c.type)||'개인'}</span></div><div class="og"><span class="hedit" onclick="iText(this,'${id}','bizName')" title="상호 수정 (클릭)">${esc(c.bizName)||'(상호 입력)'}</span> · 📞 <span class="hedit" onclick="iText(this,'${id}','phone')" title="번호 수정 (클릭)">${esc(c.phone)||'(번호 입력)'}</span></div></div>
    <div class="sum" style="flex-wrap:wrap;justify-content:flex-end;max-width:60%;gap:6px">
      ${STAGES.map(st=>`<span class="stagepill ${c.stage===st?'on':''}" style="${c.stage===st?`background:${STAGE[st]};border-color:${STAGE[st]}`:''}" onclick="setCust('${id}',{stage:'${st}',contacted:${st!=='연락전'}})">${esc(st)}</span>`).join('')}
    </div></div>
