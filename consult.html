@@ -666,17 +666,18 @@ function iSharer(box,id){
 /* ===== 서류함 (D:\컨설팅_서류 로컬 파일서버 연동) ===== */
 const FILESRV='http://127.0.0.1:8799';
 function _b64(f){ return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f);}); }
-async function docUpload(id,fileList){
+async function docUpload(id,fileList,opts){
+  opts=opts||{};
   const c=getCust(id)||{}; const nm=c.nm||id; const files=[...fileList]; if(!files.length)return;
-  toast('업로드 중… '+files.length+'개'); let last=null;
+  if(!opts.silent) toast('업로드 중… '+files.length+'개'); let last=null;
   for(const f of files){
-    if(f.size>40*1024*1024){ toast(f.name+' 40MB 초과 — 제외'); continue; }
+    if(f.size>40*1024*1024){ if(!opts.silent) toast(f.name+' 40MB 초과 — 제외'); continue; }
     try{ const data=await _b64(f);
       const r=await fetch(FILESRV+'/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer:nm,name:f.name,data})});
       last=await r.json();
-    }catch(e){ toast('⚠ 데탑 파일서버 꺼짐 — 데탑에서 대시보드 열어야 업로드돼요'); return; }
+    }catch(e){ if(!opts.silent) toast('⚠ 데탑 파일서버 꺼짐 — 데탑에서 대시보드 열어야 업로드돼요'); return; }
   }
-  if(last&&last.files){ const cc=getCust(id)||{}; setCust(id,{docs:last.files.map(x=>({name:x.name})),docStatus:'접수완료',...(cc.docDate?{}:{docDate:today()})}); toast('저장 완료 ✓ (D드라이브)'); }
+  if(last&&last.files){ const cc=getCust(id)||{}; setCust(id,{docs:last.files.map(x=>({name:x.name})),docStatus:'접수완료',...(cc.docDate?{}:{docDate:today()})}); toast(opts.silent?('서류 '+last.files.length+'개 저장 ✓'):'저장 완료 ✓ (D드라이브)'); }
 }
 function docDrop(e,id){ e.preventDefault(); e.currentTarget.classList.remove('drag'); if(e.dataTransfer&&e.dataTransfer.files) docUpload(id,e.dataTransfer.files); }
 function recDrop(e,id){ e.preventDefault(); e.currentTarget.classList.remove('drag'); if(e.dataTransfer&&e.dataTransfer.files) recUpload(id,e.dataTransfer.files); }
@@ -915,8 +916,8 @@ async function craftRequest(){
     received:today(), docStatus:files.length?'접수완료':'접수전', docDate:files.length?today():'',
     stage:'연락전', insStatus:'대기', contacted:false, memo:files.length?'🤖 제미나이 자동요약 진행중':'', biz:'-', fund:'-', type:'개인', sharer:'', created:Date.now()});
   closeNew(); go('customer',id);
-  // 브라우저에서 제미나이 멀티모달 직접 호출 → 그 자리에서 재무요약(양식) 채움 (외부 워커 불필요)
-  if(files.length){ autoSummarize(id, files, note); }
+  // 브라우저에서 제미나이 멀티모달 직접 호출 → 재무요약(양식)+상호·대표·번호 자동입력, 그 다음 서류함 저장
+  if(files.length){ autoSummarize(id, files, note).then(()=>docUpload(id, files, {silent:true})); }
   else { toast('고객 등록됨'); }
 }
 function addSharerPrompt(){
@@ -1457,8 +1458,9 @@ async function aiCall(p,key,ctx,q){
 
 /* ===== 🤖 서류 → 재무요약(양식) 자동 생성 · 제미나이 멀티모달 (브라우저 직접호출) ===== */
 const GENNING=new Set();  // 요약 생성중 고객 id (로컬 표시용 · 저장 안 함 → 무한로딩 불가)
-const SUM_SYS='당신은 한국의 정책자금·대출 컨설팅 재무분석가입니다. 첨부된 사업체 서류(재무제표·부가세 과표·대출내역·사업자등록증 등)를 읽고 아래 JSON 스키마로 "서류에 실제로 있는 값만" 정확히 추출하세요. 금액 단위는 억원(억). sales.v 는 억 단위 숫자(예 8.34). asset/liab/cap 은 "0.00억" 문자열. debtRatio 는 "~0,000%" 형식. loans 각 항목: bank(은행/기관)/amt("0.00억" 또는 "0,000만")/desc(대출종류·건수)/tag(특이사항). loanTotal 은 대출 총잔액. credit 은 연체·당좌부도·신용 상태 한 줄. warn 은 자본잠식 등 위험 한 줄. salesNote 는 "부가세 과표 기준" 등 근거. 서류에 없는 값은 빈 문자열/빈 배열로 두고 절대 추측하지 마세요.';
+const SUM_SYS='당신은 한국의 정책자금·대출 컨설팅 재무분석가입니다. 첨부된 사업체 서류(재무제표·부가세 과표·대출내역·사업자등록증·신분증 등)를 읽고 아래 JSON 스키마로 "서류에 실제로 있는 값만" 정확히 추출하세요. 금액 단위는 억원(억). sales.v 는 억 단위 숫자(예 8.34). asset/liab/cap 은 "0.00억" 문자열. debtRatio 는 "~0,000%" 형식. loans 각 항목: bank(은행/기관)/amt("0.00억" 또는 "0,000만")/desc(대출종류·건수)/tag(특이사항). loanTotal 은 대출 총잔액. credit 은 연체·당좌부도·신용 상태 한 줄. warn 은 자본잠식 등 위험 한 줄. salesNote 는 "부가세 과표 기준" 등 근거. 그리고 profile 에 업체 기본정보를 채우세요: bizName(상호명), owner(대표자 성함), phone(연락처·전화번호, 서류에 있을 때만), bizNo(사업자등록번호), industry(업종), region(지역·주소). 사업자등록증·신분증·서류 상단/직인에서 찾으세요. 서류에 없는 값은 빈 문자열/빈 배열로 두고 절대 추측하지 마세요.';
 const SUM_SCHEMA={type:'OBJECT',properties:{
+  profile:{type:'OBJECT',properties:{bizName:{type:'STRING'},owner:{type:'STRING'},phone:{type:'STRING'},bizNo:{type:'STRING'},industry:{type:'STRING'},region:{type:'STRING'}}},
   salesNote:{type:'STRING'},
   sales:{type:'ARRAY',items:{type:'OBJECT',properties:{y:{type:'STRING'},v:{type:'NUMBER'}}}},
   asset:{type:'STRING'},liab:{type:'STRING'},cap:{type:'STRING'},debtRatio:{type:'STRING'},
@@ -1509,8 +1511,17 @@ async function autoSummarize(id, files, hintNote){
     toast('제미나이가 '+used.length+'개 서류 분석 중…');
     const sm=await geminiSummarizeDocs(parts, hintNote, 'PDF/이미지 '+used.length+'건 첨부');
     GENNING.delete(id);
-    setCust(id,{summary:sm, memo:'🤖 제미나이 자동요약 완료 — 검수 필요'});
-    toast('재무요약 생성 완료 ✓'+(skipped.length?' (건너뜀 '+skipped.length+')':''));
+    const prof=sm.profile||{}; delete sm.profile;
+    const cur=getCust(id)||{};
+    const patch={summary:sm, memo:'🤖 제미나이 자동요약 완료 — 검수 필요'};
+    if(prof.owner && (!cur.nm||cur.nm==='(이름 미정)')) patch.nm=prof.owner;
+    if(prof.bizName && !cur.bizName) patch.bizName=prof.bizName;
+    if(prof.phone && !cur.phone) patch.phone=prof.phone;
+    const bz=[prof.industry,prof.region].filter(Boolean).join('·'); if(bz && (!cur.biz||cur.biz==='-')) patch.biz=bz;
+    if(prof.bizNo && !cur.bizNo) patch.bizNo=prof.bizNo;
+    setCust(id,patch);
+    const filled=[patch.nm&&'성함',patch.bizName&&'상호',patch.phone&&'번호'].filter(Boolean);
+    toast('재무요약 생성 완료 ✓'+(filled.length?' · '+filled.join('·')+' 자동입력':'')+(skipped.length?' (건너뜀 '+skipped.length+')':''));
   }catch(e){ GENNING.delete(id); rerender(); toast('요약 실패: '+(e&&e.message||'')); }
 }
 function pickAndSummarize(id){
