@@ -516,6 +516,23 @@ function fee(c,k){ const f=((c&&c.fees)||{})[k];
   return {status:'없음', amt:''}; }
 function setFee(id,k,patch){ const c=getCust(id)||{}; const fees=Object.assign({},c.fees);
   const cur=Object.assign({status:'없음',amt:''}, fees[k]||{}); fees[k]=Object.assign(cur,patch); setCust(id,{fees}); }
+/* ===== 세무 이관: 사업자 여러 건(개인/법인별 금액 직접입력·합산) ===== */
+function taxItems(c){ return (((c&&c.fees)||{}).tax||{}).items || []; }
+function taxWon(c){ return taxItems(c).reduce((a,it)=>a+won(it&&it.amt),0); }
+function feeWon(c,k){ if(k==='tax'){ const it=taxItems(c); if(it.length) return taxWon(c); } return won(fee(c,k).amt); }
+function feeAmtDisp(c,k){ if(k==='tax'){ const it=taxItems(c); if(it.length) return fmtMan(taxWon(c))+'원'+(it.length>1?' ('+it.length+'건)':''); } const a=fee(c,k).amt; return a?fmtAmt(a):''; }
+function addTaxItem(id){ const c=getCust(id)||{}; const items=taxItems(c).slice(); items.push({type:'개인',amt:''}); const cur=fee(c,'tax'); setFee(id,'tax', cur.status==='없음'?{items,status:'예정'}:{items}); }
+function delTaxItem(id,ix){ const items=taxItems(getCust(id)).slice(); items.splice(ix,1); setFee(id,'tax',{items}); }
+function _taxPatch(id,ix,patch){ const items=taxItems(getCust(id)).slice(); items[ix]=Object.assign({},items[ix]||{},patch); setFee(id,'tax',{items}); }
+function iTaxType(box,id,ix){ if(box.querySelector('select'))return; const cur=(taxItems(getCust(id))[ix]||{}).type||'개인';
+  box.innerHTML=`<select class="iedit">${['개인','법인'].map(o=>`<option ${o===cur?'selected':''}>${o}</option>`).join('')}</select>`;
+  const sel=box.querySelector('select'); sel.focus();
+  const done=()=>{ if(box.dataset.done)return; box.dataset.done='1'; _taxPatch(id,ix,{type:sel.value}); }; sel.onchange=done; sel.onblur=done; }
+function iTaxAmt(box,id,ix){ if(box.querySelector('input'))return; const cur=(taxItems(getCust(id))[ix]||{}).amt||'';
+  box.innerHTML=`<input class="iedit" value="${esc(cur)}" placeholder="예: 100,000원 ~ 150,000원">`;
+  const inp=box.querySelector('input'); inp.focus(); inp.select();
+  const done=()=>{ if(box.dataset.done)return; box.dataset.done='1'; _taxPatch(id,ix,{amt:inp.value.trim()}); };
+  inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();inp.blur();} else if(e.key==='Escape'){box.dataset.done='1';rerender();} }; inp.onblur=done; }
 const PRODUCT_TYPES=['미지정','관리계약(벤처·특허·연구소)','재무 관리','정책자금-시설자금','정책자금-운영자금'];
 const PT_CUSTOM='✍️ 직접 입력…';
 function iProductType(box,id){
@@ -540,10 +557,10 @@ function promptCustomType(box,id){
   inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();inp.blur();} else if(e.key==='Escape'){h=true;rerender();} };
   inp.onblur=ok;
 }
-function custTotal(c,status){ return ['insurance','consulting','tax'].reduce((a,k)=>{const f=fee(c,k);return f.status===status?a+won(f.amt):a;},0); }
+function custTotal(c,status){ return ['insurance','consulting','tax'].reduce((a,k)=>{const f=fee(c,k);return f.status===status?a+feeWon(c,k):a;},0); }
 function aggFees(){ const cs=custArr(); const out={};
   ['insurance','consulting','tax'].forEach(k=>{ let dA=0,dN=0,pA=0,pN=0;
-    cs.forEach(c=>{ const f=fee(c,k); const a=won(f.amt);
+    cs.forEach(c=>{ const f=fee(c,k); const a=feeWon(c,k);
       if(f.status==='완료'){dA+=a;dN++;} else if(f.status==='예정'){pA+=a;pN++;} });
     out[k]={dA,dN,pA,pN}; });
   return out; }
@@ -1186,8 +1203,8 @@ function renderSharerDetail(id){
  const link=`${location.origin+location.pathname}?share=${id}`;
  const dealRow=c=>`<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
    <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz)}</span></b><div class="memo">${esc(c.fund)}</div></div>${chip(c.stage)}</div>`;
- const feeRow=(c,k)=>{const pct=((c.fees||{})[k]||{}).shrPct; return `<div class="ins"><div><span class="nm">${esc(c.nm)}</span><span class="fd">${esc(c.fund)}</span></div>
-   <div style="display:flex;align-items:center;gap:10px"><span class="ev" style="font-size:11px;padding:2px 8px;font-weight:800;color:${pct?'#059669':'#cbd5e1'}" title="쉐어 비율(%)" onclick="iFeeSharePct(this,'${c.id}','${k}')">${pct?pct+'%':'%▾'}</span><span class="val" onclick="iFeeAmt(this,'${c.id}','${k}')">${fee(c,k).amt?fmtAmt(fee(c,k).amt):'＋ 금액'}</span>
+ const feeRow=(c,k)=>{const pct=((c.fees||{})[k]||{}).shrPct; const taxMulti=(k==='tax'&&taxItems(c).length); const amtSpan=taxMulti?`<span class="val" style="cursor:default" title="세무 사업자 ${taxItems(c).length}건 합계">${feeAmtDisp(c,k)}</span>`:`<span class="val" onclick="iFeeAmt(this,'${c.id}','${k}')">${fee(c,k).amt?fmtAmt(fee(c,k).amt):'＋ 금액'}</span>`; return `<div class="ins"><div><span class="nm">${esc(c.nm)}</span><span class="fd">${esc(c.fund)}</span></div>
+   <div style="display:flex;align-items:center;gap:10px"><span class="ev" style="font-size:11px;padding:2px 8px;font-weight:800;color:${pct?'#059669':'#cbd5e1'}" title="쉐어 비율(%)" onclick="iFeeSharePct(this,'${c.id}','${k}')">${pct?pct+'%':'%▾'}</span>${amtSpan}
    <span class="st ${fee(c,k).status}" onclick="iFeeStatus(this,'${c.id}','${k}')">${fee(c,k).status} ▾</span></div></div>`;};
  $('#main').innerHTML=`
  <span class="back" onclick="goBack()">← 뒤로</span>
@@ -1240,9 +1257,15 @@ function renderCustomer(id){
    </div>
    <div style="display:flex;flex-direction:column;gap:18px">
      <div class="panel"><div class="ph"><b>💰 수수료·계약 현황</b><span class="sub">상태·금액 클릭 수정</span></div>
-       ${FEE_KEYS.map(([k,ic,lb])=>{const f=fee(c,k); const esh=((c.fees||{})[k]||{}).shr; const shn=esh?shrShort((getSharer(esh)||{}).name||''):''; const pct=((c.fees||{})[k]||{}).shrPct; return `<div class="feerow"><div class="fl">${ic} ${lb} <span class="ev" style="font-size:10.5px;padding:2px 7px;color:${shn?'#3b82f6':'#94a3b8'};margin-left:3px;font-weight:700" title="쉐어 팀장 지정" onclick="iFeeSharer(this,'${id}','${k}')">🤝 ${shn?esc(shn):'쉐어'}</span><span class="ev" style="font-size:10.5px;padding:2px 7px;color:${pct?'#059669':'#cbd5e1'};margin-left:3px;font-weight:800" title="쉐어 비율(%)" onclick="iFeeSharePct(this,'${id}','${k}')">${pct?pct+'%':'%▾'}</span></div>
-         <span class="st ${f.status}" onclick="iFeeStatus(this,'${id}','${k}')">${f.status} ▾</span>
-         <span class="ev fa" onclick="iFeeAmt(this,'${id}','${k}')">${f.amt?fmtAmt(f.amt):'＋ 금액'}</span></div>`;}).join('')}
+       ${FEE_KEYS.map(([k,ic,lb])=>{const f=fee(c,k); const esh=((c.fees||{})[k]||{}).shr; const shn=esh?shrShort((getSharer(esh)||{}).name||''):''; const pct=((c.fees||{})[k]||{}).shrPct; const items=k==='tax'?taxItems(c):null;
+         const amtCell = (items&&items.length) ? `<span class="fa" style="font-weight:800;color:#0f172a">${fmtMan(taxWon(c))}원</span>` : `<span class="ev fa" onclick="iFeeAmt(this,'${id}','${k}')">${f.amt?fmtAmt(f.amt):'＋ 금액'}</span>`;
+         const head=`<div class="feerow"><div class="fl">${ic} ${lb} <span class="ev" style="font-size:10.5px;padding:2px 7px;color:${shn?'#3b82f6':'#94a3b8'};margin-left:3px;font-weight:700" title="쉐어 팀장 지정" onclick="iFeeSharer(this,'${id}','${k}')">🤝 ${shn?esc(shn):'쉐어'}</span><span class="ev" style="font-size:10.5px;padding:2px 7px;color:${pct?'#059669':'#cbd5e1'};margin-left:3px;font-weight:800" title="쉐어 비율(%)" onclick="iFeeSharePct(this,'${id}','${k}')">${pct?pct+'%':'%▾'}</span></div>
+           <span class="st ${f.status}" onclick="iFeeStatus(this,'${id}','${k}')">${f.status} ▾</span>
+           ${amtCell}</div>`;
+         if(k!=='tax') return head;
+         const rows=items.map((it,ix)=>`<div style="display:flex;align-items:center;gap:8px;padding:4px 0 4px 26px;font-size:12.5px"><span class="ev" style="padding:2px 9px;font-weight:700;background:${(it.type==='법인')?'#eef2ff':'#f1f5f9'};color:${(it.type==='법인')?'#4338ca':'#475569'}" title="개인/법인" onclick="iTaxType(this,'${id}',${ix})">${esc(it.type||'개인')} ▾</span><span class="ev" style="padding:2px 9px;font-weight:700" onclick="iTaxAmt(this,'${id}',${ix})">${it.amt?fmtAmt(it.amt):'＋ 금액'}</span><span style="margin-left:auto;color:#cbd5e1;cursor:pointer;font-weight:700;padding:0 4px" title="삭제" onclick="delTaxItem('${id}',${ix})">✕</span></div>`).join('');
+         return head+`<div style="border-left:2px solid #ede9fe;margin:0 0 8px 8px">${rows}<div style="padding:5px 0 2px 26px"><span class="ev" style="color:#6366f1;font-weight:700;font-size:12.5px" onclick="addTaxItem('${id}')">＋ 사업자 추가</span> <span style="color:#94a3b8;font-size:11px">개인/법인·보통 10~15만원/건</span></div></div>`;
+       }).join('')}
        ${(()=>{const pf=fee(c,'product'); const pt=((c.fees||{}).product||{}).type||''; return `<div class="feerow" style="border-top:1.5px dashed #e2e8f0;padding-top:13px"><div class="fl" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">📋 <span class="ev" style="padding:4px 9px;font-size:12.5px;font-weight:700" onclick="iProductType(this,'${id}')">${esc(pt)||'서비스 유형 ▾'}</span></div>
          <span class="st ${pf.status}" onclick="iFeeStatus(this,'${id}','product')">${pf.status} ▾</span>
          <span class="ev fa" onclick="iFeeAmt(this,'${id}','product')">${pf.amt?fmtAmt(pf.amt):'＋ 금액'}</span></div>`;})()}
@@ -1322,9 +1345,9 @@ function renderExt(){
  const all=custArr();
  const insDeals=all.filter(c=>feeShr(c,'insurance')===shareId);
  const taxDeals=all.filter(c=>feeShr(c,'tax')===shareId);
- const feeRow=(c,k)=>`<div class="ins"><div><span class="nm">${esc(c.nm)}</span><span class="fd">${esc(c.biz)} · ${esc(c.fund)}</span><div style="margin-top:3px">${chip(c.stage)}</div></div>
-   <div style="display:flex;align-items:center;gap:10px"><span class="val" onclick="iFeeAmt(this,'${c.id}','${k}')">${fee(c,k).amt?fmtAmt(fee(c,k).amt):'＋ 금액'}</span>
-   <span class="st ${fee(c,k).status}" onclick="iFeeStatus(this,'${c.id}','${k}')">${fee(c,k).status} ▾</span></div></div>`;
+ const feeRow=(c,k)=>{const taxMulti=(k==='tax'&&taxItems(c).length); const amtSpan=taxMulti?`<span class="val" style="cursor:default" title="세무 사업자 ${taxItems(c).length}건 합계">${feeAmtDisp(c,k)}</span>`:`<span class="val" onclick="iFeeAmt(this,'${c.id}','${k}')">${fee(c,k).amt?fmtAmt(fee(c,k).amt):'＋ 금액'}</span>`; return `<div class="ins"><div><span class="nm">${esc(c.nm)}</span><span class="fd">${esc(c.biz)} · ${esc(c.fund)}</span><div style="margin-top:3px">${chip(c.stage)}</div></div>
+   <div style="display:flex;align-items:center;gap:10px">${amtSpan}
+   <span class="st ${fee(c,k).status}" onclick="iFeeStatus(this,'${c.id}','${k}')">${fee(c,k).status} ▾</span></div></div>`;};
  m.innerHTML=`
  <div class="sharebar"><div class="badge">실시간 협업</div><div><b style="font-size:16px">${esc(s.name)}님 협업 보드</b><div style="font-size:12px;color:#a5b4fc">황현 컨설팅 · ${esc(s.org)} · 변경하면 실시간 반영됩니다</div></div></div>
  <div class="panel"><div class="ph"><b>🛡️ 보험 계약 (${insDeals.length}건)</b><span class="sub">금액·상태 눌러 수정</span></div>${insDeals.length?insDeals.map(c=>feeRow(c,'insurance')).join(''):'<div class="ins">진행 건이 없습니다.</div>'}</div>
@@ -1435,7 +1458,7 @@ async function aiAsk(id,preset){
 async function aiCall(p,key,ctx,q){
   const userMsg=ctx+'\n\n[질문]\n'+q;
   if(p==='gemini'){
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+encodeURIComponent(key),
       {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:AI_SYS}]},contents:[{parts:[{text:userMsg}]}]})});
     const j=await r.json(); if(!r.ok) throw new Error((j.error&&j.error.message)||'Gemini 오류');
     return (((j.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'(응답 없음)';
@@ -1496,7 +1519,7 @@ async function geminiSummarizeDocs(fileParts, hintNote, custText){
   if(custText) tp.push({text:custText});
   if(hintNote) tp.push({text:'[담당자 요청] '+hintNote});
   const body={system_instruction:{parts:[{text:SUM_SYS}]},contents:[{parts:[...tp,...fileParts]}],generationConfig:{responseMimeType:'application/json',responseSchema:SUM_SCHEMA,temperature:0.1}};
-  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
   const j=await r.json(); if(!r.ok) throw new Error((j.error&&j.error.message)||'제미나이 오류');
   let txt=((((j.candidates||[])[0]||{}).content||{}).parts||[{}])[0].text||''; txt=txt.trim().replace(/^```json\s*/i,'').replace(/```$/,'').trim();
   let sm; try{ sm=JSON.parse(txt); }catch(e){ throw new Error('요약 파싱 실패 (서류가 흐리거나 재무자료가 아닐 수 있음)'); }
