@@ -569,6 +569,29 @@ function iFeeSharer(box,id,k){
   const done=()=>{ if(box.dataset.done)return; box.dataset.done='1'; setFee(id,k,{shr:sel.value}); };
   sel.onchange=done; sel.onblur=done;
 }
+/* 쉐어 비율(%) 선택 — 5% 단위 5~100%, + 직접입력 (보통 30~70% 쉐어) */
+function iFeeSharePct(box,id,k){
+  if(box.querySelector('select'))return;
+  const cur=(((getCust(id)||{}).fees||{})[k]||{}).shrPct||'';
+  let opts=['<option value="">비율 없음</option>'];
+  if(cur && (+cur)%5!==0) opts.push(`<option value="${cur}" selected>${cur}%</option>`);   // 5의 배수 아닌 기존값
+  for(let v=5; v<=100; v+=5){ opts.push(`<option value="${v}" ${(''+v===''+cur)?'selected':''}>${v}%</option>`); }
+  opts.push('<option value="__c">✍️ 직접 입력…</option>');
+  box.innerHTML=`<select class="iedit">${opts.join('')}</select>`;
+  const sel=box.querySelector('select'); sel.focus();
+  const done=()=>{ if(box.dataset.done)return;
+    if(sel.value==='__c'){ box.dataset.done='1'; return promptSharePct(box,id,k); }
+    box.dataset.done='1'; setFee(id,k,{shrPct: sel.value?(+sel.value):''}); };
+  sel.onchange=done; sel.onblur=done;
+}
+function promptSharePct(box,id,k){
+  const cur=(((getCust(id)||{}).fees||{})[k]||{}).shrPct||'';
+  box.innerHTML=`<input class="iedit" style="width:64px" value="${cur}" placeholder="%" inputmode="numeric">`;
+  const inp=box.querySelector('input'); inp.focus(); inp.select();
+  let h=false; const ok=()=>{ if(h)return; h=true; let v=parseFloat(inp.value); if(isNaN(v))v=''; else v=Math.max(1,Math.min(100,Math.round(v))); setFee(id,k,{shrPct:v}); };
+  inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();inp.blur();} else if(e.key==='Escape'){h=true;rerender();} };
+  inp.onblur=ok;
+}
 
 /* 쓰기 → RTDB (모두에게 실시간 반영) · 잠김/오프라인이면 로컬 즉시 반영 */
 function setCust(id,patch){
@@ -1173,9 +1196,9 @@ function renderSharerDetail(id){
  const link=`${location.origin+location.pathname}?share=${id}`;
  const dealRow=c=>`<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
    <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz)}</span></b><div class="memo">${esc(c.fund)}</div></div>${chip(c.stage)}</div>`;
- const feeRow=(c,k)=>`<div class="ins"><div><span class="nm">${esc(c.nm)}</span><span class="fd">${esc(c.fund)}</span></div>
-   <div style="display:flex;align-items:center;gap:10px"><span class="val" onclick="iFeeAmt(this,'${c.id}','${k}')">${fee(c,k).amt?esc(fee(c,k).amt)+'원':'＋ 금액'}</span>
-   <span class="st ${fee(c,k).status}" onclick="iFeeStatus(this,'${c.id}','${k}')">${fee(c,k).status} ▾</span></div></div>`;
+ const feeRow=(c,k)=>{const pct=((c.fees||{})[k]||{}).shrPct; return `<div class="ins"><div><span class="nm">${esc(c.nm)}</span><span class="fd">${esc(c.fund)}</span></div>
+   <div style="display:flex;align-items:center;gap:10px"><span class="ev" style="font-size:11px;padding:2px 8px;font-weight:800;color:${pct?'#059669':'#cbd5e1'}" title="쉐어 비율(%)" onclick="iFeeSharePct(this,'${c.id}','${k}')">${pct?pct+'%':'%▾'}</span><span class="val" onclick="iFeeAmt(this,'${c.id}','${k}')">${fee(c,k).amt?esc(fee(c,k).amt)+'원':'＋ 금액'}</span>
+   <span class="st ${fee(c,k).status}" onclick="iFeeStatus(this,'${c.id}','${k}')">${fee(c,k).status} ▾</span></div></div>`;};
  $('#main').innerHTML=`
  <span class="back" onclick="goBack()">← 뒤로</span>
  <div class="tlhead"><div class="av" style="background:${s.color}">${esc(s.name[0])}</div>
@@ -1226,7 +1249,7 @@ function renderCustomer(id){
    </div>
    <div style="display:flex;flex-direction:column;gap:18px">
      <div class="panel"><div class="ph"><b>💰 수수료·계약 현황</b><span class="sub">상태·금액 클릭 수정</span></div>
-       ${FEE_KEYS.map(([k,ic,lb])=>{const f=fee(c,k); const esh=((c.fees||{})[k]||{}).shr; const shn=esh?shrShort((getSharer(esh)||{}).name||''):''; return `<div class="feerow"><div class="fl">${ic} ${lb} <span class="ev" style="font-size:10.5px;padding:2px 7px;color:${shn?'#3b82f6':'#94a3b8'};margin-left:3px;font-weight:700" title="쉐어 팀장 지정" onclick="iFeeSharer(this,'${id}','${k}')">🤝 ${shn?esc(shn):'쉐어'}</span></div>
+       ${FEE_KEYS.map(([k,ic,lb])=>{const f=fee(c,k); const esh=((c.fees||{})[k]||{}).shr; const shn=esh?shrShort((getSharer(esh)||{}).name||''):''; const pct=((c.fees||{})[k]||{}).shrPct; return `<div class="feerow"><div class="fl">${ic} ${lb} <span class="ev" style="font-size:10.5px;padding:2px 7px;color:${shn?'#3b82f6':'#94a3b8'};margin-left:3px;font-weight:700" title="쉐어 팀장 지정" onclick="iFeeSharer(this,'${id}','${k}')">🤝 ${shn?esc(shn):'쉐어'}</span><span class="ev" style="font-size:10.5px;padding:2px 7px;color:${pct?'#059669':'#cbd5e1'};margin-left:3px;font-weight:800" title="쉐어 비율(%)" onclick="iFeeSharePct(this,'${id}','${k}')">${pct?pct+'%':'%▾'}</span></div>
          <span class="st ${f.status}" onclick="iFeeStatus(this,'${id}','${k}')">${f.status} ▾</span>
          <span class="ev fa" onclick="iFeeAmt(this,'${id}','${k}')">${f.amt?esc(f.amt)+'원':'＋ 금액'}</span></div>`;}).join('')}
        ${(()=>{const pf=fee(c,'product'); const pt=((c.fees||{}).product||{}).type||''; return `<div class="feerow" style="border-top:1.5px dashed #e2e8f0;padding-top:13px"><div class="fl" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">📋 <span class="ev" style="padding:4px 9px;font-size:12.5px;font-weight:700" onclick="iProductType(this,'${id}')">${esc(pt)||'서비스 유형 ▾'}</span></div>
