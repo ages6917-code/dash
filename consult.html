@@ -493,6 +493,9 @@ function custArr(){ return Object.entries(DATA.customers||{}).map(([id,c])=>({id
 function sharerArr(){ return Object.entries(DATA.sharers||{}).map(([id,s])=>({id,...s})); }
 function getCust(id){ const c=(DATA.customers||{})[id]; return c?{id,...c}:null; }
 function getSharer(id){ const s=(DATA.sharers||{})[id]; return s?{id,...s}:null; }
+/* 고객의 담당 팀장(쉐어) — 다중 지원. c.sharers 배열 우선, 없으면 단일 c.sharer 폴백 */
+function custSharers(c){ if(!c) return []; if(Array.isArray(c.sharers)) return c.sharers.filter(Boolean); return c.sharer?[c.sharer]:[]; }
+function custSharerNames(c){ return custSharers(c).map(id=>{const s=getSharer(id);return s?s.name:'';}).filter(Boolean); }
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1400);}
 
 /* ===== 수수료·계약 모델 (보험/컨설팅/세무 각 예정·완료 + 금액 → 자동 합산) ===== */
@@ -638,25 +641,24 @@ function addSharer(name,org){
   return id;
 }
 function iSharer(box,id){
-  if(box.querySelector('select,input')) return;
-  const cur=(getCust(id)||{}).sharer||'';
-  const opts=[['','미배정']].concat(sharerArr().map(s=>[s.id,s.name])).concat([['__new__','＋ 새 팀장 추가…']]);
-  box.innerHTML=`<select class="iedit">${opts.map(([v,l])=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
-  const sel=box.querySelector('select'); sel.focus();
-  let handled=false;
-  const done=()=>{ if(handled) return; handled=true;
-    if(sel.value==='__new__') return newSharerInline(box,id);
-    setCust(id,{sharer:sel.value}); };
-  sel.onchange=done; sel.onblur=done;
-}
-function newSharerInline(box,id){
-  box.innerHTML=`<input class="iedit" placeholder="새 팀장 이름 입력 후 Enter (예: 김철수 팀장님)">`;
-  const inp=box.querySelector('input'); inp.focus();
-  let h=false;
-  const ok=()=>{ if(h) return; h=true; const nm=inp.value.trim();
-    if(nm){ const sid=addSharer(nm); setCust(id,{sharer:sid}); toast('팀장 추가 ✓'); } else rerender(); };
-  inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();inp.blur();} else if(e.key==='Escape'){h=true;rerender();} };
-  inp.onblur=ok;
+  if(box.querySelector('.shrpick')) return;
+  const cur=custSharers(getCust(id));
+  const rows=sharerArr().map(s=>`<label style="display:flex;align-items:center;gap:7px;padding:6px 4px;font-size:13px;cursor:pointer;border-bottom:1px solid #eef1f6"><input type="checkbox" value="${esc(s.id)}" ${cur.includes(s.id)?'checked':''} style="width:16px;height:16px;accent-color:#6366f1"> ${esc(s.name)}</label>`).join('');
+  box.innerHTML=`<div class="shrpick" style="background:#fff;border:1.5px solid #c7cbe8;border-radius:10px;padding:8px 10px;box-shadow:0 6px 18px rgba(0,0,0,.1)" onclick="event.stopPropagation()">
+    <div style="font-size:11px;color:#94a3b8;font-weight:700;margin-bottom:4px">함께 진행하는 팀장 모두 체크 ✓</div>
+    ${rows||'<div style="color:#94a3b8;font-size:12px;padding:4px">등록된 팀장이 없어요</div>'}
+    <div style="display:flex;gap:6px;margin-top:8px"><input class="shrnew" placeholder="＋ 새 팀장 이름" style="flex:1;padding:7px 9px;border:1px solid #d7dbe6;border-radius:8px;font-size:12.5px">
+    <button type="button" class="btn b shrsave" style="padding:7px 14px">저장</button></div></div>`;
+  const save=()=>{
+    const ids=[].slice.call(box.querySelectorAll('.shrpick input[type=checkbox]:checked')).map(x=>x.value);
+    const nm=box.querySelector('.shrnew').value.trim();
+    if(nm){ const sid=addSharer(nm); ids.push(sid); }
+    setCust(id,{sharers:ids, sharer:ids[0]||''});
+    toast(ids.length?('쉐어 '+ids.length+'명 저장 ✓'):'미배정 저장');
+  };
+  box.querySelector('.shrsave').onclick=save;
+  const ni=box.querySelector('.shrnew');
+  ni.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();save();} };
 }
 
 /* ===== 서류함 (D:\컨설팅_서류 로컬 파일서버 연동) ===== */
@@ -1170,7 +1172,7 @@ function renderDash(){
 function renderSharers(){
  buildNav('share');
  const cards=sharerArr().map(s=>{
-   const deals=custArr().filter(c=>c.sharer===s.id);
+   const deals=custArr().filter(c=>custSharers(c).includes(s.id)||feeShr(c,'insurance')===s.id||feeShr(c,'consulting')===s.id||feeShr(c,'tax')===s.id);
    return `<div class="shc" style="border-top-color:${s.color}" onclick="go('sharer','${s.id}')">
      <div class="hh"><div class="av" style="background:${s.color}">${esc(s.name[0])}</div><div><b>${esc(s.name)}</b><br><span>${esc(s.org)}</span></div></div>
      <div class="stat"><div><b style="color:${s.color}">${deals.length}</b><span>관련 진행 건</span></div>
@@ -1188,7 +1190,7 @@ function renderSharerDetail(id){
  buildNav('share');
  const s=getSharer(id); if(!s){ $('#main').innerHTML='<div class="panel">없는 팀장입니다.</div>'; return; }
  const all=custArr();
- const deals=all.filter(c=>c.sharer===id || feeShr(c,'insurance')===id || feeShr(c,'consulting')===id || feeShr(c,'tax')===id);
+ const deals=all.filter(c=>custSharers(c).includes(id) || feeShr(c,'insurance')===id || feeShr(c,'consulting')===id || feeShr(c,'tax')===id);
  const insDeals=all.filter(c=>feeShr(c,'insurance')===id);
  const taxDeals=all.filter(c=>feeShr(c,'tax')===id);
  const insDone=insDeals.filter(d=>fee(d,'insurance').status==='완료').length;
@@ -1243,7 +1245,7 @@ function renderCustomer(id){
      <div class="mrow" style="display:flex;gap:10px"><div class="fld" style="flex:1"><label>최초 접수일</label><div class="ev" onclick="iText(this,'${id}','received')">${esc(c.received)||'(예: 2026-06-30)'}</div></div>
        <div class="fld" style="flex:1"><label>서류 접수일 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 서류완료 시 자동</span></label><div class="ev" onclick="iText(this,'${id}','docDate')">${esc(c.docDate)||'(자동 기록)'}</div></div></div>
      <div class="fld"><label>신청 금액</label><div class="ev" onclick="iText(this,'${id}','fund')">${esc(c.fund)||'(입력)'}</div></div>
-     <div class="fld"><label>담당 팀장(쉐어)</label><div class="ev" onclick="iSharer(this,'${id}')">${s?esc(s.name):'미배정'} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
+     <div class="fld"><label>담당 팀장(쉐어) <span style="color:#94a3b8;font-weight:500;font-size:10px">· 여러 명 체크 가능</span></label><div class="ev" onclick="iSharer(this,'${id}')">${(()=>{const nms=custSharerNames(c); return nms.length?nms.map(n=>`<span style="display:inline-block;background:#eef2ff;color:#4338ca;border-radius:7px;padding:2px 8px;margin:1px 3px 1px 0;font-weight:700;font-size:12.5px">${esc(n)}</span>`).join(''):'미배정';})()} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
      <div class="fld"><label>연락처</label><div class="ev" onclick="iText(this,'${id}','phone')">${esc(c.phone)||'(입력)'}</div></div>
      <div class="fld"><label>메모</label><div class="notebox sm ${(c.memo&&c.memo.trim())?'':'empty'}" onclick="iArea(this,'${id}','memo')">${(c.memo&&c.memo.trim())?esc(c.memo):'클릭해서 메모 입력 (여러 줄 가능)'}</div></div>
    </div>
