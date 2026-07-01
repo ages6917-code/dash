@@ -1242,6 +1242,7 @@ function renderCustomer(id){
      ${recHtml(id,c)}
      <div class="ph"><b>📋 진행 정보</b><span class="sub">값을 클릭하면 수정</span></div>
      <div class="fld"><label>진행 단계</label><div class="ev" onclick="iStage(this,'${id}')">${esc(c.stage)} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
+     <div class="fld"><label>고객 이름</label><div class="ev" onclick="iText(this,'${id}','nm')">${esc(c.nm)||'(입력)'}</div></div>
      <div class="fld"><label>사업자 / 상호명</label><div class="ev" onclick="iText(this,'${id}','bizName')">${esc(c.bizName)||'(입력)'}</div></div>
      <div class="mrow" style="display:flex;gap:10px"><div class="fld" style="flex:1"><label>최초 접수일</label><div class="ev" onclick="iText(this,'${id}','received')">${esc(c.received)||'(예: 2026-06-30)'}</div></div>
        <div class="fld" style="flex:1"><label>서류 접수일 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 서류완료 시 자동</span></label><div class="ev" onclick="iText(this,'${id}','docDate')">${esc(c.docDate)||'(자동 기록)'}</div></div></div>
