@@ -450,10 +450,12 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-01 21:00",
-    "ago": "7시간 전",
+    "asof": "07-01 21:27",
+    "ago": "8시간 전",
     "ok": true,
-    "date": "2026-07-01 13:15"
+    "date": "2026-07-01 13:15",
+    "stale_days": 0,
+    "state": "가동"
    }
   },
   {
@@ -516,10 +518,12 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-01 21:00",
-    "ago": "25분 전",
+    "asof": "07-01 21:27",
+    "ago": "16시간 전",
     "ok": true,
-    "date": "2026-07-01 20:35"
+    "date": "2026-07-01 05:20",
+    "stale_days": 0,
+    "state": "가동"
    }
   },
   {
@@ -587,10 +591,12 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-01 21:00",
-    "ago": "6시간 전",
-    "ok": true,
-    "date": "2026-07-01 14:30"
+    "asof": "07-01 21:27",
+    "ago": "3일 전",
+    "ok": false,
+    "date": "2026-06-28 14:03",
+    "stale_days": 3,
+    "state": "정체"
    }
   },
   {
@@ -671,10 +677,12 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-01 21:00",
-    "ago": "1분 전",
+    "asof": "07-01 21:27",
+    "ago": "1시간 전",
     "ok": true,
-    "date": "2026-07-01 20:58",
+    "date": "2026-07-01 20:01",
+    "stale_days": 0,
+    "state": "가동",
     "headline": "오늘 SNS 발행 12건"
    }
   },
@@ -718,10 +726,12 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-01 21:00",
+    "asof": "07-01 21:27",
     "ago": "2일 전",
     "ok": false,
-    "date": "2026-06-29 15:04"
+    "date": "2026-06-29 15:04",
+    "stale_days": 2,
+    "state": "정체"
    }
   },
   {
@@ -755,10 +765,12 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-01 21:00",
+    "asof": "07-01 21:27",
     "ago": "1시간 전",
     "ok": true,
-    "date": "2026-07-01 19:31"
+    "date": "2026-07-01 19:31",
+    "stale_days": 0,
+    "state": "가동"
    }
   },
   {
@@ -793,10 +805,12 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-01 21:00",
-    "ago": "3일 전",
+    "asof": "07-01 21:27",
+    "ago": "4일 전",
     "ok": false,
-    "date": "2026-06-28 11:31"
+    "date": "2026-06-27 11:08",
+    "stale_days": 4,
+    "state": "정체"
    }
   },
   {
@@ -828,10 +842,12 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-01 21:00",
-    "ago": "59분 전",
+    "asof": "07-01 21:27",
+    "ago": "1시간 전",
     "ok": true,
     "date": "2026-07-01 20:00",
+    "stale_days": 0,
+    "state": "가동",
     "headline": "오늘 발송 1통"
    }
   },
@@ -864,11 +880,13 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-01 21:00",
-    "ago": "7시간 전",
+    "asof": "07-01 21:27",
+    "ago": "6분 전",
     "ok": true,
-    "date": "2026-07-01 13:32",
-    "headline": "오늘 발굴 30건"
+    "date": "2026-07-01 21:20",
+    "stale_days": 0,
+    "state": "가동",
+    "headline": "오늘 발굴 57건(검수대기)"
    }
   },
   {
@@ -1211,7 +1229,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-07-01 21:00"
+ "_autosync": "2026-07-01 21:27"
 };window.__BACKEND__=false;</script>
 </head><body>
 <div id="pwgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif">
@@ -1296,7 +1314,7 @@ return '<div class="iv6"><div class="ih"><div><h2>🔍 직원6 · AI시장조사
  +'<div class="chips">'+chips+'</div><div class="srcline">'+sl+'</div>'+rows+'</div>'}
 function goItems(){cur='items6';cl();[].forEach.call(document.querySelectorAll('.nav button'),function(x){x.classList.remove('on')});render();window.scrollTo(0,0)}
 function goItems6Back(){cur='all';[].forEach.call(document.querySelectorAll('.nav button'),function(x){x.classList.toggle('on',x.dataset.k=='all')});render();window.scrollTo(0,0)}
-function card(e){var wt=e.auto?(e.auto.ok?'<span class="wtag ok">오늘✅</span>':'<span class="wtag no">'+(e.auto.ago||'미가동')+'</span>'):'';return '<div class="cd c'+(e.cad||'24h')+'" data-no="'+e.no+'"><div class="em"><span class="dot"></span>직원'+e.no+' · '+e.n+wt+'<span class="mtag">'+e.m+'</span></div><div class="ln">'+(e.identity||'')+'</div><div class="ln"><b>목표</b> '+(e.goal||'')+'</div></div>'}
+function card(e){var wt='';if(e.auto){var _s=e.auto.state||(e.auto.ok?'가동':'정체');if(_s=='가동')wt='<span class="wtag ok">오늘✅</span>';else if(_s=='저조')wt='<span class="wtag" style="background:#fef9c3;color:#a16207">🟡 어제</span>';else if(_s=='무산출')wt='<span class="wtag" style="background:#f1f5f9;color:#64748b">⚪ 무산출</span>';else wt='<span class="wtag no" style="background:#fee2e2;color:#dc2626">🔴 정체'+(e.auto.stale_days?' '+e.auto.stale_days+'일':'')+'</span>';}return '<div class="cd c'+(e.cad||'24h')+'" data-no="'+e.no+'"><div class="em"><span class="dot"></span>직원'+e.no+' · '+e.n+wt+'<span class="mtag">'+e.m+'</span></div><div class="ln">'+(e.identity||'')+'</div><div class="ln"><b>목표</b> '+(e.goal||'')+'</div></div>'}
 function grid(m){var es=E.filter(function(e){return e.m===m}).sort(function(a,b){return a.no-b.no});return '<div class="gr">'+es.map(card).join('')+'</div>'}
 function overview(){
 var sendBtn=BK?'<button class="sendall" onclick="sendAll()">📤 전체 전송 ('+qcount+')</button>':'';
@@ -1312,9 +1330,9 @@ h+='<div class="bf tspace"><h3>💳 AI 사용료 · 결제일 <span style="font-
 return h}
 function autoBlock(e){var a=e.auto;
 if(!a)return '<div class="fb"><div class="h">📅 마지막 업무일</div><div class="id" style="color:#9a96b5">실측 미연동 (수동 관리 직원)</div></div>';
-var badge=a.ok
- ?'<span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:9px;font-weight:800;font-size:12px">✅ 오늘 가동</span>'
- :'<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:9px;font-weight:800;font-size:12px">⚠️ 오늘 미가동</span>';
+var _st=a.state||(a.ok?'가동':'정체');
+var _bc={'가동':['#dcfce7','#16a34a','✅ 오늘 가동'],'저조':['#fef9c3','#a16207','🟡 어제 산출(저조)'],'정체':['#fee2e2','#dc2626','🔴 정체 '+(a.stale_days||'')+'일'],'무산출':['#f1f5f9','#64748b','⚪ 산출 없음']}[_st]||['#fee2e2','#dc2626','⚠️ 미가동'];
+var badge='<span style="background:'+_bc[0]+';color:'+_bc[1]+';padding:3px 10px;border-radius:9px;font-weight:800;font-size:12px">'+_bc[2]+'</span>';
 var dt=a.date?'<div style="font-size:18px;font-weight:800;color:#2a2745;margin:3px 0 6px;letter-spacing:.3px">'+a.date+'</div>'
  :'<div style="font-size:14px;font-weight:800;color:#b08900;margin:3px 0 6px">산출 기록 없음</div>';
 var col=a.ok?'#16a34a':'#b08900';
