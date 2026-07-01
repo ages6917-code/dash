@@ -1368,6 +1368,7 @@ function aiUsingTeamKey(){ const p=aiProv(); return p==='gemini' && !myKeys().ge
 function aiVal(id){ return (document.getElementById(id)||{value:''}).value.trim(); }
 function aiSetProv(p){ const c=aiCfg(); c.provider=p; aiSaveCfg(c); if(!aiKey(p)){ aiSettings(); } else { rerender(); } }
 function aiBoxHtml(id){
+  return '';  // AI 기능 비활성화 (사장님 지시 2026-07-01) — 되살리려면 이 줄만 삭제
   const p=aiProv(), usingTeam=aiUsingTeamKey();
   // 칩 표시: 내 개인 키가 하나라도 있으면 (팀↔내 키 전환용), 또는 팀 모드 아닐 때
   const showChips = anyMyKey() || !aiTeamOn();
@@ -1578,9 +1579,8 @@ function helpGuide(){
       <div class="hg"><span class="hg-n">1</span><div><b>고객을 본다</b><p>왼쪽 메뉴에서 <b>대시보드</b>(오늘 할 일)·<b>고객 DB</b>(전체 명단)·<b>연락 전</b>(첫 통화 대기)을 이동해요. 고객 카드를 누르면 상세가 열립니다.</p></div></div>
       <div class="hg"><span class="hg-n">2</span><div><b>고객 추가 / 진행 기록</b><p><b>+ 새 고객</b>으로 등록하고, 상세 화면의 <b>진행 단계·메모·금액</b>은 값을 눌러 바로 수정해요. 모든 변경은 실시간으로 팀 전원에게 반영됩니다 🟢</p></div></div>
       <div class="hg"><span class="hg-n">3</span><div><b>서류 · 통화 녹음 올리기</b><p>고객 상세의 <b>서류함</b>·<b>음성·통화 녹음</b>칸에 💻데탑은 <b>끌어다 놓기/파일 선택</b>, 📞폰은 눌러서 통화 녹음을 첨부해요. (민감 서류는 사장님 PC에 저장)</p></div></div>
-      <div class="hg"><span class="hg-n">4</span><div><b>AI 비서에게 묻기</b><p>고객 상세 위 <b>AI 어시스턴트</b>에 "서류 요약해줘 / 컨설팅 어떻게 할까?"처럼 물어보세요. <b>🟢 팀 공용 AI</b>면 키 없이 바로 됩니다. Claude·GPT 유료 사용자는 ⚙에서 <b>내 키</b>를 넣으면 본인 계정으로 써요.</p></div></div>
-      <div class="hg"><span class="hg-n">5</span><div><b>쉐어처와 공유</b><p><b>쉐어</b> 메뉴에서 본부장·캐피탈·세무 파트너별 <b>전용 링크</b>를 복사해 보내면, 그 분들은 자기 관련 건만 봅니다(수익·타 고객 숨김).</p></div></div>
-      <div class="hg"><span class="hg-n">6</span><div><b>내 이름 바꾸기</b><p>왼쪽 아래 프로필 <b>⚙</b> → 이름·직함 수정. 팀 전원 화면에 반영돼요.</p></div></div>
+      <div class="hg"><span class="hg-n">4</span><div><b>쉐어처와 공유</b><p><b>쉐어</b> 메뉴에서 본부장·캐피탈·세무 파트너별 <b>전용 링크</b>를 복사해 보내면, 그 분들은 자기 관련 건만 봅니다(수익·타 고객 숨김).</p></div></div>
+      <div class="hg"><span class="hg-n">5</span><div><b>내 이름 바꾸기</b><p>왼쪽 아래 프로필 <b>⚙</b> → 이름·직함 수정. 팀 전원 화면에 반영돼요.</p></div></div>
       <div class="help-tip">💡 <b>설치 필요 없어요.</b> 이 화면은 웹주소(링크)만 있으면 폰·PC 어디서든 열려요. 폰에서 앱처럼 쓰려면 브라우저 <b>⋮ → 홈 화면에 추가</b>.</div>
     </div>
   </div>`;
