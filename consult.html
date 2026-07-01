@@ -779,12 +779,11 @@ function iArea(box,id,key){
 /* ===== 재무 요약 ===== */
 function summaryHtml(id,c){
   const sm=c.summary;
-  const pending=Object.values(DATA.requests||{}).some(r=>r && r.customerId===id && (r.status==='pending'||r.status==='processing'));
-  if(pending){
-    return `<div class="fsum"><div class="empty"><div class="spin"></div><b style="color:#3b82f6;font-size:14px">AI가 재무 요약 생성 중…</b><br><br>분석이 끝나면 이 자리에 자동으로 채워집니다.<br><span style="color:#94a3b8">⏳ 창을 닫거나 뒤로 가도 계속 생성됩니다 (클라우드 처리)</span></div></div>`;
-  }
   if(!sm||!Object.keys(sm).length){
-    return `<div class="fsum"><div class="empty">📊 재무 요약 없음<br><br><b onclick="goDocbox()" style="cursor:pointer;color:#6366f1;text-decoration:underline">📁 서류함에 파일을 넣으면</b> AI가 자동 분석해<br>매출추이·부채비율·대출현황을 이 자리에 채웁니다.<br><br><span class="add" onclick="goDocbox()" style="display:inline-block;margin-top:6px;margin-right:6px">📁 서류함으로 이동</span><span class="add" onclick="editSummary('${id}')" style="display:inline-block;margin-top:6px">✍️ 수동으로 만들기</span></div></div>`;
+    return `<div class="fsum"><div class="empty">📊 재무 요약 없음<br><br>매출추이·부채비율·대출현황 등을<br>직접 입력해 한눈에 정리할 수 있습니다.<br><br><span class="add" onclick="editSummary('${id}')" style="display:inline-block;margin-top:6px">✍️ 직접 입력</span></div></div>`;
+  }
+  if(sm.note && !(sm.sales&&sm.sales.length)){
+    return `<div class="fsum"><div style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:#334155">${esc(sm.note)}</div><div style="text-align:right;margin-top:10px"><span class="add" onclick="editSummary('${id}')">✏️ 요약 수정</span></div></div>`;
   }
   const sales=sm.sales||[]; const mx=Math.max(1,...sales.map(s=>+s.v||0));
   const cols=['#9aa6b8','#7db3ec','#3b82f6','#1d4ed8'];
@@ -804,22 +803,16 @@ function summaryHtml(id,c){
 function editSummary(id){
   const c=getCust(id)||{};
   const box=document.getElementById('sumPanel');
-  box.innerHTML=`<div class="ph"><b>📊 재무 요약 — 수동으로 만들기</b></div>
-    <div style="font-size:12px;color:#64748b;line-height:1.6;margin:2px 0 8px">입력한 내용을 토대로 AI가 요약을 만들어드립니다. <b>📁서류함에 파일이 있으면 함께 종합 분석</b>됩니다. (양식 불필요 — 메모처럼 적으세요)</div>
-    <textarea class="iarea" id="sumNote" style="min-height:150px" placeholder="예: 매출 작년 6억·올해 8억, 부채 5억, 하나은행 대출 1.1억, 신용점수 800, 자본잠식 우려… 아는 만큼 자유롭게">${esc(c.summaryNote||'')}</textarea>
-    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn b" onclick="genSummary('${id}')">📊 재무 요약 생성하기</button><button class="btn g" onclick="rerender()">취소</button><button class="btn g" style="margin-left:auto" onclick="editSummaryJson('${id}')">JSON 직접</button></div>`;
+  box.innerHTML=`<div class="ph"><b>📊 재무 요약 — 직접 입력</b></div>
+    <div style="font-size:12px;color:#64748b;line-height:1.6;margin:2px 0 8px">재무 상황을 자유롭게 적어주세요. 적은 내용이 그대로 요약 칸에 저장됩니다. (양식 불필요 — 메모처럼)</div>
+    <textarea class="iarea" id="sumNote" style="min-height:150px" placeholder="예: 매출 작년 6억·올해 8억, 부채 5억, 하나은행 대출 1.1억, 신용점수 800, 자본잠식 우려… 아는 만큼 자유롭게">${esc((c.summary&&c.summary.note)||c.summaryNote||'')}</textarea>
+    <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap"><button class="btn b" onclick="genSummary('${id}')">💾 저장</button><button class="btn g" onclick="rerender()">취소</button><button class="btn g" style="margin-left:auto" onclick="editSummaryJson('${id}')">JSON 직접(차트)</button></div>`;
 }
 function genSummary(id){
   const note=(document.getElementById('sumNote')||{value:''}).value||'';
-  const c=getCust(id)||{};
-  if(!note.trim() && !(c.docs&&c.docs.length)){ toast('메모를 적거나 서류를 먼저 넣어주세요'); return; }
-  setCust(id,{summaryNote:note, memo:'📥 AI 재무요약 생성 대기중'});
-  if(offline){ toast('실시간(규칙) 켜야 자동 생성 — 지금은 메모만 저장됨'); return; }
-  const reqId='req'+Date.now();
-  DATA.requests=DATA.requests||{}; DATA.requests[reqId]={customerId:id,status:'pending'}; rerender();  // 즉시 로딩 표시
-  dref('requests/'+reqId).set({customerId:id, customerName:c.nm||'', note:note, useExistingDocs:true, status:'pending', ts:Date.now()})
-    .then(()=>toast('요청 전송 ✓ — AI가 곧 재무요약 생성'))
-    .catch(()=>toast('전송 실패: 규칙 확인'));
+  if(!note.trim()){ toast('내용을 입력하세요'); return; }
+  setCust(id,{summary:{note:note,_meta:{manual:true}}, summaryNote:note});
+  toast('재무 요약 저장 ✓'); rerender();
 }
 function editSummaryJson(id){
   const c=getCust(id)||{};
@@ -838,17 +831,16 @@ function markReviewed(id){ const c=getCust(id)||{}; const sm=Object.assign({},c.
 /* ===== + 신규 고객 ===== */
 function openNew(){
   const m=document.createElement('div'); m.className='modal'; m.id='newModal';
-  m.innerHTML=`<div class="mc"><h3>+ 신규 고객</h3><div class="msub">등록 방법을 선택하세요</div>
-    <div class="opt"><div class="ob on" id="optM" onclick="newMode('m')"><span class="bi">✍️</span>수동 입력</div>
-      <div class="ob" id="optC" onclick="newMode('c')"><span class="bi">🤖</span>AI에게 부탁</div></div>
+  m.innerHTML=`<div class="mc"><h3>+ 신규 고객</h3><div class="msub">고객 정보를 입력하세요</div>
     <div id="newBody"></div></div>`;
   m.onclick=e=>{ if(e.target===m) closeNew(); };
   document.body.appendChild(m); newMode('m');
 }
 function shrOptions(){ return `<option value="">미배정</option>${sharerArr().map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}<option value="__new__">＋ 새 팀장 추가…</option>`; }
 function newMode(mode){
-  document.getElementById('optM').classList.toggle('on',mode==='m');
-  document.getElementById('optC').classList.toggle('on',mode==='c');
+  const _om=document.getElementById('optM'), _oc=document.getElementById('optC');
+  if(_om) _om.classList.toggle('on',mode==='m');
+  if(_oc) _oc.classList.toggle('on',mode==='c');
   const b=document.getElementById('newBody');
   if(mode==='m'){
     b.innerHTML=`<label>이름 (대표/담당자)</label><input id="nNm" placeholder="예: 홍길동">
