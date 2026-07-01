@@ -710,12 +710,13 @@ function syncDocs(id,nm){
     }
   }).catch(()=>{});  // 파일서버 off → 클라우드 이름 유지
 }
+function goDocbox(){ const el=document.getElementById('docbox'); if(!el)return; try{el.scrollIntoView({behavior:'smooth',block:'center'});}catch(e){el.scrollIntoView();} const dz=el.querySelector('.dropzone'); if(dz){ dz.classList.add('drag'); setTimeout(()=>dz.classList.remove('drag'),1500); } }
 function docsHtml(id,c){
   const docs=c.docs||[]; const dd=docState(c)==='접수완료'; const nm=c.nm||id;
   const items=docs.map(d=>`<div class="docitem">📄<span class="nm" style="cursor:pointer" title="미리보기" onclick="viewFile('${esc(nm)}','${esc(d.name)}')">${esc(d.name||'서류')}</span>
      <span class="dl" title="다운로드" onclick="dlFile('${esc(nm)}','${esc(d.name)}')">⬇</span>
      <span class="x" title="삭제" onclick="docDelete('${id}','${esc(nm)}','${esc(d.name)}')">✕</span></div>`).join('');
-  return `<div class="docbox"><div class="dh"><b>📁 서류함 <span style="color:#b9a96b;font-weight:600">(${docs.length})</span></b>
+  return `<div class="docbox" id="docbox"><div class="dh"><b>📁 서류함 <span style="color:#b9a96b;font-weight:600">(${docs.length})</span></b>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="docbadge ${dd?'on':''}" onclick="toggleDocStatus('${id}')">${dd?'✅ 접수완료':'⏳ 접수전'}</span>
       ${docs.length?`<span class="add" onclick="dlZip('${esc(nm)}')">📦 전체 zip</span><span class="add" onclick="openFolder('${esc(nm)}')">📂 폴더</span><span class="add" style="background:#fef2f2;color:#dc2626;border-color:#fecaca" onclick="docDeleteAll('${id}','${esc(nm)}')">🗑 전체삭제</span>`:''}</div></div>
     <div class="dropzone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="docDrop(event,'${id}')">
@@ -783,7 +784,7 @@ function summaryHtml(id,c){
     return `<div class="fsum"><div class="empty"><div class="spin"></div><b style="color:#3b82f6;font-size:14px">직원2가 재무 요약 생성 중…</b><br><br>분석이 끝나면 이 자리에 자동으로 채워집니다.<br><span style="color:#94a3b8">⏳ 창을 닫거나 뒤로 가도 계속 생성됩니다 (클라우드 처리)</span></div></div>`;
   }
   if(!sm||!Object.keys(sm).length){
-    return `<div class="fsum"><div class="empty">📊 재무 요약 없음<br><br><b>📁 서류함에 파일을 넣으면</b> 직원2가 자동 분석해<br>매출추이·부채비율·대출현황을 이 자리에 채웁니다.<br><br><span class="add" onclick="editSummary('${id}')" style="display:inline-block;margin-top:6px">✍️ 수동으로 만들기</span></div></div>`;
+    return `<div class="fsum"><div class="empty">📊 재무 요약 없음<br><br><b onclick="goDocbox()" style="cursor:pointer;color:#6366f1;text-decoration:underline">📁 서류함에 파일을 넣으면</b> 직원2가 자동 분석해<br>매출추이·부채비율·대출현황을 이 자리에 채웁니다.<br><br><span class="add" onclick="goDocbox()" style="display:inline-block;margin-top:6px;margin-right:6px">📁 서류함으로 이동</span><span class="add" onclick="editSummary('${id}')" style="display:inline-block;margin-top:6px">✍️ 수동으로 만들기</span></div></div>`;
   }
   const sales=sm.sales||[]; const mx=Math.max(1,...sales.map(s=>+s.v||0));
   const cols=['#9aa6b8','#7db3ec','#3b82f6','#1d4ed8'];
