@@ -1175,10 +1175,7 @@ function renderDash(){
  <div class="sechead">💰 이번달 수익 현황</div>
  <div class="rev">${revCard('insurance','🛡️','보험 계약','#ecfdf5')}${revCard('consulting','🏦','컨설팅 수수료','#eff6ff')}${revCard('tax','🧾','세무 이관','#f5f3ff')}</div>
  <div class="midrow">
-   <div class="tax" style="flex:1"><div class="h"><b>💰 수수료·계약 합계 (이번달)</b><div class="sum">확정 ${fmtMan(totDone)}원</div></div>
-     <div class="grid"><div class="box" style="background:#ecfdf5;cursor:pointer" title="완료(확정) 고객만 보기" onclick="go('flt','fee_done')"><div class="t">✅ 완료(확정)</div><div class="n">${fmtMan(totDone)}<small></small></div><div class="m" style="color:#10b981">${totDoneN}건 확정 수익 ›</div></div>
-       <div class="box" style="background:#fffbeb;cursor:pointer" title="예정(예상) 고객만 보기" onclick="go('flt','fee_plan')"><div class="t">⏳ 예정(예상)</div><div class="n">${fmtMan(totPlan)}<small></small></div><div class="m" style="color:#d97706">${totPlanN}건 진행 예상 ›</div></div></div></div>
-   <div class="acts" style="flex:2.7">${acts.map(a=>`<div class="act" style="background:linear-gradient(135deg,${a.c},${a.c}cc);box-shadow:0 6px 16px ${a.c}40;cursor:pointer" onclick="go('flt','${a.k}')"><div class="ic">${a.ic}</div><div class="n">${actCount(a.k)}</div><div class="l">${a.l}</div></div>`).join('')}</div>
+   <div class="acts" style="flex:1">${acts.map(a=>`<div class="act" style="background:linear-gradient(135deg,${a.c},${a.c}cc);box-shadow:0 6px 16px ${a.c}40;cursor:pointer" onclick="go('flt','${a.k}')"><div class="ic">${a.ic}</div><div class="n">${actCount(a.k)}</div><div class="l">${a.l}</div></div>`).join('')}</div>
  </div>
  <div class="quadgrid">
    ${quadMemo()}
