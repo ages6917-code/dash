@@ -1002,18 +1002,22 @@ function setNode(key,val){ DATA[key]=val; rerender(); _lsave(); if(!offline) dre
 function renderFiltered(key,nav){
  buildNav(nav||'dash');
  const cs=custArr();
- const TITLE={'연락전':'📞 연락 전 고객 (신규 DB · 첫 통화 전)','부재중·재연락':'🔄 부재중·재연락 고객','심사중':'📥 심사중 고객','자금접수완료':'🏦 자금접수완료 고객','old7':'⏰ 접수 7일+ (심사중·서류접수 7일 경과·방치주의)','부결':'🚫 부결 고객'};
+ const TITLE={'연락전':'📞 연락 전 고객 (신규 DB · 첫 통화 전)','부재중·재연락':'🔄 부재중·재연락 고객','심사중':'📥 심사중 고객','자금접수완료':'🏦 자금접수완료 고객','old7':'⏰ 접수 7일+ (심사중·서류접수 7일 경과·방치주의)','부결':'🚫 부결 고객','fee_done':'✅ 완료(확정) 수익 고객','fee_plan':'⏳ 예정(예상) 진행 고객'};
+ const feeStatus = key==='fee_done'?'완료':(key==='fee_plan'?'예정':null);
  let list;
  if(key==='old7') list=cs.filter(c=>c.stage==='심사중'&&docState(c)==='접수완료'&&daysSince(c.docDate||c.received)>=7);
+ else if(feeStatus) list=cs.filter(c=>['insurance','consulting','tax'].some(k=>fee(c,k).status===feeStatus));
  else list=cs.filter(c=>c.stage===key);
  const rows=list.map(c=>{
    const ago = c.received?` · 접수 ${daysSince(c.received)}일 전`:'';
+   const amt = feeStatus ? `<div class="amt" style="color:${feeStatus==='완료'?'#10b981':'#d97706'};font-weight:800">${fmtMan(custTotal(c,feeStatus))}원</div>` : `<div class="amt">${esc(c.fund||'')}</div>`;
    return `<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
      <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz||'')}</span></b><div class="memo">${esc(c.memo||'')}${ago}</div></div>
-     <div class="amt">${esc(c.fund||'')}</div>${chip(c.stage)}</div>`;
+     ${amt}${chip(c.stage)}</div>`;
  }).join('')||'<div class="row" style="color:#94a3b8">해당 고객 없음</div>';
+ const totLine = feeStatus ? ` · 합계 <b style="color:${feeStatus==='완료'?'#10b981':'#d97706'}">${fmtMan(list.reduce((a,c)=>a+custTotal(c,feeStatus),0))}원</b>` : '';
  $('#main').innerHTML=`<span class="back" onclick="goBack()">← 뒤로</span>
-   <div class="top"><h1>${TITLE[key]||key} <span style="color:#94a3b8;font-size:15px;font-weight:600">${list.length}명</span></h1></div>
+   <div class="top"><h1>${TITLE[key]||key} <span style="color:#94a3b8;font-size:15px;font-weight:600">${list.length}명${totLine}</span></h1></div>
    <div class="panel">${rows}</div>`;
 }
 
@@ -1169,8 +1173,8 @@ function renderDash(){
  </div>
  <div class="midrow">
    <div class="tax" style="flex:1"><div class="h"><b>💰 수수료·계약 합계 (이번달)</b><div class="sum">확정 ${fmtMan(totDone)}원</div></div>
-     <div class="grid"><div class="box" style="background:#ecfdf5"><div class="t">✅ 완료(확정)</div><div class="n">${fmtMan(totDone)}<small></small></div><div class="m" style="color:#10b981">${totDoneN}건 확정 수익</div></div>
-       <div class="box" style="background:#fffbeb"><div class="t">⏳ 예정(예상)</div><div class="n">${fmtMan(totPlan)}<small></small></div><div class="m" style="color:#d97706">${totPlanN}건 진행 예상</div></div></div></div>
+     <div class="grid"><div class="box" style="background:#ecfdf5;cursor:pointer" title="완료(확정) 고객만 보기" onclick="go('flt','fee_done')"><div class="t">✅ 완료(확정)</div><div class="n">${fmtMan(totDone)}<small></small></div><div class="m" style="color:#10b981">${totDoneN}건 확정 수익 ›</div></div>
+       <div class="box" style="background:#fffbeb;cursor:pointer" title="예정(예상) 고객만 보기" onclick="go('flt','fee_plan')"><div class="t">⏳ 예정(예상)</div><div class="n">${fmtMan(totPlan)}<small></small></div><div class="m" style="color:#d97706">${totPlanN}건 진행 예상 ›</div></div></div></div>
    <div class="acts" style="flex:2.7">${acts.map(a=>`<div class="act" style="background:linear-gradient(135deg,${a.c},${a.c}cc);box-shadow:0 6px 16px ${a.c}40;cursor:pointer" onclick="go('flt','${a.k}')"><div class="ic">${a.ic}</div><div class="n">${actCount(a.k)}</div><div class="l">${a.l}</div></div>`).join('')}</div>
  </div>
  <div class="quadgrid">
