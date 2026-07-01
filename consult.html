@@ -1002,23 +1002,31 @@ function setNode(key,val){ DATA[key]=val; rerender(); _lsave(); if(!offline) dre
 function renderFiltered(key,nav){
  buildNav(nav||'dash');
  const cs=custArr();
- const TITLE={'연락전':'📞 연락 전 고객 (신규 DB · 첫 통화 전)','부재중·재연락':'🔄 부재중·재연락 고객','심사중':'📥 심사중 고객','자금접수완료':'🏦 자금접수완료 고객','old7':'⏰ 접수 7일+ (심사중·서류접수 7일 경과·방치주의)','부결':'🚫 부결 고객','fee_done':'✅ 완료(확정) 수익 고객','fee_plan':'⏳ 예정(예상) 진행 고객'};
- const feeStatus = key==='fee_done'?'완료':(key==='fee_plan'?'예정':null);
+ const TITLE={'연락전':'📞 연락 전 고객 (신규 DB · 첫 통화 전)','부재중·재연락':'🔄 부재중·재연락 고객','심사중':'📥 심사중 고객','자금접수완료':'🏦 자금접수완료 고객','old7':'⏰ 접수 7일+ (심사중·서류접수 7일 경과·방치주의)','부결':'🚫 부결 고객'};
+ // 수수료 필터: fee_done / fee_plan / fee_done_insurance / fee_plan_tax ...
+ let feeStatus=null, feeType=null;
+ if(key.indexOf('fee_')===0){ const p=key.split('_'); feeStatus=(p[1]==='done')?'완료':'예정'; feeType=p[2]||null; }
+ const FTLB={insurance:'🛡️ 보험 계약',consulting:'🏦 컨설팅 수수료',tax:'🧾 세무 이관'};
+ const rowAmtWon=c=> feeType ? (fee(c,feeType).status===feeStatus?feeWon(c,feeType):0) : custTotal(c,feeStatus);
  let list;
  if(key==='old7') list=cs.filter(c=>c.stage==='심사중'&&docState(c)==='접수완료'&&daysSince(c.docDate||c.received)>=7);
- else if(feeStatus) list=cs.filter(c=>['insurance','consulting','tax'].some(k=>fee(c,k).status===feeStatus));
+ else if(feeStatus){ const ks=feeType?[feeType]:['insurance','consulting','tax']; list=cs.filter(c=>ks.some(k=>fee(c,k).status===feeStatus)); }
  else list=cs.filter(c=>c.stage===key);
  const rows=list.map(c=>{
    const ago = c.received?` · 접수 ${daysSince(c.received)}일 전`:'';
-   const amt = feeStatus ? `<div class="amt" style="color:${feeStatus==='완료'?'#10b981':'#d97706'};font-weight:800">${fmtMan(custTotal(c,feeStatus))}원</div>` : `<div class="amt">${esc(c.fund||'')}</div>`;
+   const amt = feeStatus ? `<div class="amt" style="color:${feeStatus==='완료'?'#10b981':'#d97706'};font-weight:800">${fmtMan(rowAmtWon(c))}원</div>` : `<div class="amt">${esc(c.fund||'')}</div>`;
    return `<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
      <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz||'')}</span></b><div class="memo">${esc(c.memo||'')}${ago}</div></div>
      ${amt}${chip(c.stage)}</div>`;
  }).join('')||'<div class="row" style="color:#94a3b8">해당 고객 없음</div>';
- const totLine = feeStatus ? ` · 합계 <b style="color:${feeStatus==='완료'?'#10b981':'#d97706'}">${fmtMan(list.reduce((a,c)=>a+custTotal(c,feeStatus),0))}원</b>` : '';
+ let title;
+ if(feeStatus){ const st=feeStatus==='완료'?'✅ 완료(확정)':'⏳ 예정(예상)'; title = feeType?`${FTLB[feeType]} · ${st}`:`${st} 수익 고객`; }
+ else title=TITLE[key]||key;
+ const totLine = feeStatus ? ` · 합계 <b style="color:${feeStatus==='완료'?'#10b981':'#d97706'}">${fmtMan(list.reduce((a,c)=>a+rowAmtWon(c),0))}원</b>` : '';
+ const tint = feeStatus==='완료'?'#ecfdf5':(feeStatus==='예정'?'#fffbeb':'');
  $('#main').innerHTML=`<span class="back" onclick="goBack()">← 뒤로</span>
-   <div class="top"><h1>${TITLE[key]||key} <span style="color:#94a3b8;font-size:15px;font-weight:600">${list.length}명${totLine}</span></h1></div>
-   <div class="panel">${rows}</div>`;
+   <div class="top" ${tint?`style="background:${tint};border-radius:14px;padding:12px 18px"`:''}><h1>${title} <span style="color:#94a3b8;font-size:15px;font-weight:600">${list.length}명${totLine}</span></h1></div>
+   <div class="panel" ${tint?`style="background:${tint}"`:''}>${rows}</div>`;
 }
 
 /* ===== 4분할: 개인메모 ===== */
@@ -1158,19 +1166,14 @@ function renderDash(){
  const waitRow=c=>`<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
    <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz)}</span></b><div class="memo">${esc(c.memo)}</div></div>
    <div class="amt">${esc(c.fund)}</div><div class="call">📞 연락</div></div>`;
+ const revBox=(k,done)=>{const amt=done?ag[k].dA:ag[k].pA, n=done?ag[k].dN:ag[k].pN; return `<div style="flex:1;border-radius:12px;padding:12px 13px;cursor:pointer;background:${done?'#ecfdf5':'#fffbeb'}" title="${done?'완료(확정)':'예정(예상)'} 고객 보기" onclick="go('flt','fee_${done?'done':'plan'}_${k}')"><div style="font-size:11.5px;color:#64748b;font-weight:600">${done?'✅ 완료(확정)':'⏳ 예정(예상)'}</div><div style="font-size:20px;font-weight:800;margin:2px 0">${fmtMan(amt)}<small style="font-size:12px;color:#94a3b8">원</small></div><div style="font-size:11.5px;font-weight:700;color:${done?'#10b981':'#d97706'}">${n}건 ›</div></div>`;};
+ const revCard=(k,ic,lb,icbg)=>`<div class="c"><div class="h"><div class="ic" style="background:${icbg}">${ic}</div><div class="lb">${lb}</div></div><div style="display:flex;gap:10px">${revBox(k,true)}${revBox(k,false)}</div></div>`;
  $('#main').innerHTML=`
  <div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
    <div><h1>대시보드</h1><div class="date">안녕하세요, ${esc(meName())}님 👋 · ${offline?'오프라인 모드 🔴 (규칙 열면 실시간 켜짐)':'실시간 동기화 중 🟢'}</div></div></div>
    <div class="tbtns"><button class="btn g" onclick="go('search')">🔍 검색</button><button class="btn b" onclick="openNew()">+ 신규 고객</button></div></div>
  <div class="sechead">💰 이번달 수익 현황</div>
- <div class="rev">
-   <div class="c"><div class="h"><div class="ic" style="background:#ecfdf5">🛡️</div><div class="lb">보험 계약</div></div>
-     <div class="v">${fmtMan(ag.insurance.dA)}<small>원</small></div><div class="s" style="color:#10b981">완료 ${ag.insurance.dN}건 · 예정 ${ag.insurance.pN}건${ag.insurance.pA?` (${fmtMan(ag.insurance.pA)})`:''}</div></div>
-   <div class="c"><div class="h"><div class="ic" style="background:#eff6ff">🏦</div><div class="lb">컨설팅 수수료</div></div>
-     <div class="v">${fmtMan(ag.consulting.dA)}<small>원</small></div><div class="s" style="color:#3b82f6">완료 ${ag.consulting.dN}건 · 예정 ${ag.consulting.pN}건${ag.consulting.pA?` (${fmtMan(ag.consulting.pA)})`:''}</div></div>
-   <div class="c"><div class="h"><div class="ic" style="background:#f5f3ff">🧾</div><div class="lb">세무 이관</div></div>
-     <div class="v">${fmtMan(ag.tax.dA)}<small>원</small></div><div class="s" style="color:#8b5cf6">완료 ${ag.tax.dN}건 · 예정 ${ag.tax.pN}건${ag.tax.pA?` (${fmtMan(ag.tax.pA)})`:''}</div></div>
- </div>
+ <div class="rev">${revCard('insurance','🛡️','보험 계약','#ecfdf5')}${revCard('consulting','🏦','컨설팅 수수료','#eff6ff')}${revCard('tax','🧾','세무 이관','#f5f3ff')}</div>
  <div class="midrow">
    <div class="tax" style="flex:1"><div class="h"><b>💰 수수료·계약 합계 (이번달)</b><div class="sum">확정 ${fmtMan(totDone)}원</div></div>
      <div class="grid"><div class="box" style="background:#ecfdf5;cursor:pointer" title="완료(확정) 고객만 보기" onclick="go('flt','fee_done')"><div class="t">✅ 완료(확정)</div><div class="n">${fmtMan(totDone)}<small></small></div><div class="m" style="color:#10b981">${totDoneN}건 확정 수익 ›</div></div>
