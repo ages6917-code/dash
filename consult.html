@@ -576,11 +576,13 @@ function promptCustomType(box,id){
   inp.onblur=ok;
 }
 function custTotal(c,status){ return ['insurance','consulting','tax'].reduce((a,k)=>{const f=fee(c,k);return f.status===status?a+feeWon(c,k):a;},0); }
+/* 스트림별 쉐어 몫(만원) — 세무는 taxShareWon, 나머지는 금액×shrPct% */
+function feeShareWon(c,k){ if(k==='tax'){ const it=taxItems(c); if(it.length) return taxShareWon(c); } const pct=(((c&&c.fees)||{})[k]||{}).shrPct; return pct?Math.round(feeWon(c,k)*(+pct)/100):0; }
 function aggFees(){ const cs=custArr(); const out={};
-  ['insurance','consulting','tax'].forEach(k=>{ let dA=0,dN=0,pA=0,pN=0;
-    cs.forEach(c=>{ const f=fee(c,k); const a=feeWon(c,k);
-      if(f.status==='완료'){dA+=a;dN++;} else if(f.status==='예정'){pA+=a;pN++;} });
-    out[k]={dA,dN,pA,pN}; });
+  ['insurance','consulting','tax'].forEach(k=>{ let dA=0,dN=0,pA=0,pN=0,dSh=0,pSh=0;
+    cs.forEach(c=>{ const f=fee(c,k); const a=feeWon(c,k); const sh=feeShareWon(c,k);
+      if(f.status==='완료'){dA+=a;dN++;dSh+=sh;} else if(f.status==='예정'){pA+=a;pN++;pSh+=sh;} });
+    out[k]={dA,dN,pA,pN,dSh,pSh}; });
   return out; }
 function docState(c){ return c.docStatus || ((c&&c.docs&&c.docs.length)?'접수완료':'접수전'); }
 function toggleDocStatus(id){ const c=getCust(id)||{}; const next=docState(c)==='접수완료'?'접수전':'접수완료'; const patch={docStatus:next}; if(next==='접수완료'&&!c.docDate) patch.docDate=today(); setCust(id,patch); }
@@ -1262,7 +1264,7 @@ function renderDash(){
  const waitRow=c=>`<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
    <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz)}</span></b><div class="memo">${esc(c.memo)}</div></div>
    <div class="amt">${esc(c.fund)}</div><div class="call">📞 연락</div></div>`;
- const revBox=(k,done)=>{const amt=done?ag[k].dA:ag[k].pA, n=done?ag[k].dN:ag[k].pN; return `<div style="flex:1;border-radius:12px;padding:12px 13px;cursor:pointer;background:${done?'#ecfdf5':'#fffbeb'}" title="${done?'완료(확정)':'예정(예상)'} 고객 보기" onclick="go('flt','fee_${done?'done':'plan'}_${k}')"><div style="font-size:11.5px;color:#64748b;font-weight:600">${done?'✅ 완료(확정)':'⏳ 예정(예상)'}</div><div style="font-size:20px;font-weight:800;margin:2px 0">${fmtMan(amt)}<small style="font-size:12px;color:#94a3b8">원</small></div><div style="font-size:11.5px;font-weight:700;color:${done?'#10b981':'#d97706'}">${n}건 ›</div></div>`;};
+ const revBox=(k,done)=>{const amt=done?ag[k].dA:ag[k].pA, n=done?ag[k].dN:ag[k].pN, sh=done?ag[k].dSh:ag[k].pSh; return `<div style="flex:1;border-radius:12px;padding:12px 13px;cursor:pointer;background:${done?'#ecfdf5':'#fffbeb'}" title="${done?'완료(확정)':'예정(예상)'} 고객 보기" onclick="go('flt','fee_${done?'done':'plan'}_${k}')"><div style="font-size:11.5px;color:#64748b;font-weight:600">${done?'✅ 완료(확정)':'⏳ 예정(예상)'}</div><div style="font-size:20px;font-weight:800;margin:2px 0">${fmtMan(amt)}<small style="font-size:12px;color:#94a3b8">원</small></div><div style="font-size:11.5px;font-weight:700;color:${done?'#10b981':'#d97706'}">${n}건 ›</div><div style="font-size:11px;font-weight:800;color:#7c3aed;margin-top:4px;border-top:1px dashed #e2d9f7;padding-top:4px">🤝 쉐어 ${done?'확정':'예정'} ${fmtMan(sh)}<small style="color:#a78bfa;font-weight:600">원</small></div><div style="font-size:10.5px;color:#94a3b8;margin-top:1px">내 몫 ${fmtMan(amt-sh)}원</div></div>`;};
  const revCard=(k,ic,lb,icbg)=>`<div class="c"><div class="h"><div class="ic" style="background:${icbg}">${ic}</div><div class="lb">${lb}</div></div><div style="display:flex;gap:10px">${revBox(k,true)}${revBox(k,false)}</div></div>`;
  $('#main').innerHTML=`
  <div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
