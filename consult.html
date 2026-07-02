@@ -505,6 +505,8 @@ function custReferrerNames(c){ return custReferrers(c).map(id=>{const s=getShare
 function custShareParty(c){ const set=[]; custSharers(c).concat(custReferrers(c)).forEach(id=>{ if(id&&set.indexOf(id)<0)set.push(id); }); return set; }
 /* 사업자/상호명 — 다중 지원. c.bizNames 배열 우선, 없으면 단일 c.bizName 폴백 */
 function custBizNames(c){ if(!c) return []; if(Array.isArray(c.bizNames)) return c.bizNames.filter(Boolean); return c.bizName?[c.bizName]:[]; }
+/* 유형(개인/법인 등) — 다중 지원. c.types 배열 우선, 없으면 c.type 문자열(·구분) 폴백 */
+function custTypes(c){ if(!c) return []; if(Array.isArray(c.types)) return c.types.filter(Boolean); return c.type?(''+c.type).split('·').filter(Boolean):[]; }
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1400);}
 
 /* ===== 수수료·계약 모델 (보험/컨설팅/세무 각 예정·완료 + 금액 → 자동 합산) ===== */
@@ -735,6 +737,21 @@ function iBizNames(box,id){
     toast(names.length?('사업자 '+names.length+'건 저장 ✓'):'저장됨');
   };
 }
+/* 유형 다중 선택 (개인/법인 등 여러 개 체크) */
+function iTypes(box,id){
+  if(box.querySelector('.typepick')) return;
+  const cur=custTypes(getCust(id)); const OPTS=['개인','법인'];
+  const rows=OPTS.map(o=>`<label style="display:inline-flex;align-items:center;gap:6px;padding:6px 12px;margin:0 6px 5px 0;background:#f8f9ff;border:1px solid #e4e7f2;border-radius:8px;font-size:13px;cursor:pointer"><input type="checkbox" value="${o}" ${cur.includes(o)?'checked':''} style="width:15px;height:15px;accent-color:#6366f1"> ${o}</label>`).join('');
+  box.innerHTML=`<div class="typepick" onclick="event.stopPropagation()" style="background:#fff;border:1.5px solid #c7cbe8;border-radius:10px;padding:9px 11px;box-shadow:0 6px 18px rgba(0,0,0,.1)">
+    <div style="font-size:11px;color:#94a3b8;font-weight:700;margin-bottom:6px">개인·법인 둘 다면 모두 체크 ✓</div>
+    <div>${rows}</div>
+    <div style="text-align:right;margin-top:4px"><button type="button" class="btn b typesave" style="padding:7px 16px">저장</button></div></div>`;
+  box.querySelector('.typesave').onclick=()=>{
+    const ts=[].slice.call(box.querySelectorAll('.typepick input[type=checkbox]:checked')).map(x=>x.value);
+    setCust(id,{types:ts, type:ts.join('·')});
+    toast(ts.length?('유형 '+ts.join('·')+' 저장 ✓'):'유형 없음 저장');
+  };
+}
 
 /* ===== 서류함 (D:\컨설팅_서류 로컬 파일서버 연동) ===== */
 const FILESRV='http://127.0.0.1:8799';
@@ -930,7 +947,8 @@ function newMode(mode){
       <button type="button" onclick="nBizAdd()" style="margin:4px 0 2px;border:1px dashed #c7cbe8;background:#f8f9ff;border-radius:8px;padding:7px 12px;cursor:pointer;color:#6366f1;font-weight:700;font-size:12.5px">＋ 사업자 추가</button>
       <div class="mrow"><div><label>연락처</label><input id="nPh" placeholder="010-0000-0000"></div>
       <div><label>최초 접수일</label><input id="nRecv" type="date" value="${today()}"></div></div>
-      <div class="mrow"><div><label>유형</label><select id="nType"><option>개인</option><option>법인</option></select></div>
+      <div class="mrow"><div><label>유형 <span style="color:#94a3b8;font-weight:500;font-size:11px">· 여러 개 가능</span></label>
+      <div id="nTypePick" style="display:flex;gap:8px;padding:6px 0 2px"><label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" class="ntype" value="개인" checked style="width:15px;height:15px;accent-color:#6366f1"> 개인</label><label style="display:inline-flex;align-items:center;gap:5px;font-size:13px;cursor:pointer"><input type="checkbox" class="ntype" value="법인" style="width:15px;height:15px;accent-color:#6366f1"> 법인</label></div></div>
       <div><label>신청 금액</label><input id="nFund" placeholder="5~10억"></div></div>
       <label>업종·지역</label><input id="nBiz" placeholder="제조업·서울">
       <label>담당 팀장(쉐어) <span style="color:#94a3b8;font-weight:500;font-size:11px">· 여러 명 체크</span></label><div id="nShrPick"></div>
@@ -1042,8 +1060,9 @@ function addNew(){
   const bizNames=[].slice.call(document.querySelectorAll('#nBizRows .nbiz')).map(x=>x.value.trim()).filter(Boolean);
   ['shr','ref'].forEach(k=>{ const inp=document.getElementById('np_'+k+'_new'); if(inp&&inp.value.trim()) npAdd(k); });   // 추가 안 누르고 이름만 남긴 경우 반영
   const sharers=npChecked('shr'); const referrers=npChecked('ref');
+  const types=[].slice.call(document.querySelectorAll('#nTypePick .ntype:checked')).map(x=>x.value);
   const id='c'+Date.now();
-  setCust(id,{nm,bizNames,bizName:bizNames[0]||'',phone:g('nPh').value.trim(),type:g('nType').value,biz:g('nBiz').value.trim()||'-',fund:g('nFund').value.trim()||'-',sharers,sharer:sharers[0]||'',referrers,referrer:referrers[0]||'',memo:g('nMemo').value.trim(),received:g('nRecv').value||today(),docStatus:'접수전',stage:'연락전',ins:'',insStatus:'대기',contacted:false,created:Date.now()});
+  setCust(id,{nm,bizNames,bizName:bizNames[0]||'',phone:g('nPh').value.trim(),types,type:types.join('·')||'개인',biz:g('nBiz').value.trim()||'-',fund:g('nFund').value.trim()||'-',sharers,sharer:sharers[0]||'',referrers,referrer:referrers[0]||'',memo:g('nMemo').value.trim(),received:g('nRecv').value||today(),docStatus:'접수전',stage:'연락전',ins:'',insStatus:'대기',contacted:false,created:Date.now()});
   closeNew(); go('customer',id);
 }
 
@@ -1338,6 +1357,7 @@ function renderCustomer(id){
      <div class="fld"><label>진행 단계</label><div class="ev" onclick="iStage(this,'${id}')">${esc(c.stage)} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
      <div class="fld"><label>고객 이름</label><div class="ev" onclick="iText(this,'${id}','nm')">${esc(c.nm)||'(입력)'}</div></div>
      <div class="fld"><label>사업자 / 상호명 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 여러 개 가능</span></label><div class="ev" onclick="iBizNames(this,'${id}')">${(()=>{const bs=custBizNames(c); return bs.length?bs.map(n=>`<span style="display:inline-block;background:#f1f5f9;color:#334155;border-radius:7px;padding:2px 8px;margin:1px 3px 1px 0;font-weight:700;font-size:12.5px">${esc(n)}</span>`).join(''):'(입력)';})()} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
+     <div class="fld"><label>유형 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 개인/법인 복수 가능</span></label><div class="ev" onclick="iTypes(this,'${id}')">${(()=>{const ts=custTypes(c); return ts.length?ts.map(n=>`<span style="display:inline-block;background:#ecfeff;color:#0e7490;border-radius:7px;padding:2px 8px;margin:1px 3px 1px 0;font-weight:700;font-size:12.5px">${esc(n)}</span>`).join(''):'(선택)';})()} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
      <div class="mrow" style="display:flex;gap:10px"><div class="fld" style="flex:1"><label>최초 접수일</label><div class="ev" onclick="iText(this,'${id}','received')">${esc(c.received)||'(예: 2026-06-30)'}</div></div>
        <div class="fld" style="flex:1"><label>서류 접수일 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 서류완료 시 자동</span></label><div class="ev" onclick="iText(this,'${id}','docDate')">${esc(c.docDate)||'(자동 기록)'}</div></div></div>
      <div class="fld"><label>신청 금액</label><div class="ev" onclick="iText(this,'${id}','fund')">${esc(c.fund)||'(입력)'}</div></div>
