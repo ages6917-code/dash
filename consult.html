@@ -498,6 +498,13 @@ function getSharer(id){ const s=(DATA.sharers||{})[id]; return s?{id,...s}:null;
 /* 고객의 담당 팀장(쉐어) — 다중 지원. c.sharers 배열 우선, 없으면 단일 c.sharer 폴백 */
 function custSharers(c){ if(!c) return []; if(Array.isArray(c.sharers)) return c.sharers.filter(Boolean); return c.sharer?[c.sharer]:[]; }
 function custSharerNames(c){ return custSharers(c).map(id=>{const s=getSharer(id);return s?s.name:'';}).filter(Boolean); }
+/* 소개자(referrer) — 다중 지원. 소개자도 쉐어에 참여함 */
+function custReferrers(c){ if(!c) return []; if(Array.isArray(c.referrers)) return c.referrers.filter(Boolean); return c.referrer?[c.referrer]:[]; }
+function custReferrerNames(c){ return custReferrers(c).map(id=>{const s=getSharer(id);return s?s.name:'';}).filter(Boolean); }
+/* 담당 팀장 + 소개자 = 쉐어 참여 전원(중복 제거) */
+function custShareParty(c){ const set=[]; custSharers(c).concat(custReferrers(c)).forEach(id=>{ if(id&&set.indexOf(id)<0)set.push(id); }); return set; }
+/* 사업자/상호명 — 다중 지원. c.bizNames 배열 우선, 없으면 단일 c.bizName 폴백 */
+function custBizNames(c){ if(!c) return []; if(Array.isArray(c.bizNames)) return c.bizNames.filter(Boolean); return c.bizName?[c.bizName]:[]; }
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1400);}
 
 /* ===== 수수료·계약 모델 (보험/컨설팅/세무 각 예정·완료 + 금액 → 자동 합산) ===== */
@@ -689,6 +696,45 @@ function iSharer(box,id){
   const ni=box.querySelector('.shrnew');
   ni.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();save();} };
 }
+/* 소개자 다중 선택 (담당 팀장과 동일 UI, 별도 카테고리 · 소개자도 쉐어 참여) */
+function iReferrer(box,id){
+  if(box.querySelector('.refpick')) return;
+  const cur=custReferrers(getCust(id));
+  const rows=sharerArr().map(s=>`<label style="display:flex;align-items:center;gap:7px;padding:6px 4px;font-size:13px;cursor:pointer;border-bottom:1px solid #eef1f6"><input type="checkbox" value="${esc(s.id)}" ${cur.includes(s.id)?'checked':''} style="width:16px;height:16px;accent-color:#f59e0b"> ${esc(s.name)}</label>`).join('');
+  box.innerHTML=`<div class="refpick" style="background:#fff;border:1.5px solid #f0d8a8;border-radius:10px;padding:8px 10px;box-shadow:0 6px 18px rgba(0,0,0,.1)" onclick="event.stopPropagation()">
+    <div style="font-size:11px;color:#b45309;font-weight:700;margin-bottom:4px">소개자 모두 체크 ✓ (소개자도 쉐어 참여)</div>
+    ${rows||'<div style="color:#94a3b8;font-size:12px;padding:4px">등록된 사람이 없어요</div>'}
+    <div style="display:flex;gap:6px;margin-top:8px"><input class="refnew" placeholder="＋ 새 소개자 이름" style="flex:1;padding:7px 9px;border:1px solid #d7dbe6;border-radius:8px;font-size:12.5px">
+    <button type="button" class="btn b refsave" style="padding:7px 14px">저장</button></div></div>`;
+  const save=()=>{
+    const ids=[].slice.call(box.querySelectorAll('.refpick input[type=checkbox]:checked')).map(x=>x.value);
+    const nm=box.querySelector('.refnew').value.trim();
+    if(nm){ const sid=addSharer(nm,'소개자'); ids.push(sid); }
+    setCust(id,{referrers:ids, referrer:ids[0]||''});
+    toast(ids.length?('소개자 '+ids.length+'명 저장 ✓'):'소개자 없음 저장');
+  };
+  box.querySelector('.refsave').onclick=save;
+  const ni=box.querySelector('.refnew');
+  ni.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();save();} };
+}
+/* 사업자/상호명 다중 편집 (여러 개 입력·삭제) */
+function iBizNames(box,id){
+  if(box.querySelector('.bizpick')) return;
+  const cur=custBizNames(getCust(id)); const list=cur.length?cur:[''];
+  const rowHtml=v=>`<div class="bizrow" style="display:flex;gap:6px;margin-bottom:5px"><input class="bizinp" value="${esc(v)}" placeholder="예: ㈜한국상사" style="flex:1;padding:7px 9px;border:1px solid #d7dbe6;border-radius:8px;font-size:12.5px"><button type="button" class="bizdel" style="border:none;background:#f1f5f9;border-radius:8px;padding:0 11px;cursor:pointer;color:#94a3b8;font-weight:700">✕</button></div>`;
+  box.innerHTML=`<div class="bizpick" onclick="event.stopPropagation()" style="background:#fff;border:1.5px solid #c7cbe8;border-radius:10px;padding:8px 10px;box-shadow:0 6px 18px rgba(0,0,0,.1)">
+    <div style="font-size:11px;color:#94a3b8;font-weight:700;margin-bottom:5px">사업자 여러 개면 모두 입력 ✓</div>
+    <div class="bizrows">${list.map(rowHtml).join('')}</div>
+    <div style="display:flex;gap:6px;margin-top:4px"><button type="button" class="bizadd" style="flex:1;border:1px dashed #c7cbe8;background:#f8f9ff;border-radius:8px;padding:7px;cursor:pointer;color:#6366f1;font-weight:700;font-size:12.5px">＋ 사업자 추가</button><button type="button" class="btn b bizsave" style="padding:7px 14px">저장</button></div></div>`;
+  const rowsBox=box.querySelector('.bizrows');
+  box.querySelector('.bizadd').onclick=()=>{ rowsBox.insertAdjacentHTML('beforeend', rowHtml('')); };
+  rowsBox.onclick=e=>{ const b=e.target.closest('.bizdel'); if(b) b.parentElement.remove(); };
+  box.querySelector('.bizsave').onclick=()=>{
+    const names=[].slice.call(box.querySelectorAll('.bizinp')).map(x=>x.value.trim()).filter(Boolean);
+    setCust(id,{bizNames:names, bizName:names[0]||''});
+    toast(names.length?('사업자 '+names.length+'건 저장 ✓'):'저장됨');
+  };
+}
 
 /* ===== 서류함 (D:\컨설팅_서류 로컬 파일서버 연동) ===== */
 const FILESRV='http://127.0.0.1:8799';
@@ -879,15 +925,19 @@ function newMode(mode){
   const b=document.getElementById('newBody');
   if(mode==='m'){
     b.innerHTML=`<label>이름 (대표/담당자)</label><input id="nNm" placeholder="예: 홍길동">
-      <label>사업자 / 상호명 (선택)</label><input id="nBizName" placeholder="예: ㈜한국상사">
+      <label>사업자 / 상호명 <span style="color:#94a3b8;font-weight:500;font-size:11px">· 여러 개 가능</span></label>
+      <div id="nBizRows"><input class="nbiz" placeholder="예: ㈜한국상사"></div>
+      <button type="button" onclick="nBizAdd()" style="margin:4px 0 2px;border:1px dashed #c7cbe8;background:#f8f9ff;border-radius:8px;padding:7px 12px;cursor:pointer;color:#6366f1;font-weight:700;font-size:12.5px">＋ 사업자 추가</button>
       <div class="mrow"><div><label>연락처</label><input id="nPh" placeholder="010-0000-0000"></div>
       <div><label>최초 접수일</label><input id="nRecv" type="date" value="${today()}"></div></div>
       <div class="mrow"><div><label>유형</label><select id="nType"><option>개인</option><option>법인</option></select></div>
       <div><label>신청 금액</label><input id="nFund" placeholder="5~10억"></div></div>
       <label>업종·지역</label><input id="nBiz" placeholder="제조업·서울">
-      <label>담당 팀장(쉐어)</label><select id="nShr" onchange="if(this.value==='__new__')newSharerField()">${shrOptions()}</select><div id="nShrNew"></div>
-      <label>메모</label><textarea id="nMemo" rows="3" placeholder="첫 통화 전 / 서류 요청 등 (여러 줄 가능)"></textarea>
+      <label>담당 팀장(쉐어) <span style="color:#94a3b8;font-weight:500;font-size:11px">· 여러 명 체크</span></label><div id="nShrPick"></div>
+      <label style="margin-top:8px">소개자(쉐어) <span style="color:#94a3b8;font-weight:500;font-size:11px">· 여러 명 · 소개자도 쉐어 참여</span></label><div id="nRefPick"></div>
+      <label style="margin-top:8px">메모</label><textarea id="nMemo" rows="3" placeholder="첫 통화 전 / 서류 요청 등 (여러 줄 가능)"></textarea>
       <div class="mact"><button class="btn g" onclick="closeNew()">취소</button><button class="btn b" onclick="addNew()">추가</button></div>`;
+    npRender('shr'); npRender('ref');
   } else {
     REQFILES=[]; REQAUDIO=[];
     b.innerHTML=`<label>고객명 / 업체</label><input id="reqNm" placeholder="예: ㈜한국상사 (모르면 비워도 됨)">
@@ -917,6 +967,30 @@ function confirmNewSharer(){
   sel.insertBefore(o, sel.querySelector('option[value="__new__"]')); sel.value=sid;
   document.getElementById('nShrNew').innerHTML=''; toast('팀장 추가됨 ✓');
 }
+/* ===== 신규 모달: 담당 팀장 / 소개자 다중 선택 픽커 ===== */
+function npBox(kind){ return document.getElementById(kind==='ref'?'nRefPick':'nShrPick'); }
+function npChecked(kind){ const box=npBox(kind); return box?[].slice.call(box.querySelectorAll('input[type=checkbox]:checked')).map(x=>x.value):[]; }
+function npRender(kind){
+  const box=npBox(kind); if(!box) return;
+  const checked=npChecked(kind);
+  const label=kind==='ref'?'소개자':'팀장'; const accent=kind==='ref'?'#f59e0b':'#6366f1';
+  const rows=sharerArr().map(s=>`<label style="display:inline-flex;align-items:center;gap:5px;padding:5px 9px;margin:0 5px 5px 0;background:#f8f9ff;border:1px solid #e4e7f2;border-radius:8px;font-size:12.5px;cursor:pointer"><input type="checkbox" value="${esc(s.id)}" ${checked.includes(s.id)?'checked':''} style="width:15px;height:15px;accent-color:${accent}"> ${esc(s.name)}</label>`).join('');
+  box.innerHTML=`<div style="margin:2px 0 5px">${rows||'<span style="color:#94a3b8;font-size:12px">등록된 사람이 없어요 — 아래에 이름 추가</span>'}</div>
+    <div style="display:flex;gap:6px"><input id="np_${kind}_new" placeholder="＋ 새 ${label} 이름" style="flex:1"><button type="button" class="btn g" style="padding:0 14px" onclick="npAdd('${kind}')">추가</button></div>`;
+}
+function npAdd(kind){
+  const inp=document.getElementById('np_'+kind+'_new'); const nm=(inp&&inp.value.trim())||'';
+  if(!nm){ toast('이름 입력'); return; }
+  addSharer(nm, kind==='ref'?'소개자':undefined);
+  npRender(kind);
+  const box=npBox(kind); const cbs=box.querySelectorAll('input[type=checkbox]'); if(cbs.length) cbs[cbs.length-1].checked=true;   // 방금 추가분 자동 체크
+  toast((kind==='ref'?'소개자':'팀장')+' 추가됨 ✓');
+}
+/* 신규 모달: 사업자 여러 개 입력 */
+function nBizAdd(){ const box=document.getElementById('nBizRows'); if(!box) return;
+  const d=document.createElement('div'); d.style.cssText='display:flex;gap:6px;margin-bottom:6px';
+  d.innerHTML=`<input class="nbiz" placeholder="예: ㈜한국상사" style="flex:1"><button type="button" class="btn g" style="padding:0 12px" onclick="this.parentElement.remove()">✕</button>`;
+  box.appendChild(d); }
 let REQFILES=[]; let REQAUDIO=[];
 function reqAddFiles(fl){ for(const f of fl){ REQFILES.push(f); } reqRenderList(); }   // 실제 File 객체 보관(업로드용)
 function reqDrop(e){ e.preventDefault(); e.currentTarget.classList.remove('drag'); if(e.dataTransfer&&e.dataTransfer.files) reqAddFiles(e.dataTransfer.files); }
@@ -965,8 +1039,11 @@ function closeNew(){ const m=document.getElementById('newModal'); if(m)m.remove(
 function addNew(){
   const g=i=>document.getElementById(i);
   const nm=g('nNm').value.trim(); if(!nm){ toast('이름/업체를 입력하세요'); return; }
+  const bizNames=[].slice.call(document.querySelectorAll('#nBizRows .nbiz')).map(x=>x.value.trim()).filter(Boolean);
+  ['shr','ref'].forEach(k=>{ const inp=document.getElementById('np_'+k+'_new'); if(inp&&inp.value.trim()) npAdd(k); });   // 추가 안 누르고 이름만 남긴 경우 반영
+  const sharers=npChecked('shr'); const referrers=npChecked('ref');
   const id='c'+Date.now();
-  setCust(id,{nm,bizName:g('nBizName').value.trim(),phone:g('nPh').value.trim(),type:g('nType').value,biz:g('nBiz').value.trim()||'-',fund:g('nFund').value.trim()||'-',sharer:g('nShr').value==='__new__'?'':g('nShr').value,memo:g('nMemo').value.trim(),received:g('nRecv').value||today(),docStatus:'접수전',stage:'연락전',ins:'',insStatus:'대기',contacted:false,created:Date.now()});
+  setCust(id,{nm,bizNames,bizName:bizNames[0]||'',phone:g('nPh').value.trim(),type:g('nType').value,biz:g('nBiz').value.trim()||'-',fund:g('nFund').value.trim()||'-',sharers,sharer:sharers[0]||'',referrers,referrer:referrers[0]||'',memo:g('nMemo').value.trim(),received:g('nRecv').value||today(),docStatus:'접수전',stage:'연락전',ins:'',insStatus:'대기',contacted:false,created:Date.now()});
   closeNew(); go('customer',id);
 }
 
@@ -1190,7 +1267,7 @@ function renderDash(){
 function renderSharers(){
  buildNav('share');
  const cards=sharerArr().map(s=>{
-   const deals=custArr().filter(c=>custSharers(c).includes(s.id)||feeShr(c,'insurance')===s.id||feeShr(c,'consulting')===s.id||feeShr(c,'tax')===s.id);
+   const deals=custArr().filter(c=>custShareParty(c).includes(s.id)||feeShr(c,'insurance')===s.id||feeShr(c,'consulting')===s.id||feeShr(c,'tax')===s.id);
    return `<div class="shc" style="border-top-color:${s.color}" onclick="go('sharer','${s.id}')">
      <div class="hh"><div class="av" style="background:${s.color}">${esc(s.name[0])}</div><div><b>${esc(s.name)}</b><br><span>${esc(s.org)}</span></div></div>
      <div class="stat"><div><b style="color:${s.color}">${deals.length}</b><span>관련 진행 건</span></div>
@@ -1208,7 +1285,7 @@ function renderSharerDetail(id){
  buildNav('share');
  const s=getSharer(id); if(!s){ $('#main').innerHTML='<div class="panel">없는 팀장입니다.</div>'; return; }
  const all=custArr();
- const deals=all.filter(c=>custSharers(c).includes(id) || feeShr(c,'insurance')===id || feeShr(c,'consulting')===id || feeShr(c,'tax')===id);
+ const deals=all.filter(c=>custShareParty(c).includes(id) || feeShr(c,'insurance')===id || feeShr(c,'consulting')===id || feeShr(c,'tax')===id);
  const insDeals=all.filter(c=>feeShr(c,'insurance')===id);
  const taxDeals=all.filter(c=>feeShr(c,'tax')===id);
  const insDone=insDeals.filter(d=>fee(d,'insurance').status==='완료').length;
@@ -1260,11 +1337,12 @@ function renderCustomer(id){
      <div class="ph"><b>📋 진행 정보</b><span class="sub">값을 클릭하면 수정</span></div>
      <div class="fld"><label>진행 단계</label><div class="ev" onclick="iStage(this,'${id}')">${esc(c.stage)} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
      <div class="fld"><label>고객 이름</label><div class="ev" onclick="iText(this,'${id}','nm')">${esc(c.nm)||'(입력)'}</div></div>
-     <div class="fld"><label>사업자 / 상호명</label><div class="ev" onclick="iText(this,'${id}','bizName')">${esc(c.bizName)||'(입력)'}</div></div>
+     <div class="fld"><label>사업자 / 상호명 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 여러 개 가능</span></label><div class="ev" onclick="iBizNames(this,'${id}')">${(()=>{const bs=custBizNames(c); return bs.length?bs.map(n=>`<span style="display:inline-block;background:#f1f5f9;color:#334155;border-radius:7px;padding:2px 8px;margin:1px 3px 1px 0;font-weight:700;font-size:12.5px">${esc(n)}</span>`).join(''):'(입력)';})()} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
      <div class="mrow" style="display:flex;gap:10px"><div class="fld" style="flex:1"><label>최초 접수일</label><div class="ev" onclick="iText(this,'${id}','received')">${esc(c.received)||'(예: 2026-06-30)'}</div></div>
        <div class="fld" style="flex:1"><label>서류 접수일 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 서류완료 시 자동</span></label><div class="ev" onclick="iText(this,'${id}','docDate')">${esc(c.docDate)||'(자동 기록)'}</div></div></div>
      <div class="fld"><label>신청 금액</label><div class="ev" onclick="iText(this,'${id}','fund')">${esc(c.fund)||'(입력)'}</div></div>
      <div class="fld"><label>담당 팀장(쉐어) <span style="color:#94a3b8;font-weight:500;font-size:10px">· 여러 명 체크 가능</span></label><div class="ev" onclick="iSharer(this,'${id}')">${(()=>{const nms=custSharerNames(c); return nms.length?nms.map(n=>`<span style="display:inline-block;background:#eef2ff;color:#4338ca;border-radius:7px;padding:2px 8px;margin:1px 3px 1px 0;font-weight:700;font-size:12.5px">${esc(n)}</span>`).join(''):'미배정';})()} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
+     <div class="fld"><label>소개자 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 여러 명 · 쉐어 참여</span></label><div class="ev" onclick="iReferrer(this,'${id}')">${(()=>{const nms=custReferrerNames(c); return nms.length?nms.map(n=>`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:7px;padding:2px 8px;margin:1px 3px 1px 0;font-weight:700;font-size:12.5px">${esc(n)}</span>`).join(''):'없음';})()} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
      <div class="fld"><label>연락처</label><div class="ev" onclick="iText(this,'${id}','phone')">${esc(c.phone)||'(입력)'}</div></div>
      <div class="fld"><label>메모</label><div class="notebox sm ${(c.memo&&c.memo.trim())?'':'empty'}" onclick="iArea(this,'${id}','memo')">${(c.memo&&c.memo.trim())?esc(c.memo):'클릭해서 메모 입력 (여러 줄 가능)'}</div></div>
    </div>
