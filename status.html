@@ -450,7 +450,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 19:00",
+    "asof": "07-03 19:01",
     "ago": "1시간 전",
     "ok": true,
     "date": "2026-07-03 17:38",
@@ -518,7 +518,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 19:00",
+    "asof": "07-03 19:01",
     "ago": "13시간 전",
     "ok": true,
     "date": "2026-07-03 05:20",
@@ -591,7 +591,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 19:00",
+    "asof": "07-03 19:01",
     "ago": "4시간 전",
     "ok": true,
     "date": "2026-07-03 14:03",
@@ -678,8 +678,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 19:00",
-    "ago": "38분 전",
+    "asof": "07-03 19:01",
+    "ago": "40분 전",
     "ok": true,
     "date": "2026-07-03 18:21",
     "stale_days": 0,
@@ -727,7 +727,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 19:00",
+    "asof": "07-03 19:01",
     "ago": "4일 전",
     "ok": false,
     "date": "2026-06-29 15:04",
@@ -766,7 +766,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 19:00",
+    "asof": "07-03 19:01",
     "ago": "10시간 전",
     "ok": true,
     "date": "2026-07-03 08:57",
@@ -806,7 +806,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 19:00",
+    "asof": "07-03 19:01",
     "ago": "6일 전",
     "ok": false,
     "date": "2026-06-27 11:08",
@@ -843,10 +843,10 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 19:00",
-    "ago": "59분 전",
+    "asof": "07-03 19:01",
+    "ago": "방금",
     "ok": true,
-    "date": "2026-07-03 18:00",
+    "date": "2026-07-03 19:00",
     "stale_days": 0,
     "state": "가동"
    }
@@ -880,10 +880,10 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 19:00",
-    "ago": "4시간 전",
+    "asof": "07-03 19:01",
+    "ago": "방금",
     "ok": true,
-    "date": "2026-07-03 14:09",
+    "date": "2026-07-03 19:01",
     "stale_days": 0,
     "state": "가동",
     "headline": "오늘 발굴 39건(검수대기)"
@@ -921,66 +921,75 @@ body{background:#eef0f7;color:var(--ink)}
   },
   {
    "no": 14,
-   "tm": "ecom",
+   "tm": "temu",
    "m": "노트북",
-   "n": "위탁 거래처수집",
+   "n": "테무운영",
    "st": "on",
    "bg": "🟢 가동중",
-   "ago": "어젯밤",
-   "identity": "위탁 거래처 수집 업무",
+   "ago": "신규 편성",
+   "identity": "테무 위탁판매 일일 운영 — 주문처리·송장처리·재고감시 (매일 아침·저녁 2회). 위탁 거래처 야간 수집도 병행",
    "ch": [
-    "네이버 카페 14곳",
-    "검수게이트"
+    "주문처리",
+    "송장처리",
+    "재고감시",
+    "테무 셀러센터",
+    "거래처 수집"
    ],
    "today": [
     {
-     "t": "19:00",
-     "task": "야간 14개 카페 수집"
+     "t": "09:00",
+     "task": "신규 주문 수집→발주서 생성·발송(카톡/메일)"
     },
     {
-     "t": "23:00",
-     "task": "검수게이트 통과분 적재"
+     "t": "18:00",
+     "task": "거래처 회신 파싱→송장 검증→테무 일괄 업로드(기한 감시)"
     }
    ],
    "res": [
-    "야간 신규 <b>18</b>건"
+    "📚 테무 운영 SOP 학습 착수",
+    "위탁 거래처 야간 수집 병행"
    ],
-   "goal": "테무 위탁 거래처 풀 확장",
+   "goal": "주문→발주→송장 무결 운영 (페널티 0)",
    "strat": [
-    "야간 무인 수집+검수게이트"
+    "송장 기한(배송일 23:59) 최우선 감시",
+    "거래처 ACK 2h 무응답 시 사장 알림",
+    "'경쟁력 없음' 라벨 감지→즉시 알림"
    ],
    "cad": "24h"
   },
   {
    "no": 15,
-   "tm": "etc",
+   "tm": "temu",
    "m": "노트북",
-   "n": "컨설팅 스케줄 관리",
+   "n": "테무관리",
    "st": "on",
    "bg": "🟢 가동중",
-   "ago": "정상",
-   "identity": "컨설팅 대시보드 · 스케줄 관리",
+   "ago": "신규 편성",
+   "identity": "테무 상품 심사·등록·분석·헬스체크 — 거래처 인입 심사(GO/NO-GO)·대량등록·시장분석 (주 2회 + 인입 시)",
    "ch": [
-    "구글 캘린더 연동"
-   ],
-   "links": [
-    {
-     "l": "구글 캘린더",
-     "u": "https://calendar.google.com/"
-    }
+    "심사(GO/NO-GO)",
+    "대량등록",
+    "시장분석",
+    "헬스체크"
    ],
    "today": [
     {
-     "t": "상시",
-     "task": "컨설팅 일정 동기화"
+     "t": "인입시",
+     "task": "거래처 심사→금지품 필터→마진계산→GO/NO-GO 리포트"
+    },
+    {
+     "t": "주2회",
+     "task": "시장 스냅샷·판매속도→대시보드 갱신·헬스체크"
     }
    ],
    "res": [
-    "일정 동기화 정상"
+    "📚 테무 관리 SOP 학습 착수"
    ],
-   "goal": "컨설팅 일정·스케줄 관리",
+   "goal": "GO상품만 등록 + 시장·리스크 관리",
    "strat": [
-    "구글 캘린더 연동 운영"
+    "금지품목 자동 필터(주류·효능·미등록 화장품)",
+    "테무 경쟁조사+마진계산 후 GO/NO-GO",
+    "대량등록 엑셀(GoodsLevelMode 파싱)"
    ],
    "cad": "24h"
   }
@@ -998,9 +1007,13 @@ body{background:#eef0f7;color:var(--ink)}
    "goal": "전국 010 DB 풀 최대 확보",
    "strat": "네이버·카카오·구글 크로스체크 + 예비 병렬 가동"
   },
+  "temu": {
+   "goal": "테무 위탁판매 운영·관리",
+   "strat": "운영(주문·송장·재고 감시) + 관리(심사·등록·분석) 2역 분담 · 페널티 0·송장기한 준수"
+  },
   "ecom": {
-   "goal": "테무 위탁 거래처·시장 장악",
-   "strat": "야간 무인수집 + 검수게이트 + 시장조사 대행"
+   "goal": "테무 시장조사 대행 (광고·경쟁 분석)",
+   "strat": "쿠팡·네이버·테무·알리 시장조사로 테무팀 지원"
   },
   "etc": {
    "goal": "운영·등록·일정 안정화",
@@ -1229,7 +1242,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-07-03 19:00"
+ "_autosync": "2026-07-03 19:01"
 };window.__BACKEND__=false;</script>
 </head><body>
 <div id="pwgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif">
@@ -1260,7 +1273,7 @@ body{background:#eef0f7;color:var(--ink)}
 var D=window.__D__||{employees:[],interv:[],review:[],pending:[],billing:[],kpis:[],brief:[],billtotal:''};
 var BK=!!window.__BACKEND__;
 var E=D.employees,INTERV=D.interv,REVIEW=D.review,PENDING=D.pending,BILLING=D.billing,KPIS=D.kpis,BRIEF=D.brief,BILLTOTAL=D.billtotal;
-var TEAMS=[{k:'overseas',e:'🌍',l:'해외팀'},{k:'ai',e:'🤖',l:'AI수익화팀'},{k:'collect',e:'📥',l:'수집팀'},{k:'ecom',e:'🛒',l:'이커머스팀'},{k:'etc',e:'🗂',l:'기타'}];
+var TEAMS=[{k:'overseas',e:'🌍',l:'해외팀'},{k:'ai',e:'🤖',l:'AI수익화팀'},{k:'collect',e:'📥',l:'수집팀'},{k:'temu',e:'📦',l:'테무팀'},{k:'ecom',e:'🛒',l:'이커머스팀'},{k:'etc',e:'🗂',l:'기타'}];
 var cur='all',qcount=0;
 function api(path,method,body){return fetch(path,{method:method||'GET',headers:{'Content-Type':'application/json'},body:body?JSON.stringify(body):undefined}).then(function(r){return r.json()})}
 function emp(no){return E.filter(function(e){return e.no==no})[0]}
