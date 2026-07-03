@@ -140,6 +140,26 @@ body{background:#eef0f7;color:var(--ink)}
 .iv6 .note6{font-size:12px;color:#b9bdd9;background:#15192b;border-left:3px solid #4f46e5;border-radius:6px;padding:9px 12px;line-height:1.55}
 .iv6 .src6{font-size:11px;color:#8e93b5;margin-top:9px}.iv6 .src6 a{color:#22d3ee;text-decoration:none}
 @media(max-width:780px){.iv6 .dgrid{grid-template-columns:1fr}.iv6 .row{flex-wrap:wrap}.iv6 .rev{text-align:left}}
+/* ── 개편: 액션밴드(펄스) + 우측 패널 + 팀뷰 확장 ── */
+.act{background:#2b2352;border-radius:14px;padding:13px 17px;margin-bottom:14px;color:#fff}
+.act .ah{font-size:13.5px;font-weight:800;margin-bottom:9px;display:flex;align-items:center;gap:8px}
+.act .pulse{width:9px;height:9px;border-radius:50%;background:#f87171;animation:pu 1.3s infinite}
+@keyframes pu{0%,100%{opacity:1}50%{opacity:.25}}
+.act .chips{display:flex;gap:8px;flex-wrap:wrap}
+.act .ac{border:none;border-radius:11px;padding:8px 13px;font-size:12.5px;font-weight:800;cursor:pointer;font-family:inherit}
+.act .ac.red{background:#fee2e2;color:#dc2626;animation:pu 1.3s infinite}
+.act .ac.yel{background:#fef3c7;color:#b45309}.act .ac.blu{background:#dbeafe;color:#2563eb}.act .ac.grn{background:#dcfce7;color:#16a34a;cursor:default;animation:none}
+.ovgrid{display:grid;grid-template-columns:1fr 330px;gap:16px;align-items:start}
+.ovside .pn,.ovside .bf{margin-bottom:14px}
+.tkpis{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+.tk{background:#fff;border-radius:12px;padding:12px 18px;text-align:center;flex:1;min-width:110px}
+.tk .v{font-size:20px;font-weight:800;color:var(--p1)}.tk.warn .v{color:#dc2626}.tk .l{font-size:11px;color:var(--mut);margin-top:2px}
+.flow{background:#fff;border-radius:14px;padding:14px 17px;margin-bottom:16px;display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.flow .fn{background:#f5f3ff;border-radius:10px;padding:9px 14px;font-size:12.5px;font-weight:800;color:#3f3a5c;display:flex;gap:7px;align-items:center;cursor:pointer}
+.flow .fn .dot2{width:7px;height:7px;border-radius:50%}
+.flow .fn.bad{background:#fee2e2;color:#dc2626;animation:pu 1.3s infinite}
+.flow .ar{color:#b6b0d6;font-weight:800}
+@media(max-width:1100px){.ovgrid{grid-template-columns:1fr}}
 @media(max-width:780px){.side{position:fixed;bottom:0;top:auto;left:0;right:0;width:100%;height:auto;flex-direction:row;padding:8px;z-index:8;overflow-x:auto}.lg,.ft{display:none}.nav{display:flex;gap:6px}.nav button{width:auto;white-space:nowrap;margin:0;padding:8px 12px}.nav .ct{display:none}.main{padding-bottom:70px}.kpis{grid-template-columns:repeat(3,1fr)}.r2{grid-template-columns:1fr}.gr{grid-template-columns:1fr}.tvgr{grid-template-columns:1fr}.tgoal{grid-template-columns:1fr}.monm{grid-template-columns:repeat(2,1fr)}.msrc{grid-template-columns:1fr}}
 </style>
 <script>window.__D__={
@@ -450,8 +470,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 20:00",
-    "ago": "2시간 전",
+    "asof": "07-03 21:00",
+    "ago": "3시간 전",
     "ok": true,
     "date": "2026-07-03 17:38",
     "stale_days": 0,
@@ -518,8 +538,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 20:00",
-    "ago": "14시간 전",
+    "asof": "07-03 21:00",
+    "ago": "15시간 전",
     "ok": true,
     "date": "2026-07-03 05:20",
     "stale_days": 0,
@@ -591,8 +611,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 20:00",
-    "ago": "5시간 전",
+    "asof": "07-03 21:00",
+    "ago": "6시간 전",
     "ok": true,
     "date": "2026-07-03 14:03",
     "stale_days": 0,
@@ -678,13 +698,13 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 20:00",
-    "ago": "방금",
+    "asof": "07-03 21:00",
+    "ago": "55분 전",
     "ok": true,
-    "date": "2026-07-03 19:59",
+    "date": "2026-07-03 20:04",
     "stale_days": 0,
     "state": "가동",
-    "headline": "오늘 SNS 발행 8건"
+    "headline": "오늘 SNS 발행 12건"
    }
   },
   {
@@ -727,7 +747,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 20:00",
+    "asof": "07-03 21:00",
     "ago": "4일 전",
     "ok": false,
     "date": "2026-06-29 15:04",
@@ -766,8 +786,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 20:00",
-    "ago": "11시간 전",
+    "asof": "07-03 21:00",
+    "ago": "12시간 전",
     "ok": true,
     "date": "2026-07-03 08:57",
     "stale_days": 0,
@@ -806,7 +826,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 20:00",
+    "asof": "07-03 21:00",
     "ago": "6일 전",
     "ok": false,
     "date": "2026-06-27 11:08",
@@ -843,10 +863,10 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 20:00",
+    "asof": "07-03 21:00",
     "ago": "59분 전",
     "ok": true,
-    "date": "2026-07-03 19:00",
+    "date": "2026-07-03 20:00",
     "stale_days": 0,
     "state": "가동"
    }
@@ -880,8 +900,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-03 20:00",
-    "ago": "56분 전",
+    "asof": "07-03 21:00",
+    "ago": "1시간 전",
     "ok": true,
     "date": "2026-07-03 19:03",
     "stale_days": 0,
@@ -1242,7 +1262,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-07-03 20:00"
+ "_autosync": "2026-07-03 21:00"
 };window.__BACKEND__=false;</script>
 </head><body>
 <div id="pwgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif">
@@ -1329,17 +1349,28 @@ function goItems(){cur='items6';cl();[].forEach.call(document.querySelectorAll('
 function goItems6Back(){cur='all';[].forEach.call(document.querySelectorAll('.nav button'),function(x){x.classList.toggle('on',x.dataset.k=='all')});render();window.scrollTo(0,0)}
 function card(e){var wt='';if(e.auto){var _s=e.auto.state||(e.auto.ok?'가동':'정체');if(_s=='가동')wt='<span class="wtag ok">오늘✅</span>';else if(_s=='저조')wt='<span class="wtag" style="background:#fef9c3;color:#a16207">🟡 어제</span>';else if(_s=='무산출')wt='<span class="wtag" style="background:#f1f5f9;color:#64748b">⚪ 무산출</span>';else wt='<span class="wtag no" style="background:#fee2e2;color:#dc2626">🔴 정체'+(e.auto.stale_days?' '+e.auto.stale_days+'일':'')+'</span>';}return '<div class="cd c'+(e.cad||'24h')+'" data-no="'+e.no+'"><div class="em"><span class="dot"></span>직원'+e.no+' · '+e.n+wt+'<span class="mtag">'+e.m+'</span></div><div class="ln">'+(e.identity||'')+'</div><div class="ln"><b>목표</b> '+(e.goal||'')+'</div></div>'}
 function grid(m){var es=E.filter(function(e){return e.m===m}).sort(function(a,b){return a.no-b.no});return '<div class="gr">'+es.map(card).join('')+'</div>'}
+function probLv(e){var a=e.auto||{};var st=a.state||'';if(e.cad=='stop')return 2;if(st=='정체')return 2;if(st=='저조'||st=='무산출')return 1;return 0}
+function actBand(){var ps=E.filter(function(e){return probLv(e)>0}).sort(function(a,b){return probLv(b)-probLv(a)||((b.auto&&b.auto.stale_days)||0)-((a.auto&&a.auto.stale_days)||0)});var c='';
+ps.forEach(function(e){var a=e.auto||{};var lbl=e.cad=='stop'?'중지':(a.state||'점검');var dd=a.stale_days?(' '+a.stale_days+'일'):'';
+c+='<button class="ac '+(probLv(e)==2?'red':'yel')+'" data-no="'+e.no+'">'+(probLv(e)==2?'🔴':'🟡')+' 직원'+e.no+' '+e.n+' — '+lbl+dd+'</button>'});
+if(INTERV.length)c+='<button class="ac blu" data-go="pnl-iv">🚨 개입 대기 '+INTERV.length+'건</button>';
+if(!c)c='<span class="ac grn">✅ 전 직원 정상 가동</span>';
+return '<div class="act"><div class="ah"><span class="pulse"></span>지금 봐야 할 것</div><div class="chips">'+c+'</div></div>'}
 function overview(){
 var sendBtn=BK?'<button class="sendall" onclick="sendAll()">📤 전체 전송 ('+qcount+')</button>':'';
 var h='<div class="hd"><div><h1>👋 이영태 사장님, 좋은 아침이에요</h1><div class="s">중앙 동기화 · 방금 갱신</div></div><div class="hdr">'+sendBtn+'<div class="stt">🟢 '+E.filter(function(e){return e.cad=='24h'}).length+' · 🟡 '+E.filter(function(e){return e.cad=='demand'}).length+' · 🔴 '+E.filter(function(e){return e.cad=='stop'}).length+'</div></div></div>';
 var pcd=E.filter(function(e){return e.m=='데탑'}).length,nbk=E.filter(function(e){return e.m=='노트북'}).length;var teamN=TEAMS.filter(function(t){return E.filter(function(e){return e.tm==t.k}).length>0}).length;var auto=E.filter(function(e){return e.cad!='stop'}).length;var on24=E.filter(function(e){return e.cad=='24h'}).length;var rate=Math.round(on24/E.length*100);var todayN=0;E.forEach(function(e){todayN+=(e.today||[]).filter(function(x){return x.t!='-'&&x.t!='상시'}).length});var dn=function(p,v,l){return '<div class="kpi"><div class="kdonut" style="background:conic-gradient(var(--p1) '+p+'%,#eceaf6 0)"><b>'+v+'</b></div><div class="l">'+l+'</div></div>'};
 h+='<div class="kpis"><div class="kpi"><div class="n">'+E.length+'</div><div class="l">총 직원</div><div class="sub">데탑 '+pcd+' · 노트북 '+nbk+'</div></div><div class="kpi"><div class="n">'+teamN+'</div><div class="l">운영 팀</div></div><div class="kpi"><div class="n">'+auto+'</div><div class="l">자동화 직원</div></div>'+dn(rate,rate+'%','가동률')+dn(Math.min(Math.round(todayN/20*100),100),todayN+'건','오늘 업무량')+'</div>';
-h+='<div class="bf hero"><h3>🐱 T봇 오늘 브리핑 <span class="cc">'+BRIEF.length+'</span></h3>'+briefRows(BRIEF)+'</div>';
-h+='<div class="r2"><div class="pn pa"><h3>🚨 사람 개입 대기 <span class="cc">'+INTERV.length+'</span></h3>'+itrow(INTERV,'iv')+'</div><div class="pn pb"><h3>📋 T봇 검수 대기 <span class="cc">'+REVIEW.length+'</span></h3>'+itrow(REVIEW,'rv')+'</div></div>';
-h+='<div class="pn pc"><h3>📌 사장님 보류중인 건 <span class="cc">'+PENDING.length+'</span></h3>'+itrow(PENDING,'pd')+'</div>';
-h+='<div class="tsec">🖥️ 데스크탑 직원 <span class="ct">DESKTOP-MS75689</span></div>'+grid('데탑');
-h+='<div class="tsec">💻 노트북 직원 <span class="ct">BOOK-7HRV1V3LVH</span></div>'+grid('노트북');
-h+='<div class="bf tspace"><h3>💳 AI 사용료 · 결제일 <span style="font-weight:500;color:#9a96b5;font-size:11px">(환율 1,550원)</span></h3>'+BILLING.map(function(b){return '<div class="it" style="cursor:default"><span class="ttl"><a href="'+b.u+'" target="_blank" style="color:var(--p1);text-decoration:none;font-weight:700">'+b.n+'</a> · '+b.c+'</span><span class="w">'+b.d+'</span></div>'}).join('')+'<div style="text-align:right;font-weight:800;color:var(--p1);margin-top:9px;font-size:14px">월 총 사용료 ≈ '+BILLTOTAL+'</div></div>';
+var main='',side='';
+main+=actBand();
+main+='<div class="tsec" style="margin-top:6px">🖥️ 데스크탑 직원 <span class="ct">DESKTOP-MS75689</span></div>'+grid('데탑');
+main+='<div class="tsec">💻 노트북 직원 <span class="ct">BOOK-7HRV1V3LVH</span></div>'+grid('노트북');
+main+='<div class="bf tspace"><h3>💳 AI 사용료 · 결제일 <span style="font-weight:500;color:#9a96b5;font-size:11px">(환율 1,550원)</span></h3>'+BILLING.map(function(b){return '<div class="it" style="cursor:default"><span class="ttl"><a href="'+b.u+'" target="_blank" style="color:var(--p1);text-decoration:none;font-weight:700">'+b.n+'</a> · '+b.c+'</span><span class="w">'+b.d+'</span></div>'}).join('')+'<div style="text-align:right;font-weight:800;color:var(--p1);margin-top:9px;font-size:14px">월 총 사용료 ≈ '+BILLTOTAL+'</div></div>';
+side+='<div class="bf hero"><h3>🐱 T봇 오늘 브리핑 <span class="cc">'+BRIEF.length+'</span></h3>'+briefRows(BRIEF)+'</div>';
+side+='<div class="pn pa" id="pnl-iv"><h3>🚨 사람 개입 대기 <span class="cc">'+INTERV.length+'</span></h3>'+itrow(INTERV,'iv')+'</div>';
+side+='<div class="pn pb"><h3>📋 T봇 검수 대기 <span class="cc">'+REVIEW.length+'</span></h3>'+itrow(REVIEW,'rv')+'</div>';
+side+='<div class="pn pc"><h3>📌 사장님 보류중인 건 <span class="cc">'+PENDING.length+'</span></h3>'+itrow(PENDING,'pd')+'</div>';
+h+='<div class="ovgrid"><div>'+main+'</div><div class="ovside">'+side+'</div></div>';
 return h}
 function autoBlock(e){var a=e.auto;
 if(!a)return '<div class="fb"><div class="h">📅 마지막 업무일</div><div class="id" style="color:#9a96b5">실측 미연동 (수동 관리 직원)</div></div>';
@@ -1385,9 +1416,29 @@ return drill+'<div class="fb"><div class="h">🪪 정체성 '+editBtn+'</div><di
 +'<div class="fb"><div class="h">📊 성과</div><div class="res">'+rs+'</div></div>'
 +'<div class="fb"><div class="h">🎯 목표 · 전략</div><div class="goal"><div class="g">'+(e.goal||'')+'</div><div class="s">└ '+st+'</div></div></div>'
 +memo}
+var FLOWS={collect:[4,5],overseas:[10,0,11,12],temu:[14,15],ai:[6,7,9],ecom:[13]};
+var TKEY={overseas:['해외','사이언숯'],ai:['AI','음악','쇼츠','시장조사'],collect:['수집'],temu:['테무'],ecom:['이커머스','위탁','광고'],etc:['쇼핑몰등록','컨설팅','결제','동기화','스케줄']};
+function teamFlow(k){var fl=FLOWS[k];if(!fl)return '';
+var h='<div class="flow"><b style="font-size:12px;color:#8a83b0">업무 흐름</b>';
+fl.forEach(function(no,i){if(i)h+='<span class="ar">→</span>';
+if(no==0){h+='<span class="fn" style="background:#f0eefc;color:#5b4fd0;cursor:default">🐱 T봇 검수</span>';return}
+var e=emp(no);if(!e)return;var lv=probLv(e);var c=lv==2?'#ef4444':lv==1?'#f59e0b':'#10b981';
+h+='<span class="fn'+(lv==2?' bad':'')+'" data-no="'+no+'"><span class="dot2" style="background:'+c+'"></span>직원'+no+' '+e.n+'</span>'});
+return h+'</div>'}
+function teamBrief(k){var ks=TKEY[k]||[];var bs=BRIEF.filter(function(b){var t=(typeof b=='string')?b:b.t;return ks.some(function(w){return t.indexOf(w)>=0})});
+if(!bs.length)return '';
+return '<div class="bf hero" style="margin-bottom:16px"><h3>🐱 이 팀 오늘 브리핑 <span class="cc">'+bs.length+'</span></h3>'+briefRows(bs)+'</div>'}
 function teamView(k){var t=TEAMS.filter(function(x){return x.k==k})[0];var es=E.filter(function(e){return e.tm===k}).sort(function(a,b){return a.no-b.no});
 var tg=(D.teams&&D.teams[k])||{goal:'-',strat:'-'};
+var ok=es.filter(function(e){return probLv(e)==0}).length,bad=es.filter(function(e){return probLv(e)==2}).length;
+var todayN=0;es.forEach(function(e){todayN+=(e.today||[]).filter(function(x){return x.t!='-'}).length;if(e.auto&&e.auto.today)todayN+=e.auto.today.length});
+var iv2=INTERV.filter(function(x){return (TKEY[k]||[]).some(function(w){return x.t.indexOf(w)>=0})}).length;
+var tk='<div class="tkpis"><div class="tk"><div class="v">'+ok+'/'+es.length+'</div><div class="l">정상 가동</div></div>'
++'<div class="tk'+(bad?' warn':'')+'"><div class="v">'+bad+'</div><div class="l">문제 직원</div></div>'
++'<div class="tk"><div class="v">'+todayN+'건</div><div class="l">오늘 일정</div></div>'
++'<div class="tk'+(iv2?' warn':'')+'"><div class="v">'+iv2+'</div><div class="l">개입 대기</div></div></div>';
 return '<div class="thead"><span class="te">'+t.e+'</span><div><h2>'+t.l+' <span style="font-size:12px;opacity:.85">'+es.length+'명</span></h2></div></div>'
++tk+teamFlow(k)+teamBrief(k)
 +'<div class="tgoal"><div class="box g"><h4>🎯 팀 목표</h4><p>'+tg.goal+'</p></div><div class="box s"><h4>🧭 팀 전략</h4><p>'+tg.strat+'</p></div></div>'
 +'<div class="gr tvgr">'+es.map(card).join('')+'</div>'}
 function op(e){document.getElementById('mt').textContent='직원'+e.no+' · '+e.n;document.getElementById('mr').textContent=e.bg+' · '+((e.auto&&e.auto.ago)?e.auto.ago:e.ago);document.getElementById('mbg').textContent='목표 · '+(e.goal||'');document.getElementById('mb').innerHTML=detail(e);document.getElementById('ov').classList.add('show')}
@@ -1397,6 +1448,6 @@ function toggleEdit(){document.getElementById('ef').classList.toggle('show')}
 function saveEmp(no){var b={no:no,identity:document.getElementById('ef_id').value,ch:document.getElementById('ef_ch').value,goal:document.getElementById('ef_goal').value,strat:document.getElementById('ef_strat').value};api('/api/save','POST',b).then(function(){var e=emp(no);e.identity=b.identity;e.goal=b.goal;e.ch=b.ch.split(',').map(function(s){return s.trim()}).filter(Boolean);e.strat=b.strat.split('\n').map(function(s){return s.trim()}).filter(Boolean);op(e);render();alert('저장됐어요 ✅')})}
 function addMemo(no,name){var t=document.getElementById('memo_text').value.trim();if(!t){alert('메모를 적어주세요');return}var when=document.getElementById('memo_when').value;if(when=='예약'){when='예약 '+(document.getElementById('memo_time').value||'시간미정')}api('/api/memo','POST',{no:no,name:name,text:t,when:when}).then(function(r){qcount=r.count;alert('메모 담음 — 전송 대기 '+qcount+'건. 다 적고 위 [전체 전송] 누르세요');cl();render()})}
 function sendAll(){if(qcount==0){alert('담긴 메모가 없어요');return}if(!confirm(qcount+'건을 직원들에게 전송할까요?'))return;api('/api/sendall','POST',{}).then(function(r){alert(r.ready+'건 전송 준비 완료! T봇 전달기가 순차 전달합니다.');qcount=0;render()})}
-function render(){var v=document.getElementById('view');if(cur=='all'){v.innerHTML=overview();[].forEach.call(v.querySelectorAll('.cd'),function(c){c.onclick=function(){op(emp(+c.dataset.no))}});[].forEach.call(v.querySelectorAll('.it[data-c]'),function(it){it.onclick=function(){info(it.dataset.c,+it.dataset.i)}})}else if(cur=='mon6'){v.innerHTML=monView()}else if(cur=='items6'){v.innerHTML=itemsView();[].forEach.call(v.querySelectorAll('.iv6 .item'),function(it){it.querySelector('.row').onclick=function(){it.classList.toggle('op');var c=it.querySelector('.dchev');if(c)c.textContent=it.classList.contains('op')?'▾':'▸'}})}else{v.innerHTML=teamView(cur);[].forEach.call(v.querySelectorAll('.cd'),function(c){c.onclick=function(){op(emp(+c.dataset.no))}})}}
+function render(){var v=document.getElementById('view');if(cur=='all'){v.innerHTML=overview();[].forEach.call(v.querySelectorAll('.cd'),function(c){c.onclick=function(){op(emp(+c.dataset.no))}});[].forEach.call(v.querySelectorAll('.it[data-c]'),function(it){it.onclick=function(){info(it.dataset.c,+it.dataset.i)}});[].forEach.call(v.querySelectorAll('.act .ac'),function(b){b.onclick=function(){if(b.dataset.no)op(emp(+b.dataset.no));else if(b.dataset.go){var p=document.getElementById(b.dataset.go);if(p)p.scrollIntoView({behavior:'smooth'})}}})}else if(cur=='mon6'){v.innerHTML=monView()}else if(cur=='items6'){v.innerHTML=itemsView();[].forEach.call(v.querySelectorAll('.iv6 .item'),function(it){it.querySelector('.row').onclick=function(){it.classList.toggle('op');var c=it.querySelector('.dchev');if(c)c.textContent=it.classList.contains('op')?'▾':'▸'}})}else{v.innerHTML=teamView(cur);[].forEach.call(v.querySelectorAll('.cd'),function(c){c.onclick=function(){op(emp(+c.dataset.no))}});[].forEach.call(v.querySelectorAll('.flow .fn[data-no]'),function(f){f.onclick=function(){op(emp(+f.dataset.no))}});[].forEach.call(v.querySelectorAll('.it[data-c]'),function(it){it.onclick=function(){info(it.dataset.c,+it.dataset.i)}})}}
 if(BK){api('/api/queue').then(function(r){qcount=r.count;nb();render()}).catch(function(){nb();render()})}else{nb();render()}
 </script></body></html>
