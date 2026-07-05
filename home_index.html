@@ -117,6 +117,11 @@ a{color:inherit;text-decoration:none}
 .lk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px;font-size:12.5px;font-weight:700;cursor:pointer}.lk .d{font-size:11px;color:var(--sub);font-weight:400;margin-top:3px}
 #memo,.bnote{width:100%;min-height:120px;border:none;background:transparent;resize:vertical;font-family:inherit;font-size:13px;color:var(--txt);line-height:1.7;outline:none}
 .memoinfo{font-size:11px;color:var(--sub)}
+.shortcuts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.sc{text-align:center;cursor:pointer;width:72px}
+.sc .tile{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:16px;font-weight:800;transition:transform .12s}
+.sc:hover .tile{transform:translateY(-3px)}
+.sc p{font-size:11px;color:var(--sub2);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* 반응형 (모바일은 추후 정밀화) */
 @media(max-width:900px){
   .wrap{grid-template-columns:1fr}
@@ -233,6 +238,17 @@ const BIZ=[
     cards:[['📊 T봇 관제탑','직원 현황·보고','status.html'],['🧭 부업 발굴','아이템 발굴기','hustle.html'],['🤖 자동화 목록','워크플로우','#']]}
 ];
 const bizOf=k=>BIZ.find(b=>b.k===k)||BIZ[0];
+const SHORTCUTS=[
+  ['Gmail','M','#FCEBEB','#A32D2D','https://mail.google.com'],
+  ['네이버 메일','N','#EAF3DE','#3B6D11','https://mail.naver.com'],
+  ['구글 캘린더','31','#E6F1FB','#185FA5','https://calendar.google.com'],
+  ['T봇 관제탑','T','#EEEDFE','#534AB7','status.html'],
+  ['부업 발굴','부','#E1F5EE','#0F6E56','hustle.html'],
+  ['컨설팅','컨','#FBEAF0','#993556','consult.html'],
+  ['위탁거래처','핫','#FAECE7','#993C1D','wholesale.html']
+];
+function scGo(u){ if(/^https?:/.test(u)) window.open(u,'_blank'); else location.href=u; }
+function shortcutRow(){ return `<div class="shortcuts">${SHORTCUTS.map(s=>`<div class="sc" onclick="scGo('${s[4]}')" title="${esc(s[0])}"><div class="tile" style="background:${s[2]};color:${s[3]}">${s[1]}</div><p>${esc(s[0])}</p></div>`).join('')}</div>`; }
 const pad=n=>String(n).padStart(2,'0');
 const key=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const todayKey=()=>key(new Date());
@@ -362,7 +378,7 @@ function renderView(){
   renderSubline();
 }
 function homeView(){
-  return `<div class="grid g3">
+  return shortcutRow()+`<div class="grid g3">
     <div class="col">${tasksCard('')}${ddCard('')}</div>
     <div class="col">${calCard()}</div>
     <div class="col">
