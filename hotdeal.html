@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<title>핫딜연합 · 팀 대시보드</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+:root{--bg:#F5EEDC;--card:#FFFDF6;--line:#EDE6CE;--line2:#D8CFA8;--txt:#3E3A28;--sub:#8A8264;--sub2:#6B6448;--red:#C0392B;--green:#3B6D11;--c:#D85A30;--tc:#712B13}
+*{box-sizing:border-box;margin:0;padding:0}body{background:var(--bg);color:var(--txt);font-family:'Malgun Gothic',sans-serif;padding:20px;max-width:1240px;margin:0 auto}
+.hero{border-radius:16px;padding:18px 22px;color:#fff;margin-bottom:14px;background:linear-gradient(120deg,var(--c),var(--tc));display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px}
+.hero h1{font-size:22px;font-weight:800}.hero p{font-size:13px;opacity:.9;margin-top:3px}
+.hero .badge{background:rgba(255,255,255,.22);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;display:inline-block;margin-top:8px}
+.hero .ql a{background:rgba(255,255,255,.2);border-radius:9px;padding:8px 13px;font-size:12.5px;font-weight:700;color:#fff;text-decoration:none;margin-left:6px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.kpi{background:var(--card);border-radius:14px;padding:15px 16px;border-left:4px solid var(--c);cursor:pointer}
+.kpi .v{font-size:24px;font-weight:800}.kpi .l{font-size:11.5px;color:var(--sub);margin-top:3px}
+.card{background:var(--card);border-radius:14px;padding:15px 17px;border:1px solid rgba(0,0,0,.03);margin-bottom:14px}
+.card h2{font-size:14px;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}.card h2 .cnt{font-size:11px;color:var(--sub);font-weight:400}
+.g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.dchart{display:flex;gap:8px;align-items:flex-end;height:90px}
+.dbar{flex:1;text-align:center;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-end}
+.dbf{border-radius:5px 5px 0 0;min-height:4px;margin:0 auto;width:62%;background:var(--c)}.dbl{font-size:10.5px;color:var(--sub);margin-top:5px}
+.row{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}.row:last-child{border-bottom:none}
+.row .txt{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.due{font-size:11px;color:var(--sub)}.due.over{color:var(--red);font-weight:700}
+.del{cursor:pointer;color:var(--line2);padding:0 2px}.del:hover{color:var(--red)}
+.addrow{margin-top:10px}.addrow button{border:none;background:var(--tc);color:#fff;border-radius:7px;padding:8px 14px;font-size:12px;cursor:pointer}
+.money{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center}
+.money .m{background:var(--bg);border-radius:10px;padding:10px}.money .mv{font-size:16px;font-weight:800}.money .ml{font-size:10.5px;color:var(--sub);margin-top:2px}
+.empty{font-size:12px;color:var(--sub);padding:8px 0}
+/* AI 요약 박스 */
+.aibox{border:2px dashed var(--line2);border-radius:14px;padding:16px;background:#FFFDF6}
+.aibox.drag{border-color:var(--c);background:#FDF3EC}
+.aihint{font-size:12px;color:var(--sub);margin-bottom:8px}
+#aiIn{width:100%;min-height:70px;border:1px solid var(--line2);border-radius:9px;padding:10px;font-family:inherit;font-size:13px;resize:vertical;outline:none}
+.aibtns{display:flex;gap:8px;margin-top:8px;align-items:center;flex-wrap:wrap}
+.aibtn{border:none;border-radius:9px;padding:9px 16px;font-size:13px;font-weight:700;cursor:pointer}
+.aibtn.go{background:var(--c);color:#fff}.aibtn.sub{background:#EEF0F3;color:var(--sub2)}
+#aiThumb{max-height:60px;border-radius:6px;display:none;border:1px solid var(--line)}
+.airesult{margin-top:12px;background:#F3F7EC;border-radius:10px;padding:12px 14px;font-size:13px;line-height:1.7;white-space:pre-wrap;display:none}
+.ainote{padding:9px 0;border-bottom:1px solid var(--line);font-size:12.5px;color:var(--sub2)}
+.ainote:last-child{border-bottom:none}.ainote .t{font-size:11px;color:var(--sub)}
+@media(max-width:820px){.kpis{grid-template-columns:1fr 1fr}.g2{grid-template-columns:1fr}body{padding:12px}}
+</style>
+</head>
+<body>
+<div id="pwgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif">
+  <div style="color:#fff;font-size:20px;margin-bottom:6px">🔒 핫딜연합 팀 대시보드</div>
+  <div style="color:#9fb3d1;font-size:13px;margin-bottom:18px">팀 전용 · 비밀번호를 입력하세요</div>
+  <input id="pwin" type="password" style="padding:13px 14px;font-size:16px;border-radius:10px;border:1px solid #2a3b5e;width:240px;background:#1a2540;color:#fff;outline:none" placeholder="비밀번호">
+  <div id="pwerr" style="color:#f87171;margin-top:12px;height:18px;font-size:13px"></div>
+</div>
+
+<div class="hero">
+  <div><h1>📦 핫딜연합 <span style="font-size:13px;opacity:.85">· 팀 대시보드</span></h1><p>온라인(테무 위탁) + 오프라인 도소매 · 실시간 공유</p><span class="badge" id="badge">🟢 진행중</span></div>
+  <div class="ql"><a href="wholesale.html">📦 위탁판매 거래처 →</a><a href="temu.html">🛒 테무 통합 →</a></div>
+</div>
+
+<div class="kpis">
+  <div class="kpi" onclick="editStat('inv','보유 재고 자산')"><div class="v" id="k_inv">–</div><div class="l">보유 재고 자산 ✎</div></div>
+  <div class="kpi" onclick="editStat('today','오늘 매출')"><div class="v" id="k_today">–</div><div class="l">오늘 매출 ✎</div></div>
+  <div class="kpi" onclick="editStat('month','이번달 매출')"><div class="v" id="k_month">–</div><div class="l">이번달 매출 ✎</div></div>
+  <div class="kpi" style="border-color:var(--red)"><div class="v" id="k_unpaid" style="color:var(--red)">0</div><div class="l">오프라인 미정산 합계</div></div>
+</div>
+
+<div class="card"><h2>📈 최근 7일 일매출 <span class="cnt">막대 클릭 → 수정 · 만원</span></h2><div class="dchart" id="dchart"></div></div>
+
+<div class="card">
+  <h2>🤖 AI 요약 <span class="cnt">통화·카톡 캡처 붙여넣기 / 파일 드래그 / 텍스트 → 자동 요약</span></h2>
+  <div class="aibox" id="aibox">
+    <div class="aihint">여기에 <b>캡처를 Ctrl+V로 붙여넣거나</b>, 파일을 <b>끌어다 놓거나</b>, 통화/카톡 내용을 텍스트로 붙여넣으세요.</div>
+    <textarea id="aiIn" placeholder="여기에 붙여넣기 (텍스트 또는 캡처 이미지)…"></textarea>
+    <img id="aiThumb"/>
+    <div class="aibtns">
+      <button class="aibtn go" onclick="runAI()">🤖 AI 요약</button>
+      <button class="aibtn sub" onclick="clearAI()">지우기</button>
+      <span id="aiStat" style="font-size:12px;color:var(--sub)"></span>
+    </div>
+    <div class="airesult" id="aiResult"></div>
+  </div>
+  <div style="margin-top:12px"><div style="font-size:12px;color:var(--sub);margin-bottom:4px">📋 저장된 요약</div><div id="aiNotes"></div></div>
+</div>
+
+<div class="g2">
+  <div>
+    <div class="card"><h2>🏪 오프라인 · 거래처별 매출 <span class="cnt" id="vcnt"></span></h2><div id="vlist"></div><div class="addrow"><button onclick="addVendor()">+ 거래처 추가</button></div></div>
+    <div class="card"><h2>💳 결제 내역 <span class="cnt">입금·결제</span></h2><div id="plist"></div><div class="addrow"><button onclick="addPay()">+ 결제 추가</button></div></div>
+    <div class="card"><h2>🧾 계산서 발행 내역 <span class="cnt">세금계산서</span></h2><div id="blist"></div><div class="addrow"><button onclick="addBill()">+ 계산서 추가</button></div></div>
+  </div>
+  <div>
+    <div class="card"><h2>🌐 온라인 · 테무 위탁판매 <span class="cnt">현재 위탁판매중</span></h2>
+      <div class="money"><div class="m"><div class="mv">34</div><div class="ml">진행 딜</div></div><div class="m"><div class="mv" style="color:var(--green)">8,200만</div><div class="ml">판매 매출</div></div><div class="m"><div class="mv">22%</div><div class="ml">마진율</div></div></div>
+      <div class="addrow"><button onclick="location.href='temu.html'">🛒 테무 통합 대시보드 열기 →</button></div></div>
+    <div class="card"><h2>📝 팀 공유 메모</h2><textarea id="memo" style="width:100%;min-height:120px;border:1px solid var(--line2);border-radius:9px;padding:10px;font-family:inherit;font-size:13px;resize:vertical;outline:none" placeholder="거래처 이슈·재고·전달사항…" onblur="db.ref('shared/hotdeal/memo').set(this.value)"></textarea></div>
+  </div>
+</div>
+
+<script>
+(function(){var PW="5todghkfrhks!";var g=document.getElementById('pwgate');
+  if(sessionStorage.getItem('cdash_ok')==='1'){g.style.display='none';}else{document.body.style.overflow='hidden';}
+  function ok(){sessionStorage.setItem('cdash_ok','1');g.style.display='none';document.body.style.overflow='';}
+  function chk(){if(document.getElementById('pwin').value===PW)ok();else document.getElementById('pwerr').textContent='비밀번호가 틀렸습니다';}
+  var i=document.getElementById('pwin');i.addEventListener('keydown',function(e){if(e.key==='Enter')chk();});setTimeout(function(){i.focus();},200);
+})();
+
+const firebaseConfig={apiKey:"AIzaSyCAdQ2KkU5Nui6l2vJxnpZKBM65iJXRLn8",authDomain:"consult-crm-cfef6.firebaseapp.com",databaseURL:"https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"consult-crm-cfef6"};
+firebase.initializeApp(firebaseConfig);const db=firebase.database();
+const AI_PROXY="";  /* 보안: AI 키를 클라이언트에 두지 않음. Cloudflare Worker 프록시 URL을 넣으면 AI 요약 작동 */
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let hd={};
+db.ref('shared/hotdeal').on('value',s=>{hd=s.val()||{};render();});
+
+function render(){
+  const st=hd.stats||{};
+  document.getElementById('k_inv').textContent=st.inv||'–';
+  document.getElementById('k_today').textContent=st.today||'–';
+  document.getElementById('k_month').textContent=st.month||'–';
+  const daily=(st.daily&&st.daily.length)?st.daily:[0,0,0,0,0,0,0];const mx=Math.max.apply(null,daily.concat([1]));const dw=['월','화','수','목','금','토','일'];
+  document.getElementById('dchart').innerHTML=daily.map((n,i)=>`<div class="dbar" onclick="editDaily()" title="${n}만"><div class="dbf" style="height:${Math.round(n/mx*66+4)}px"></div><div class="dbl">${dw[i]||''}</div></div>`).join('');
+  const V=Object.entries(hd.vendors||{}).map(([id,v])=>({id,...v}));
+  document.getElementById('vcnt').textContent=V.length+'곳';
+  document.getElementById('vlist').innerHTML=V.length?V.map(v=>`<div class="row"><span class="txt">${esc(v.name)}</span><span style="font-weight:700">${esc(v.sales)}만</span><span class="due ${(+v.unpaid)>0?'over':''}" style="min-width:78px;text-align:right">미정산 ${esc(v.unpaid)}만</span><span class="del" onclick="db.ref('shared/hotdeal/vendors/${v.id}').remove()">✕</span></div>`).join(''):'<div class="empty">거래처 없음 — 아래 + 추가</div>';
+  document.getElementById('k_unpaid').textContent=V.reduce((s,v)=>s+(parseInt(v.unpaid,10)||0),0)+'만';
+  const P=Object.entries(hd.pays||{}).map(([id,p])=>({id,...p}));
+  document.getElementById('plist').innerHTML=P.length?P.map(p=>`<div class="row"><span class="txt">${esc(p.txt)} <span style="color:var(--sub);font-size:11px">${esc(p.date)}</span></span><span style="font-weight:700;color:var(--green)">${esc(p.amt)}만</span><span class="del" onclick="db.ref('shared/hotdeal/pays/${p.id}').remove()">✕</span></div>`).join(''):'<div class="empty">결제 내역 없음</div>';
+  const B=Object.entries(hd.bills||{}).map(([id,x])=>({id,...x}));
+  document.getElementById('blist').innerHTML=B.length?B.map(x=>`<div class="row"><span class="txt">${esc(x.txt)} <span style="color:var(--sub);font-size:11px">${esc(x.date)}</span></span><span style="font-weight:700">${esc(x.amt)}만</span><span class="del" onclick="db.ref('shared/hotdeal/bills/${x.id}').remove()">✕</span></div>`).join(''):'<div class="empty">계산서 발행 내역 없음</div>';
+  const A=Object.entries(hd.ainotes||{}).map(([id,a])=>({id,...a})).reverse();
+  document.getElementById('aiNotes').innerHTML=A.length?A.map(a=>`<div class="ainote"><span class="t">${esc(a.ts||'')}</span> ${esc(a.txt)}</div>`).join(''):'<div class="empty">저장된 요약 없음</div>';
+  const m=document.getElementById('memo');if(document.activeElement!==m)m.value=hd.memo||'';
+}
+function editStat(f,l){const v=prompt(l,(hd.stats&&hd.stats[f])||'');if(v===null)return;db.ref('shared/hotdeal/stats/'+f).set(v.trim());}
+function editDaily(){const c=(hd.stats&&hd.stats.daily)||[];const v=prompt('최근 7일 일매출 — 쉼표 7개(만원)',c.join(','));if(v===null)return;db.ref('shared/hotdeal/stats/daily').set(v.split(',').map(x=>parseInt(x.trim(),10)||0));}
+function addVendor(){const v=prompt('거래처 — "거래처명 | 매출(만) | 미정산(만)"','');if(!v)return;const p=v.split('|').map(s=>s.trim());db.ref('shared/hotdeal/vendors/v'+Date.now()).set({name:p[0]||'',sales:p[1]||'0',unpaid:p[2]||'0'});}
+function addPay(){const v=prompt('결제 — "내용 | 금액(만) | 날짜"','');if(!v)return;const p=v.split('|').map(s=>s.trim());db.ref('shared/hotdeal/pays/p'+Date.now()).set({txt:p[0]||'',amt:p[1]||'',date:p[2]||''});}
+function addBill(){const v=prompt('계산서 — "거래처/내용 | 금액(만) | 날짜"','');if(!v)return;const p=v.split('|').map(s=>s.trim());db.ref('shared/hotdeal/bills/b'+Date.now()).set({txt:p[0]||'',amt:p[1]||'',date:p[2]||''});}
+
+/* ── AI 요약 (제미나이) ── */
+let pastedImg=null;
+const aiIn=document.getElementById('aiIn'),aibox=document.getElementById('aibox');
+aiIn.addEventListener('paste',e=>{const it=(e.clipboardData||{}).items||[];for(const x of it){if(x.type.indexOf('image')===0){const f=x.getFile?x.getFile():x.getAsFile();readImg(f);e.preventDefault();}}});
+['dragover','dragenter'].forEach(ev=>aibox.addEventListener(ev,e=>{e.preventDefault();aibox.classList.add('drag');}));
+['dragleave','drop'].forEach(ev=>aibox.addEventListener(ev,e=>{e.preventDefault();aibox.classList.remove('drag');}));
+aibox.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(!f)return;if(f.type.indexOf('image')===0)readImg(f);else{const r=new FileReader();r.onload=()=>{aiIn.value=r.result.slice(0,8000);};r.readAsText(f);}});
+function readImg(f){const r=new FileReader();r.onload=()=>{pastedImg=r.result;const t=document.getElementById('aiThumb');t.src=pastedImg;t.style.display='block';document.getElementById('aiStat').textContent='📷 캡처 첨부됨';};r.readAsDataURL(f);}
+function clearAI(){aiIn.value='';pastedImg=null;document.getElementById('aiThumb').style.display='none';document.getElementById('aiResult').style.display='none';document.getElementById('aiStat').textContent='';}
+async function runAI(){
+  const txt=aiIn.value.trim();if(!txt&&!pastedImg){document.getElementById('aiStat').textContent='내용을 붙여넣으세요';return;}
+  const prompt='너는 핫딜연합(도소매·위탁판매) 거래처 담당 비서다. 아래 통화/카톡 내용을 3~5줄로 요약해라. ①핵심 합의 ②금액/수량 ③다음 할 일 위주. 불릿으로.';
+  if(!AI_PROXY){
+    const el=document.getElementById('aiResult');el.style.display='block';
+    el.textContent='🤖 AI 프록시 연결 준비중 — 곧 자동 요약됩니다.\n(붙여넣기·파일 드래그·저장 기능은 지금도 동작. TTAPP이 보안 프록시를 연결하면 여기 요약이 표시됩니다.)';
+    document.getElementById('aiStat').textContent='';return;
+  }
+  document.getElementById('aiStat').textContent='🤖 요약 중…';
+  try{
+    const body=pastedImg?{image:pastedImg.split(',')[1],prompt}:{text:txt,prompt};
+    const r=await fetch(AI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const j=await r.json();
+    const out=j.summary||j.text||('요약 실패: '+(j.error||'응답 없음'));
+    const el=document.getElementById('aiResult');el.textContent=out;el.style.display='block';
+    document.getElementById('aiStat').innerHTML='<b onclick="saveAI(`'+out.replace(/[`"]/g,"'")+'`)" style="color:var(--c);cursor:pointer">💾 이 요약 저장</b>';
+  }catch(e){document.getElementById('aiStat').textContent='오류: '+e.message;}
+}
+function saveAI(txt){const t=new Date();const ts=(t.getMonth()+1)+'/'+t.getDate()+' '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');db.ref('shared/hotdeal/ainotes/a'+Date.now()).set({txt:txt,ts:ts});clearAI();document.getElementById('aiStat').textContent='✅ 저장됨';}
+</script>
+</body>
+</html>

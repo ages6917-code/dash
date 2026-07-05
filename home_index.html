@@ -290,7 +290,7 @@ function start(){
   db.ref('home/events').on('value',s=>{evs=s.val()||{}; refresh();});
   db.ref('home/biz').on('value',s=>{bizNotes=s.val()||{}; refresh();});
   db.ref('home/bizdata').on('value',s=>{bizdata=s.val()||{}; refresh();});
-  db.ref('home/hotdeal').on('value',s=>{hd=s.val()||{}; refresh();});
+  db.ref('shared/hotdeal').on('value',s=>{hd=s.val()||{}; refresh();});
   db.ref('home/memo').on('value',s=>{memoVal=s.val()||''; var m=document.getElementById('memo'); if(m&&document.activeElement!==m)m.value=memoVal;});
   db.ref('.info/connected').on('value',s=>{const el=document.getElementById('sync'); el.textContent=s.val()?'● 동기화됨':'○ 오프라인'; el.style.color=s.val()?'var(--green)':'var(--red)';});
   db.ref('home/summary').on('value',s=>{ if(s.exists()){summary=s.val(); renderAiMini();} });
@@ -483,14 +483,14 @@ function delFu(k,i){ const a=cloneArr(effFu(k)); a.splice(i,1); db.ref('home/biz
 
 /* ── 핫딜연합 전용 (온/오프라인) ── */
 function num(v){ return (v==null||v==='')?'–':v; }
-function editHdStat(f,label){ const v=prompt(label,(hd.stats&&hd.stats[f])||''); if(v===null)return; db.ref('home/hotdeal/stats/'+f).set(v.trim()); }
-function editHdDaily(){ const cur=(hd.stats&&hd.stats.daily)||[]; const v=prompt('최근 7일 일매출 — 쉼표로 7개 (만원)\n예: 120,90,150,80,200,60,40', cur.join(',')); if(v===null)return; db.ref('home/hotdeal/stats/daily').set(v.split(',').map(x=>parseInt(x.trim(),10)||0)); }
-function addVendor(){ const v=prompt('거래처 추가 — "거래처명 | 매출(만) | 미정산(만)"',''); if(!v)return; const p=v.split('|').map(s=>s.trim()); db.ref('home/hotdeal/vendors/v'+Date.now()).set({name:p[0]||'',sales:p[1]||'0',unpaid:p[2]||'0'}); }
-function delVendor(id){ db.ref('home/hotdeal/vendors/'+id).remove(); }
-function addPay(){ const v=prompt('결제 내역 — "내용 | 금액(만) | 날짜(MM/DD)"',''); if(!v)return; const p=v.split('|').map(s=>s.trim()); db.ref('home/hotdeal/pays/p'+Date.now()).set({txt:p[0]||'',amt:p[1]||'',date:p[2]||''}); }
-function delPay(id){ db.ref('home/hotdeal/pays/'+id).remove(); }
-function addBill(){ const v=prompt('계산서 발행 — "거래처/내용 | 금액(만) | 날짜(MM/DD)"',''); if(!v)return; const p=v.split('|').map(s=>s.trim()); db.ref('home/hotdeal/bills/b'+Date.now()).set({txt:p[0]||'',amt:p[1]||'',date:p[2]||''}); }
-function delBill(id){ db.ref('home/hotdeal/bills/'+id).remove(); }
+function editHdStat(f,label){ const v=prompt(label,(hd.stats&&hd.stats[f])||''); if(v===null)return; db.ref('shared/hotdeal/stats/'+f).set(v.trim()); }
+function editHdDaily(){ const cur=(hd.stats&&hd.stats.daily)||[]; const v=prompt('최근 7일 일매출 — 쉼표로 7개 (만원)\n예: 120,90,150,80,200,60,40', cur.join(',')); if(v===null)return; db.ref('shared/hotdeal/stats/daily').set(v.split(',').map(x=>parseInt(x.trim(),10)||0)); }
+function addVendor(){ const v=prompt('거래처 추가 — "거래처명 | 매출(만) | 미정산(만)"',''); if(!v)return; const p=v.split('|').map(s=>s.trim()); db.ref('shared/hotdeal/vendors/v'+Date.now()).set({name:p[0]||'',sales:p[1]||'0',unpaid:p[2]||'0'}); }
+function delVendor(id){ db.ref('shared/hotdeal/vendors/'+id).remove(); }
+function addPay(){ const v=prompt('결제 내역 — "내용 | 금액(만) | 날짜(MM/DD)"',''); if(!v)return; const p=v.split('|').map(s=>s.trim()); db.ref('shared/hotdeal/pays/p'+Date.now()).set({txt:p[0]||'',amt:p[1]||'',date:p[2]||''}); }
+function delPay(id){ db.ref('shared/hotdeal/pays/'+id).remove(); }
+function addBill(){ const v=prompt('계산서 발행 — "거래처/내용 | 금액(만) | 날짜(MM/DD)"',''); if(!v)return; const p=v.split('|').map(s=>s.trim()); db.ref('shared/hotdeal/bills/b'+Date.now()).set({txt:p[0]||'',amt:p[1]||'',date:p[2]||''}); }
+function delBill(id){ db.ref('shared/hotdeal/bills/'+id).remove(); }
 
 function hotdealView(){
   const b=bizOf('핫딜연합'), st=hd.stats||{};
