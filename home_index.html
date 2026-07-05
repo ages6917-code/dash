@@ -89,6 +89,19 @@ h1{font-size:22px;font-weight:700}
 .ai .m .l{font-size:10.5px;color:var(--sub);margin-top:2px}
 .ai .m .v.warn{color:#BA7517}
 .ai .m .v.bad{color:var(--red)}
+.dd{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.dd:last-child{border-bottom:none}
+.dd .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.dd .txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dd .cd{font-size:12.5px;font-weight:800;white-space:nowrap;padding:2px 9px;border-radius:20px}
+.dd .cd.soon{background:var(--red-bg,#FBEAEA);color:var(--red)}
+.dd .cd.near{background:#FAEEDA;color:#8A5A0B}
+.dd .cd.far{background:#EEF0F3;color:var(--sub2)}
+.dd .del{cursor:pointer;color:var(--line2);font-size:14px;padding:0 2px}
+.dd .del:hover{color:var(--red)}
+.ailine{margin-top:12px;padding-top:10px;border-top:1px dashed var(--line);font-size:12px;color:var(--sub2);cursor:pointer}
+.ailine:hover{color:var(--txt)}
+.ailine b{color:var(--txt)}
 .dashes{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px}
 .dash{background:var(--card);border-radius:14px;padding:15px 17px;cursor:pointer;border:1px solid rgba(0,0,0,0.03);transition:transform .12s;position:relative}
 .dash:hover{transform:translateY(-3px)}
@@ -136,12 +149,14 @@ h1{font-size:22px;font-weight:700}
       </div>
     </div>
     <div class="card">
-      <h2>사업 현황 <span class="cnt">클릭해서 메모 수정</span></h2>
-      <div id="bizList"></div>
-    </div>
-    <div class="card">
-      <h2>컨설팅 CRM <span class="cnt" id="crmInfo"></span></h2>
-      <div id="crmBody" style="font-size:12.5px;color:var(--sub2);line-height:1.7">불러오는 중...</div>
+      <h2>🔥 마감 · D-day <span class="cnt">놓치면 안 되는 날</span></h2>
+      <div id="ddList"></div>
+      <div class="addrow">
+        <select id="dBiz"></select>
+        <input type="text" id="dTxt" placeholder="마감 내용 (예: 대납, 세금신고)" onkeydown="if(event.key==='Enter')addDday()">
+        <input type="date" id="dDate">
+        <button onclick="addDday()">추가</button>
+      </div>
     </div>
   </div>
 
@@ -175,17 +190,17 @@ h1{font-size:22px;font-weight:700}
 
   <div class="col">
     <div class="card">
-      <h2>AI 직원 현황 <span class="cnt" id="aiInfo"></span></h2>
-      <div class="ai" id="aiGrid"><div style="font-size:12px;color:var(--sub);grid-column:span 2">home_summary.json 대기 중...</div></div>
-      <div style="margin-top:10px"><a href="status.html" style="font-size:11.5px;color:var(--blue)">T봇 관제탑 열기 →</a></div>
-    </div>
-    <div class="card">
-      <h2>직원 보고 피드 <span class="cnt" id="repInfo"></span></h2>
-      <div id="repList" style="font-size:12px;color:var(--sub2)">보고 대기 중...</div>
+      <h2>📊 사업 현황 <span class="cnt">클릭해서 메모 수정</span></h2>
+      <div id="bizList"></div>
     </div>
     <div class="card">
       <h2>메모장 <span class="cnt" id="memoSaved">자동 저장·동기화</span></h2>
       <textarea id="memo" placeholder="떠오르는 생각, 전화 메모, 오늘 챙길 것..."></textarea>
+    </div>
+    <div class="card">
+      <h2>컨설팅 CRM <span class="cnt" id="crmInfo"></span></h2>
+      <div id="crmBody" style="font-size:12.5px;color:var(--sub2);line-height:1.7">불러오는 중...</div>
+      <div class="ailine" id="aiLine" onclick="location.href='status.html'">AI 직원 현황 불러오는 중… · T봇 관제탑 →</div>
     </div>
   </div>
 </div>
@@ -253,7 +268,7 @@ fb.auth().onAuthStateChanged(u=>{
   start();
 });
 
-let started=false, tasks={}, evs={}, linksOv={}, bizNotes={};
+let started=false, tasks={}, evs={}, linksOv={}, bizNotes={}, ddays={};
 function start(){
   if(started) return; started=true;
   const now = new Date(), H = now.getHours();
@@ -261,9 +276,12 @@ function start(){
     (H<5?'늦은 밤까지 고생 많으세요, 사장님':H<12?'안녕하세요! 사장님, 좋은 아침이에요':H<18?'좋은 오후예요, 사장님':'수고 많으셨어요, 사장님')+'.';
   document.getElementById('dateStr').textContent = now.getFullYear()+'년 '+(now.getMonth()+1)+'월 '+now.getDate()+'일';
   document.getElementById('dowStr').textContent = ['일','월','화','수','목','금','토'][now.getDay()]+'요일';
-  document.getElementById('tBiz').innerHTML = BIZ.map(b=>`<option>${b.k}</option>`).join('');
+  var bizOpts = BIZ.map(b=>`<option>${b.k}</option>`).join('');
+  document.getElementById('tBiz').innerHTML = bizOpts;
+  document.getElementById('dBiz').innerHTML = bizOpts;
 
   db.ref('home/tasks').on('value', s=>{ tasks=s.val()||{}; renderTasks(); });
+  db.ref('home/deadlines').on('value', s=>{ ddays=s.val()||{}; renderDdays(); });
   db.ref('home/events').on('value', s=>{ evs=s.val()||{}; renderCal(); renderEvs(); });
   db.ref('home/links').on('value', s=>{ linksOv=s.val()||{}; renderShortcuts(); renderDashes(); });
   db.ref('home/biz').on('value', s=>{ bizNotes=s.val()||{}; renderBiz(); });
@@ -277,7 +295,6 @@ function start(){
     el.style.color = s.val()?'var(--green)':'var(--red)';
   });
   db.ref('home/summary').on('value', s=>{ if(s.exists()){ liveSummary=true; renderSummary(s.val()); } });
-  db.ref('home/reports').limitToLast(10).on('value', s=>renderReports(s.val()||{}));
   loadSummary(); loadCrm(); renderCal(); renderEvs();
   if(localStorage.getItem('home_gcal_on')==='1') toggleG();
 }
@@ -395,6 +412,33 @@ function editBiz(k){
   db.ref('home/biz/'+k).set(v.trim());
 }
 
+/* ── 마감 · D-day ── */
+function ymdShort(d){ if(!d) return ''; const p=d.split('-'); return (+p[1])+'/'+(+p[2]); }
+function addDday(){
+  const txt=document.getElementById('dTxt').value.trim(), date=document.getElementById('dDate').value;
+  if(!txt||!date) return;
+  db.ref('home/deadlines/d'+Date.now()).set({biz:document.getElementById('dBiz').value,txt,date});
+  document.getElementById('dTxt').value=''; document.getElementById('dDate').value='';
+}
+function delDday(id){ db.ref('home/deadlines/'+id).remove(); }
+function ddLabel(d){
+  const diff = Math.round((new Date(d) - new Date(todayKey()))/86400000);
+  if(diff<0) return {t:'지남 '+(-diff)+'일',c:'far'};
+  if(diff===0) return {t:'D-DAY',c:'soon'};
+  return {t:'D-'+diff, c:diff<=3?'soon':diff<=7?'near':'far'};
+}
+function renderDdays(){
+  const arr = Object.entries(ddays).map(([id,d])=>({id,...d}))
+    .sort((a,b)=> (a.date||'9999')<(b.date||'9999')?-1:1);
+  document.getElementById('ddList').innerHTML = arr.map(d=>{
+    const b = BIZ.find(x=>x.k===d.biz)||BIZ[0]; const L=ddLabel(d.date);
+    return `<div class="dd"><span class="dot" style="background:${b.c}"></span>
+      <span class="txt">${esc(d.txt)} <span style="color:var(--sub);font-size:11px">${ymdShort(d.date)}</span></span>
+      <span class="cd ${L.c}">${L.t}</span>
+      <span class="del" onclick="delDday('${d.id}')">✕</span></div>`;
+  }).join('') || '<div style="font-size:12px;color:var(--sub);padding:8px 0">등록된 마감이 없어요. 아래에서 추가하세요.</div>';
+}
+
 let memoTimer;
 document.addEventListener('input', e=>{
   if(e.target.id!=='memo') return;
@@ -410,17 +454,10 @@ document.addEventListener('input', e=>{
 
 let liveSummary=false;
 function renderSummary(s){
-  const items = [
-      ['가동중', s['가동중'], (s['가동중']<s['직원_총원']*0.6)?'warn':''],
-      ['주의', s['주의'], s['주의']>0?'warn':''],
-      ['개입 대기', s['개입_대기'], s['개입_대기']>0?'bad':''],
-      ['검수 대기', s['검수_대기'], s['검수_대기']>0?'warn':''],
-      ['보류 업무', s['보류_업무'], ''],
-      ['부업 신규(오늘)', s['부업_오늘신규'], '']
-    ];
-  document.getElementById('aiInfo').textContent = '직원 '+(s['직원_총원']||'?')+'명 · 부업 '+(s['부업_총아이템']||'?')+'건';
-  document.getElementById('aiGrid').innerHTML = items.map(([l,v,c])=>
-    `<div class="m"><div class="v ${c}">${v??'–'}</div><div class="l">${l}</div></div>`).join('');
+  const el=document.getElementById('aiLine'); if(!el) return;
+  el.innerHTML = '🤖 AI 직원 <b>'+(s['직원_총원']??'?')+'명</b> · 가동 '+(s['가동중']??'–')
+    +' · 개입 <b>'+(s['개입_대기']??'–')+'</b> · 검수 <b>'+(s['검수_대기']??'–')+'</b> · 부업신규 '+(s['부업_오늘신규']??'–')
+    +' &nbsp;— T봇 관제탑 →';
 }
 async function loadSummary(){
   try{
@@ -429,24 +466,8 @@ async function loadSummary(){
     const s = await r.json();
     if(!liveSummary) renderSummary(s);
   }catch(e){
-    if(!liveSummary) document.getElementById('aiGrid').innerHTML =
-      '<div style="font-size:12px;color:var(--sub);grid-column:span 2">데이터 대기 중 — RTDB /home/summary 또는 home_summary.json 발행 후 자동 표시됩니다.</div>';
+    if(!liveSummary){ const el=document.getElementById('aiLine'); if(el) el.textContent='AI 직원 현황 대기 중 · T봇 관제탑 →'; }
   }
-}
-function renderReports(obj){
-  const arr = Object.entries(obj).map(([id,r])=>({id,...r})).reverse();
-  document.getElementById('repInfo').textContent = arr.length?arr.length+'건':'';
-  const col = lv => lv==='bad'?'#C0392B':lv==='warn'?'#BA7517':'#3B6D11';
-  document.getElementById('repList').innerHTML = arr.map(r=>
-    `<div style="padding:6px 0;border-bottom:1px solid var(--line)">
-      <div style="display:flex;gap:6px;align-items:baseline">
-        <span style="width:7px;height:7px;border-radius:50%;background:${col(r.lv)};flex:none;position:relative;top:-1px"></span>
-        <span style="flex:1;color:var(--txt)">${esc(r.t||r.headline||'')}</span>
-        <span style="font-size:10.5px;color:var(--sub);white-space:nowrap">${esc((r.ts||'').slice(5,16).replace('T',' '))}</span>
-      </div>
-      ${r.why?`<div style="font-size:11px;color:var(--sub);margin:2px 0 0 13px">${esc(r.why)}</div>`:''}
-    </div>`
-  ).join('') || '<div style="padding:6px 0">아직 보고가 없어요. TTAPP 배선 후 아침 브리핑이 여기 표시됩니다.</div>';
 }
 
 async function loadCrm(){
