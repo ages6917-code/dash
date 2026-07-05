@@ -77,8 +77,10 @@
     <div class="aibtns">
       <button class="aibtn go" onclick="runAI()">🤖 AI 요약</button>
       <button class="aibtn sub" onclick="clearAI()">지우기</button>
+      <button class="aibtn sub" onclick="setKey()">🔑 내 제미나이 키</button>
       <span id="aiStat" style="font-size:12px;color:var(--sub)"></span>
     </div>
+    <div style="font-size:11px;color:var(--sub);margin-top:6px">처음 한 번 <b>무료 제미나이 키</b>를 넣으면(<a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--c)">1분 발급</a>) 이 브라우저에서 계속 AI 요약이 됩니다. 각자 본인 키 사용.</div>
     <div class="airesult" id="aiResult"></div>
   </div>
   <div style="margin-top:12px"><div style="font-size:12px;color:var(--sub);margin-bottom:4px">📋 저장된 요약</div><div id="aiNotes"></div></div>
@@ -108,7 +110,9 @@
 
 const firebaseConfig={apiKey:"AIzaSyCAdQ2KkU5Nui6l2vJxnpZKBM65iJXRLn8",authDomain:"consult-crm-cfef6.firebaseapp.com",databaseURL:"https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"consult-crm-cfef6"};
 firebase.initializeApp(firebaseConfig);const db=firebase.database();
-const AI_PROXY="";  /* 보안: AI 키를 클라이언트에 두지 않음. Cloudflare Worker 프록시 URL을 넣으면 AI 요약 작동 */
+/* AI: 각 사용자가 자기 제미나이 무료 키를 브라우저에 저장(코드엔 없음 → 안전) */
+function gkey(){ return localStorage.getItem('gemini_key')||''; }
+function setKey(){ const v=prompt('제미나이 API 키 입력\n무료 발급(1분): https://aistudio.google.com/apikey\n(이 브라우저에만 저장됩니다)', gkey()); if(v===null)return; localStorage.setItem('gemini_key',(v||'').trim()); document.getElementById('aiStat').textContent=gkey()?'🔑 키 저장됨 — 이제 AI 요약 가능':'키 삭제됨'; }
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let hd={};
 db.ref('shared/hotdeal').on('value',s=>{hd=s.val()||{};render();});
@@ -149,18 +153,15 @@ function readImg(f){const r=new FileReader();r.onload=()=>{pastedImg=r.result;co
 function clearAI(){aiIn.value='';pastedImg=null;document.getElementById('aiThumb').style.display='none';document.getElementById('aiResult').style.display='none';document.getElementById('aiStat').textContent='';}
 async function runAI(){
   const txt=aiIn.value.trim();if(!txt&&!pastedImg){document.getElementById('aiStat').textContent='내용을 붙여넣으세요';return;}
+  const key=gkey();
+  if(!key){ if(confirm('AI 요약을 쓰려면 제미나이 무료 키가 필요해요 (1분 발급).\n\n확인 = 발급 페이지 열기\n취소 = 키 직접 입력')){window.open('https://aistudio.google.com/apikey','_blank');} setKey(); return; }
   const prompt='너는 핫딜연합(도소매·위탁판매) 거래처 담당 비서다. 아래 통화/카톡 내용을 3~5줄로 요약해라. ①핵심 합의 ②금액/수량 ③다음 할 일 위주. 불릿으로.';
-  if(!AI_PROXY){
-    const el=document.getElementById('aiResult');el.style.display='block';
-    el.textContent='🤖 AI 프록시 연결 준비중 — 곧 자동 요약됩니다.\n(붙여넣기·파일 드래그·저장 기능은 지금도 동작. TTAPP이 보안 프록시를 연결하면 여기 요약이 표시됩니다.)';
-    document.getElementById('aiStat').textContent='';return;
-  }
   document.getElementById('aiStat').textContent='🤖 요약 중…';
+  let parts=pastedImg?[{inline_data:{mime_type:'image/png',data:pastedImg.split(',')[1]}},{text:prompt}]:[{text:prompt+'\n\n---\n'+txt}];
   try{
-    const body=pastedImg?{image:pastedImg.split(',')[1],prompt}:{text:txt,prompt};
-    const r=await fetch(AI_PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+key,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts}]})});
     const j=await r.json();
-    const out=j.summary||j.text||('요약 실패: '+(j.error||'응답 없음'));
+    const out=(j.candidates&&j.candidates[0]&&j.candidates[0].content.parts[0].text)||('요약 실패: '+(j.error?j.error.message:'응답 없음')+' — 🔑 키 확인');
     const el=document.getElementById('aiResult');el.textContent=out;el.style.display='block';
     document.getElementById('aiStat').innerHTML='<b onclick="saveAI(`'+out.replace(/[`"]/g,"'")+'`)" style="color:var(--c);cursor:pointer">💾 이 요약 저장</b>';
   }catch(e){document.getElementById('aiStat').textContent='오류: '+e.message;}
