@@ -12,7 +12,8 @@
     --purple:#7c3aed; --purple-bg:#f0e9fe; --accent:#4f46e5;
   }
   *{box-sizing:border-box;margin:0;padding:0}
-  body{font-family:'Pretendard','Malgun Gothic',-apple-system,sans-serif;background:var(--bg);color:var(--ink);padding:18px;max-width:1720px;margin:0 auto}
+  html{overflow-x:hidden}
+  body{font-family:'Pretendard','Malgun Gothic',-apple-system,sans-serif;background:var(--bg);color:var(--ink);padding:18px;max-width:1720px;margin:0 auto;overflow-x:hidden}
   /* ── 3단 레이아웃: 좌 필터레일 / 중앙 / 우 발굴처 ── */
   .layout{display:grid;grid-template-columns:212px minmax(0,1fr) 300px;gap:16px;align-items:start;margin-top:16px}
   .rail{position:sticky;top:12px}
@@ -158,12 +159,23 @@
     .spanel{order:3}
     .ssec{margin-bottom:8px}
   }
+  /* ── 폰 세로 (≤760px): 필터 컨트롤 세로 스택 + 넘침 제거 ── */
+  @media(max-width:760px){
+    body{padding:12px}
+    .controls{gap:8px}
+    .controls select,.search{width:100%;min-width:0;flex:1 1 100%}
+    .fbar{font-size:12px}
+    .grid{grid-template-columns:1fr 1fr;gap:10px}
+    .trend,.card,.railsec,.ssec{max-width:100%}
+    .trow .tn{font-size:12.5px}
+    .tbar{max-width:40vw}
+  }
   @media(max-width:520px){
     body{padding:10px}
     .hero{padding:16px 18px;border-radius:14px}
     .hero h1{font-size:20px}.hero .date{float:none;display:block;margin-bottom:6px;font-size:12px}
     .chips{gap:6px}.chip{padding:8px 12px;font-size:12px}.chip b{font-size:16px}
-    .controls select,.search{padding:9px 11px;font-size:13px}
+    .controls select,.search{padding:10px 11px;font-size:13px}
     .grid{grid-template-columns:1fr 1fr;gap:10px}
     .vcard{padding:12px}.vname{font-size:13.5px}.avatar{width:40px;height:40px;font-size:20px;border-radius:10px}
     .badge,.cc{font-size:10px;padding:2px 7px}
@@ -172,8 +184,9 @@
     .modal{padding:16px;border-radius:16px}
     .mbar .bl{width:86px}.mbar .bv{width:80px}
     .fbtns .fbtn{padding:11px 14px;font-size:13px;flex:1}
+    .cc{margin-top:6px}
   }
-  @media(max-width:380px){.grid{grid-template-columns:1fr}}
+  @media(max-width:400px){.grid{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
