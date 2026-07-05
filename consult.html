@@ -638,6 +638,7 @@ function promptSharePct(box,id,k){
 
 /* 쓰기 → RTDB (모두에게 실시간 반영) · 잠김/오프라인이면 로컬 즉시 반영 */
 function setCust(id,patch){
+  if(!('up' in patch)) patch={...patch, up:Date.now()};        // 마지막 활동 시각 (액션 큐 정체 감지용)
   DATA.customers=DATA.customers||{};
   DATA.customers[id]={...(DATA.customers[id]||{}),...patch};   // 낙관적 로컬 반영
   rerender(); _lsave();
@@ -937,6 +938,7 @@ function openNew(){
   document.body.appendChild(m); newMode('m');
 }
 function shrOptions(){ return `<option value="">미배정</option>${sharerArr().map(s=>`<option value="${esc(s.id)}">${esc(s.name)}</option>`).join('')}<option value="__new__">＋ 새 팀장 추가…</option>`; }
+
 function newMode(mode){
   const _om=document.getElementById('optM'), _oc=document.getElementById('optC');
   if(_om) _om.classList.toggle('on',mode==='m');
@@ -1242,6 +1244,54 @@ function renderSearch(){
   setTimeout(()=>{ const el=document.getElementById('searchInput'); if(el){ el.focus(); el.setSelectionRange(el.value.length,el.value.length); } },10);
 }
 
+/* ===== 🎯 오늘의 액션 큐 ===== */
+const AQ_CLOSED=['승인완료','부결'];                       // 종결 단계 — 큐에서 제외
+const AQ_STALE_STAGES=['통화완료','심사중','서류검토','본부장접수','자금접수완료'];
+const AQ_STALE_DAYS=10;
+function aqLastTouch(c){ return c.up || (c.created||0) || (c.received?new Date(c.received).getTime():0); }
+function actionQueue(){
+  const t=today(); const q=[];
+  custArr().forEach(c=>{
+    if(AQ_CLOSED.includes(c.stage)) return;
+    if(c.fu && c.fu<=t){
+      const d=daysSince(c.fu);
+      q.push({c,pri:0,days:d,why:d>0?`재연락 D+${d} 지남`:'오늘 재연락',col:'#ec4899'});
+    } else if(!c.fu && AQ_STALE_STAGES.includes(c.stage)){
+      const lt=aqLastTouch(c); if(!lt) return;
+      const d=Math.floor((Date.now()-lt)/86400000);
+      if(d>=AQ_STALE_DAYS) q.push({c,pri:2,days:d,why:`${d}일째 변화 없음 (${c.stage})`,col:'#f59e0b'});
+    }
+  });
+  return q.sort((a,b)=>(a.pri-b.pri)||(b.days-a.days));
+}
+function aqShift(id,days){ const d=new Date(); d.setDate(d.getDate()+days); setCust(id,{fu:d.toISOString().slice(0,10)}); toast('재연락 → '+(days===1?'내일':days+'일 뒤')); }
+function aqDone(id){ setCust(id,{fu:''}); toast('재연락 처리 완료 ✓'); }
+function aqAsk(id){
+  const c=getCust(id)||{};
+  const v=prompt('재연락 예정일 (YYYY-MM-DD, 비우면 해제):', c.fu||today());
+  if(v===null) return;
+  const s=v.trim();
+  if(s==='') return setCust(id,{fu:''});
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(s)){ alert('형식이 올바르지 않아요. 예: 2026-07-12'); return; }
+  setCust(id,{fu:s});
+}
+function actionQueueHtml(){
+  const q=actionQueue(); const MAX=8;
+  const rows=q.slice(0,MAX).map(({c,why,col})=>`
+   <div class="row click" onclick="go('customer','${c.id}')" style="align-items:center">
+     <span style="width:9px;height:9px;border-radius:50%;background:${col};flex:none;margin-right:2px"></span>
+     <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.bizName||c.biz||'')}</span></b><div class="memo" style="color:${col};font-weight:700">${esc(why)}</div></div>
+     ${c.phone?`<a href="tel:${esc(c.phone)}" onclick="event.stopPropagation()" style="font-size:12px;font-weight:700;color:#3b82f6;text-decoration:none;padding:5px 8px;background:#eff6ff;border-radius:8px;white-space:nowrap">📞 ${esc(c.phone)}</a>`:''}
+     ${chip(c.stage)}
+     <span title="재연락 완료 처리" onclick="event.stopPropagation();aqDone('${c.id}')" style="cursor:pointer;font-size:12px;font-weight:800;color:#10b981;padding:5px 8px;background:#ecfdf5;border-radius:8px;white-space:nowrap">✓ 완료</span>
+     <span title="3일 뒤로 미루기" onclick="event.stopPropagation();aqShift('${c.id}',3)" style="cursor:pointer;font-size:12px;font-weight:700;color:#64748b;padding:5px 8px;background:#f1f5f9;border-radius:8px;white-space:nowrap">+3일</span>
+   </div>`).join('');
+  const more = q.length>MAX ? `<div style="font-size:12px;color:#94a3b8;padding:8px 4px">외 ${q.length-MAX}건 더 — 재연락일이 도래하면 순서대로 올라옵니다</div>` : '';
+  const body = q.length ? rows+more : `<div style="font-size:13px;color:#94a3b8;padding:14px 6px">오늘 처리할 항목이 없습니다 🎉 &nbsp;<span style="font-size:12px">고객 카드 ⋮ 메뉴나 상세 화면에서 재연락일을 지정하면 여기 자동으로 올라와요.</span></div>`;
+  return `<div class="sechead">🎯 오늘의 액션 큐 ${q.length?`<span style="color:#ec4899">${q.length}건</span>`:''}</div>
+  <div class="panel" style="padding:8px 14px;margin-bottom:16px">${body}</div>`;
+}
+
 /* ===== 대시보드 ===== */
 function renderDash(){
  buildNav('dash');
@@ -1270,6 +1320,7 @@ function renderDash(){
  <div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
    <div><h1>대시보드</h1><div class="date">안녕하세요, ${esc(meName())}님 👋 · ${offline?'오프라인 모드 🔴 (규칙 열면 실시간 켜짐)':'실시간 동기화 중 🟢'}</div></div></div>
    <div class="tbtns"><button class="btn g" onclick="go('search')">🔍 검색</button><button class="btn b" onclick="openNew()">+ 신규 고객</button></div></div>
+ ${actionQueueHtml()}
  <div class="sechead">💰 이번달 수익 현황</div>
  <div class="rev">${revCard('insurance','🛡️','보험 계약','#ecfdf5')}${revCard('consulting','🏦','컨설팅 수수료','#eff6ff')}${revCard('tax','🧾','세무 이관','#f5f3ff')}</div>
  <div class="midrow">
@@ -1362,6 +1413,14 @@ function renderCustomer(id){
      <div class="fld"><label>유형 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 개인/법인 복수 가능</span></label><div class="ev" onclick="iTypes(this,'${id}')">${(()=>{const ts=custTypes(c); return ts.length?ts.map(n=>`<span style="display:inline-block;background:#ecfeff;color:#0e7490;border-radius:7px;padding:2px 8px;margin:1px 3px 1px 0;font-weight:700;font-size:12.5px">${esc(n)}</span>`).join(''):'(선택)';})()} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
      <div class="mrow" style="display:flex;gap:10px"><div class="fld" style="flex:1"><label>최초 접수일</label><div class="ev" onclick="iText(this,'${id}','received')">${esc(c.received)||'(예: 2026-06-30)'}</div></div>
        <div class="fld" style="flex:1"><label>서류 접수일 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 서류완료 시 자동</span></label><div class="ev" onclick="iText(this,'${id}','docDate')">${esc(c.docDate)||'(자동 기록)'}</div></div></div>
+     <div class="fld"><label>⏰ 재연락 예정일 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 날짜 도래 시 대시보드 액션 큐에 자동 표시</span></label>
+       <div class="ev" onclick="aqAsk('${id}')" style="color:${c.fu?'#ec4899':'#94a3b8'};font-weight:${c.fu?'800':'400'}">${esc(c.fu)||'(지정 안 함 — 클릭해서 지정)'}</div>
+       <div style="display:flex;gap:6px;margin-top:5px;flex-wrap:wrap">
+         <span class="ev" style="font-size:11px;padding:3px 9px" onclick="aqShift('${id}',1)">내일</span>
+         <span class="ev" style="font-size:11px;padding:3px 9px" onclick="aqShift('${id}',3)">+3일</span>
+         <span class="ev" style="font-size:11px;padding:3px 9px" onclick="aqShift('${id}',7)">+7일</span>
+         ${c.fu?`<span class="ev" style="font-size:11px;padding:3px 9px;color:#10b981;font-weight:700" onclick="aqDone('${id}')">✓ 완료(해제)</span>`:''}
+       </div></div>
      <div class="fld"><label>신청 금액</label><div class="ev" onclick="iText(this,'${id}','fund')">${esc(c.fund)||'(입력)'}</div></div>
      <div class="fld"><label>담당 팀장(쉐어) <span style="color:#94a3b8;font-weight:500;font-size:10px">· 여러 명 체크 가능</span></label><div class="ev" onclick="iSharer(this,'${id}')">${(()=>{const nms=custSharerNames(c); return nms.length?nms.map(n=>`<span style="display:inline-block;background:#eef2ff;color:#4338ca;border-radius:7px;padding:2px 8px;margin:1px 3px 1px 0;font-weight:700;font-size:12.5px">${esc(n)}</span>`).join(''):'미배정';})()} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
      <div class="fld"><label>소개자 <span style="color:#94a3b8;font-weight:500;font-size:10px">· 여러 명 · 쉐어 참여</span></label><div class="ev" onclick="iReferrer(this,'${id}')">${(()=>{const nms=custReferrerNames(c); return nms.length?nms.map(n=>`<span style="display:inline-block;background:#fef3c7;color:#92400e;border-radius:7px;padding:2px 8px;margin:1px 3px 1px 0;font-weight:700;font-size:12.5px">${esc(n)}</span>`).join(''):'없음';})()} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
@@ -1398,7 +1457,7 @@ function cardMenu(e,id){
   e.stopPropagation(); closeCardMenu();
   const m=document.createElement('div'); m.id='cardMenu'; m.className='cardmenu-pop';
   m.style.left=Math.min(e.clientX,(window.innerWidth-160))+'px'; m.style.top=(e.clientY)+'px';
-  m.innerHTML=`<div onclick="closeCardMenu();go('customer','${id}')">✏️ 수정·관리</div><div class="del" onclick="delCustomer('${id}')">🗑 삭제</div>`;
+  m.innerHTML=`<div onclick="closeCardMenu();go('customer','${id}')">✏️ 수정·관리</div><div onclick="closeCardMenu();aqAsk('${id}')">⏰ 재연락일 지정</div><div class="del" onclick="delCustomer('${id}')">🗑 삭제</div>`;
   document.body.appendChild(m);
   setTimeout(()=>document.addEventListener('click',closeCardMenu,{once:true}),20);
 }
@@ -1573,8 +1632,8 @@ async function aiAsk(id,preset){
 async function aiCall(p,key,ctx,q){
   const userMsg=ctx+'\n\n[질문]\n'+q;
   if(p==='gemini'){
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+encodeURIComponent(key),
-      {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({system_instruction:{parts:[{text:AI_SYS}]},contents:[{parts:[{text:userMsg}]}]})});
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',
+      {method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify({system_instruction:{parts:[{text:AI_SYS}]},contents:[{parts:[{text:userMsg}]}]})});
     const j=await r.json(); if(!r.ok) throw new Error((j.error&&j.error.message)||'Gemini 오류');
     return (((j.candidates||[])[0]||{}).content||{}).parts?.[0]?.text||'(응답 없음)';
   }
@@ -1634,7 +1693,7 @@ async function geminiSummarizeDocs(fileParts, hintNote, custText){
   if(custText) tp.push({text:custText});
   if(hintNote) tp.push({text:'[담당자 요청] '+hintNote});
   const body={system_instruction:{parts:[{text:SUM_SYS}]},contents:[{parts:[...tp,...fileParts]}],generationConfig:{responseMimeType:'application/json',responseSchema:SUM_SCHEMA,temperature:0.1}};
-  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)});
+  const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent',{method:'POST',headers:{'Content-Type':'application/json','x-goog-api-key':key},body:JSON.stringify(body)});
   const j=await r.json(); if(!r.ok) throw new Error((j.error&&j.error.message)||'제미나이 오류');
   let txt=((((j.candidates||[])[0]||{}).content||{}).parts||[{}])[0].text||''; txt=txt.trim().replace(/^```json\s*/i,'').replace(/```$/,'').trim();
   let sm; try{ sm=JSON.parse(txt); }catch(e){ throw new Error('요약 파싱 실패 (서류가 흐리거나 재무자료가 아닐 수 있음)'); }
