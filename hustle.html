@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>부업 아이템 발굴기</title>
+<style>
+  :root{
+    --bg:#eef1f6; --card:#fff; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --green:#2e7d32; --green-bg:#e7f4e8; --orange:#e08600; --orange-bg:#fff2dd;
+    --blue:#2563eb; --blue-bg:#e8eefc; --red:#d23f3f; --red-bg:#fde8e8;
+    --purple:#7c3aed; --purple-bg:#f0e9fe; --accent:#4f46e5;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard','Malgun Gothic',-apple-system,sans-serif;background:var(--bg);color:var(--ink);padding:18px;max-width:1720px;margin:0 auto}
+  /* ── 3단 레이아웃: 좌 필터레일 / 중앙 / 우 발굴처 ── */
+  .layout{display:grid;grid-template-columns:212px minmax(0,1fr) 300px;gap:16px;align-items:start;margin-top:16px}
+  .rail{position:sticky;top:12px}
+  .railsec{background:#fff;border:1px solid var(--line);border-radius:14px;padding:12px;margin-bottom:12px}
+  .railsec h4{font-size:12px;color:var(--sub);font-weight:800;margin:2px 4px 10px}
+  .vlist{display:flex;flex-direction:column;gap:6px}
+  .rail .fold{width:100%;display:flex;justify-content:space-between;align-items:center;padding:9px 13px;margin:0}
+  .rail .catchip{width:100%;text-align:left;border-radius:10px;display:flex;justify-content:space-between;align-items:center}
+  .rail .foldnote{display:block;margin:8px 4px 0;font-size:11px;line-height:1.5}
+  /* 우측 발굴처 패널 */
+  .spanel{position:sticky;top:12px}
+  .ssec{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px;margin-bottom:12px}
+  .ssec h4{font-size:13px;font-weight:800;margin:0 2px 10px;display:flex;align-items:center;gap:6px}
+  .srow{display:flex;align-items:center;gap:8px;padding:8px 10px;border-radius:10px;cursor:pointer;border:1px solid transparent}
+  .srow:hover{background:#f7f8fa}
+  .srow.on{background:var(--purple-bg);border-color:#d6ccfb}
+  .srow .sdot{width:8px;height:8px;border-radius:50%;flex:none}
+  .srow .sn{flex:1;font-size:13px;font-weight:700}
+  .srow .sc{font-size:12px;font-weight:800;color:var(--accent)}
+  .srow .st{font-size:10px;color:var(--sub);width:100%;margin-left:16px;margin-top:-2px}
+  .cbarrow{display:flex;align-items:center;gap:8px;margin:7px 0}
+  .cbarrow .cl{width:44px;font-size:12px;font-weight:800}
+  .cbarrow .ctrack{flex:1;height:10px;background:#eef0f4;border-radius:6px;overflow:hidden}
+  .cbarrow .cfill{height:100%;border-radius:6px}
+  .cbarrow .cv{width:30px;text-align:right;font-size:11.5px;font-weight:800;color:var(--sub)}
+  .snote{font-size:11px;color:var(--sub);line-height:1.55;margin-top:8px}
+  .cbarrow{cursor:pointer;border-radius:8px;padding:4px 6px;border:1px solid transparent}
+  .cbarrow:hover{background:#f7f8fa}
+  .cbarrow.on{background:var(--purple-bg);border-color:#d6ccfb}
+  /* 현재 필터 요약줄 */
+  .fbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;background:#fff;border:1px solid var(--line);border-radius:12px;padding:9px 12px;margin-bottom:12px;font-size:12.5px;color:var(--sub);font-weight:700}
+  .fbar .fchip{background:var(--purple-bg);color:var(--accent);border-radius:20px;padding:4px 11px;font-weight:800;font-size:12px}
+  .fbar .fcnt{color:var(--ink);font-weight:800}
+  .fbar .rst{margin-left:auto;border:none;background:#eef0f3;color:var(--sub);border-radius:9px;padding:6px 12px;font-weight:800;cursor:pointer;font-family:inherit;font-size:12px}
+  .fbar .rst:hover{background:var(--red-bg);color:var(--red)}
+  /* 국가 칩 */
+  .cc{display:inline-block;font-size:11px;font-weight:800;padding:3px 9px;border-radius:20px;margin:8px 5px 0 0}
+  .hero{background:linear-gradient(120deg,#4f46e5,#7c3aed);color:#fff;border-radius:18px;padding:22px 26px;box-shadow:0 6px 20px rgba(0,0,0,.08)}
+  .hero h1{font-size:24px;font-weight:800}
+  .hero .date{float:right;font-size:14px;opacity:.9;font-weight:600}
+  .hero p{margin-top:4px;font-size:14px;opacity:.92}
+  .chips{margin-top:16px;display:flex;gap:10px;flex-wrap:wrap}
+  .chip{background:rgba(255,255,255,.18);backdrop-filter:blur(4px);border-radius:12px;padding:10px 16px;font-size:13px;font-weight:600}
+  .chip b{font-size:20px;display:block;font-weight:800}
+  /* 폴더 탭 */
+  .foldbar{display:flex;gap:8px;margin:18px 0 4px;flex-wrap:wrap;align-items:center}
+  .fold{border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 16px;font-size:14px;font-weight:800;color:#374151;cursor:pointer;transition:.15s}
+  .fold:hover{border-color:var(--accent);color:var(--accent)}
+  .fold.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .fold .cnt{margin-left:6px;font-size:12px;opacity:.75}
+  .fold.f-go.on{background:var(--green);border-color:var(--green)}
+  .fold.f-hold.on{background:var(--orange);border-color:var(--orange)}
+  .fold.f-drop.on{background:#6b7280;border-color:#6b7280}
+  .foldnote{font-size:12px;color:var(--sub);margin-left:4px}
+  .controls{display:flex;gap:8px;margin:12px 0;flex-wrap:wrap}
+  .controls select,.search{border:1.5px solid var(--line);border-radius:11px;padding:10px 14px;font-size:14px;outline:none;background:#fff;font-weight:600;color:var(--ink)}
+  .search{flex:1;min-width:160px}
+  .catbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:16px}
+  .catchip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:8px 15px;font-size:13.5px;font-weight:700;color:#374151;cursor:pointer;transition:.15s}
+  .catchip:hover{border-color:var(--accent);color:var(--accent)}
+  .catchip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .catchip .cnt{display:inline-block;margin-left:5px;font-size:11px;font-weight:700;opacity:.8}
+  .sect{margin:20px 0 10px;font-size:16px;font-weight:800;display:flex;align-items:center;gap:8px}
+  .sect .tag{font-size:11px;font-weight:700;background:var(--blue-bg);color:var(--blue);padding:3px 9px;border-radius:20px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:14px}
+  .vcard{background:var(--card);border-radius:16px;padding:16px;cursor:pointer;border:1px solid var(--line);transition:.15s;box-shadow:0 2px 8px rgba(0,0,0,.04);position:relative}
+  .vcard:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(0,0,0,.10);border-color:var(--accent)}
+  .vcard.new{border-color:var(--blue);box-shadow:0 2px 10px rgba(37,99,235,.12)}
+  .vcard.dim{opacity:.55}
+  .vtop{display:flex;align-items:center;gap:12px}
+  .avatar{width:50px;height:50px;border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:26px;background:var(--purple-bg);flex:none}
+  .vname{font-weight:800;font-size:15px;line-height:1.28}
+  .vcat{font-size:12px;color:var(--sub);margin-top:2px}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;margin:8px 5px 0 0}
+  .b-ok{background:var(--green-bg);color:var(--green)} .b-check{background:var(--orange-bg);color:var(--orange)}
+  .b-new{background:var(--blue-bg);color:var(--blue)} .b-no{background:var(--red-bg);color:var(--red)}
+  .b-diff{background:#eef2f7;color:#475569}
+  .b-upd{background:var(--blue-bg);color:var(--blue)}
+  .b-merge{background:#fdf3d7;color:#926b0a}
+  .b-go{background:var(--green-bg);color:var(--green)} .b-hold{background:var(--orange-bg);color:var(--orange)} .b-drop{background:#eef0f3;color:#6b7280}
+  .vmeta{margin-top:12px;display:flex;justify-content:space-between;align-items:flex-end;border-top:1px dashed var(--line);padding-top:10px}
+  .vmeta .k{font-size:11px;color:var(--sub)} .vmeta .v{font-weight:800;font-size:14px}
+  .plat{color:var(--accent)}
+  /* 페이지네이션 */
+  .pager{display:flex;gap:6px;justify-content:center;margin:22px 0 8px;flex-wrap:wrap}
+  .pg{min-width:38px;height:38px;border:1.5px solid var(--line);background:#fff;border-radius:10px;font-size:14px;font-weight:800;color:#374151;cursor:pointer;padding:0 10px}
+  .pg:hover{border-color:var(--accent);color:var(--accent)}
+  .pg.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .pg:disabled{opacity:.35;cursor:default}
+  .pginfo{font-size:12px;color:var(--sub);text-align:center;margin-bottom:8px}
+  /* trend */
+  .trend{background:#fff;border:1px solid var(--line);border-radius:16px;padding:16px 18px;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .trow{display:flex;align-items:center;gap:10px;margin:7px 0}
+  .trow .tn{flex:1;font-size:13.5px;font-weight:700}
+  .tbar{height:9px;border-radius:6px;background:linear-gradient(90deg,#7c3aed,#4f46e5)}
+  .trow .tc{font-size:12px;color:var(--sub);font-weight:700;width:48px;text-align:right}
+  /* scam */
+  .scam{margin-top:22px;border:1.5px solid #f3c2c2;background:var(--red-bg);border-radius:16px;padding:14px 18px}
+  .scam summary{font-weight:800;color:var(--red);cursor:pointer;font-size:14.5px}
+  .scam .si{background:#fff;border-radius:10px;padding:10px 13px;margin-top:10px;font-size:13px}
+  .scam .si b{color:var(--red)}
+  /* modal */
+  .overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);display:none;align-items:flex-start;justify-content:center;padding:30px 14px;overflow:auto;z-index:50}
+  .overlay.on{display:flex}
+  .modal{background:#fff;border-radius:20px;width:100%;max-width:760px;padding:24px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .mhead{display:flex;align-items:center;gap:14px;border-bottom:2px solid var(--line);padding-bottom:16px}
+  .mhead .avatar{width:60px;height:60px;font-size:32px}
+  .mhead h2{font-size:20px;font-weight:800;line-height:1.3}
+  .close{margin-left:auto;background:#f3f4f6;border:none;border-radius:10px;width:38px;height:38px;font-size:18px;cursor:pointer;flex:none}
+  .msub{font-size:12px;font-weight:800;color:var(--accent);margin:16px 0 8px}
+  .drow{display:flex;flex-wrap:wrap;gap:10px;margin:6px 0 4px}
+  .di{background:#f7f8fa;border-radius:10px;padding:9px 13px;font-size:13px;font-weight:700}
+  .di span{color:var(--sub);font-weight:500;margin-right:6px}
+  /* 지표 바 */
+  .mbars{margin:6px 0 2px}
+  .mbar{display:flex;align-items:center;gap:10px;margin:8px 0}
+  .mbar .bl{width:120px;font-size:12.5px;color:var(--sub);font-weight:700}
+  .mbar .btrack{flex:1;height:12px;background:#eef0f4;border-radius:7px;overflow:hidden}
+  .mbar .bfill{height:100%;border-radius:7px}
+  .mbar .bv{width:110px;font-size:12px;font-weight:800;text-align:right}
+  /* 출처 */
+  .srcs a{display:flex;align-items:center;gap:10px;background:#f7f8fa;border-radius:10px;padding:10px 13px;margin:6px 0;font-size:13px;color:var(--ink);text-decoration:none;font-weight:600}
+  .srcs a:hover{background:var(--blue-bg)}
+  .srcs .pill{font-size:10.5px;font-weight:800;background:var(--purple-bg);color:var(--purple);border-radius:20px;padding:3px 9px;flex:none}
+  .srcs .u{color:var(--blue);font-size:11.5px;word-break:break-all}
+  .hist{background:#f7f8fa;border-radius:10px;padding:10px 13px;font-size:12.5px;color:var(--sub);margin-top:4px}
+  /* 폴더 버튼 */
+  .fbtns{display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;align-items:center}
+  .fbtn{border:none;border-radius:11px;padding:12px 20px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit}
+  .fb-go{background:var(--green-bg);color:var(--green)} .fb-hold{background:var(--orange-bg);color:var(--orange)} .fb-drop{background:#eef0f3;color:#6b7280}
+  .fbtn.sel{outline:3px solid currentColor}
+  .fb-clear{background:none;color:var(--sub);text-decoration:underline;font-size:12px}
+  .fnote{font-size:11.5px;color:var(--sub);margin-top:8px}
+  .foot{text-align:center;color:var(--sub);font-size:12px;margin:22px 0 6px}
+  /* ── 반응형: 태블릿 이하 1단 (레일→가로 칩, 발굴처→하단) ── */
+  @media(max-width:1150px){
+    .layout{grid-template-columns:1fr;gap:10px}
+    .rail,.spanel{position:static}
+    .railsec{margin-bottom:8px;padding:10px}
+    .vlist{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;gap:8px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
+    .rail .fold,.rail .catchip{width:auto;white-space:nowrap;flex:none}
+    .rail .foldnote{display:none}
+    .spanel{order:3}
+    .ssec{margin-bottom:8px}
+  }
+  @media(max-width:520px){
+    body{padding:10px}
+    .hero{padding:16px 18px;border-radius:14px}
+    .hero h1{font-size:20px}.hero .date{float:none;display:block;margin-bottom:6px;font-size:12px}
+    .chips{gap:6px}.chip{padding:8px 12px;font-size:12px}.chip b{font-size:16px}
+    .controls select,.search{padding:9px 11px;font-size:13px}
+    .grid{grid-template-columns:1fr 1fr;gap:10px}
+    .vcard{padding:12px}.vname{font-size:13.5px}.avatar{width:40px;height:40px;font-size:20px;border-radius:10px}
+    .badge,.cc{font-size:10px;padding:2px 7px}
+    .vmeta .v{font-size:12.5px}
+    .pg{min-width:34px;height:34px;font-size:13px}
+    .modal{padding:16px;border-radius:16px}
+    .mbar .bl{width:86px}.mbar .bv{width:80px}
+    .fbtns .fbtn{padding:11px 14px;font-size:13px;flex:1}
+  }
+  @media(max-width:380px){.grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+  <div class="hero">
+    <span class="date" id="date"></span>
+    <h1>🧭 부업 아이템 발굴기</h1>
+    <p>매일 발굴한 아이템 — 손대지 않아도 사라지지 않습니다. 분류(진행/보류/폐기)는 사장님만 합니다.</p>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="layout">
+
+  <aside class="rail">
+    <div class="railsec"><h4>📂 폴더</h4><div class="vlist" id="foldbar"></div></div>
+    <div class="railsec"><h4>🗂 카테고리</h4><div class="vlist" id="catbar"></div></div>
+  </aside>
+
+  <main style="min-width:0">
+  <div class="controls">
+    <select id="period" onchange="resetPg()">
+      <option value="all">전체 기간</option>
+      <option value="today">오늘 신규</option>
+      <option value="week">이번 주</option>
+      <option value="month">이번 달</option>
+    </select>
+    <select id="fresh" onchange="resetPg()">
+      <option value="all">전체 신선도</option>
+      <option value="fresh">🟢 최근 90일</option>
+      <option value="stale">🟡 오래됨(90일+)</option>
+      <option value="legacy">🔴 레거시(2025)</option>
+      <option value="unknown">⚪ 게시일 미확인</option>
+    </select>
+    <select id="mon" onchange="resetPg()"></select>
+    <input class="search" id="search" placeholder="🔍 아이템·플랫폼 검색" oninput="resetPg()">
+  </div>
+
+  <div class="fbar" id="fbar"></div>
+  <div id="newsect"></div>
+  <div id="view"></div>
+  <div class="pginfo" id="pginfo"></div>
+  <div class="pager" id="pager"></div>
+
+  <div class="sect" id="trendhd" style="display:none">🔥 언급 급상승 <span class="tag">트렌드</span></div>
+  <div class="trend" id="trend" style="display:none"></div>
+
+  <div id="scamwrap"></div>
+
+  <div class="foot" id="foot"></div>
+  </main>
+
+  <aside class="spanel" id="spanel"></aside>
+
+  </div>
+
+  <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" id="modal"></div>
+  </div>
+
+<script>
+// 부업 아이템 발굴기 — 대시보드 데이터 (build_dashboard.py 자동생성, 직접편집 금지)
+window.META = {"updated": "2026-07-04", "total": 12, "newToday": 1, "byCat": {"앱테크": 2, "AI": 4, "콘텐츠": 3, "서비스": 2}, "builtAt": "2026-07-04 13:27:46"};
+window.ITEMS = [
+  {"id": "IT0001", "name": "리워드 출석체크 앱테크(7종)", "cat": "앱테크", "country": "KR", "platform": "리워드앱(피그머니/머니쿤/캐시라운드 등)", "model": "출석·룰렛·광고 보상", "cost": "0원", "diff": 1, "ttapp": 3, "mentions": 1, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=rh-kosm9YMU"], "scam": false, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20250829", "ver": 1},
+  {"id": "IT0011", "name": "위치기반 스톡 사진 판매(스탠바이)", "cat": "콘텐츠", "country": "KR", "platform": "스탠바이(StandBy)", "model": "사진 1년 사용권 판매", "cost": "0원", "diff": 1, "ttapp": 3, "mentions": 1, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=q9oTIy0aOJI"], "scam": false, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20250428", "ver": 1},
+  {"id": "IT0005", "name": "대본·녹음 없는 힐링음악 유튜브 영상", "cat": "콘텐츠", "country": "KR", "platform": "유튜브", "model": "유튜브 광고수익", "cost": "0원(Pexels+유튜브 오디오보관함)", "diff": 2, "ttapp": 3, "mentions": 1, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=6X1ICS7ojJA"], "scam": false, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20250218", "ver": 1},
+  {"id": "IT0006", "name": "네이버 프리미엄 콘텐츠 글쓰기", "cat": "콘텐츠", "country": "KR", "platform": "네이버 프리미엄 콘텐츠", "model": "유료 구독 기반", "cost": "0원", "diff": 2, "ttapp": 3, "mentions": 1, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=bVQkQQI1owg"], "scam": false, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20250319", "ver": 1},
+  {"id": "IT0007", "name": "소프트웨어 리뷰 작성(Halftera)", "cat": "서비스", "country": "KR", "platform": "Halftera", "model": "리뷰당 약 $10(아마존 기프트카드)", "cost": "0원", "diff": 2, "ttapp": 3, "mentions": 1, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=i-WlvCHuL1I"], "scam": false, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20250223", "ver": 1},
+  {"id": "IT0008", "name": "템플릿 로고 제작 판매", "cat": "서비스", "country": "KR", "platform": "크몽+네이버블로그(Logopony)", "model": "로고 제작 의뢰 판매", "cost": "구독료(로고폴리)", "diff": 2, "ttapp": 3, "mentions": 1, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=aA5NLt2S3yo"], "scam": false, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20260318", "ver": 1},
+  {"id": "IT0012", "name": "에어드랍 부업 (플랫폼 이벤트 보상 수집)", "cat": "앱테크", "country": "KR", "platform": "코인·앱 에어드랍/이벤트 플랫폼", "model": "기업·앱 이벤트 참여 → 포인트·상품권·현금 보상 수령", "cost": "0 (무료 참여)", "diff": 2, "ttapp": 3, "mentions": 1, "firstSeen": "20260704", "lastSeen": "20260704", "urls": ["https://www.youtube.com/watch?v=rGT7xG8zlr0"], "scam": false, "score": "", "status": "후보", "desc": "①기업·앱이 신규 고객을 끌려고 뿌리는 이벤트 보상(포인트·상품권·현금)을 매일 챙겨 모으는 방식. ②무료로 여러 앱·플랫폼 이벤트에 출석하듯 참여, 하루 30분~1시간, 돈 안 들임. ③새 이벤트·마감일 정보 수집과 알림은 T봇이 자동으로 모아줄 수 있음(참여·본인인증은 직접). 영상은 월 130~160만원 주장하나 개인차 크고 과장 가능성 있음.", "foundAt": "2026-07-04 13:27", "pubDate": "20260601", "ver": 1},
+  {"id": "IT0002", "name": "GPT로 SNS 콘텐츠 제작·수익화", "cat": "AI", "country": "KR", "platform": "쓰레드/링크드인", "model": "콘텐츠→퍼널→웨비나·강의·제품", "cost": "0~소액(API)", "diff": 3, "ttapp": 3, "mentions": 1, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=4Q6_I4F0IcM"], "scam": false, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20250514", "ver": 1},
+  {"id": "IT0003", "name": "MAKE 노코드로 SNS 글쓰기 100% 자동화", "cat": "AI", "country": "KR", "platform": "MAKE+에어테이블+SNS", "model": "콘텐츠 자동발행(간접수익)", "cost": "약 5달러(OpenAI API)", "diff": 3, "ttapp": 3, "mentions": 1, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=6lwFll-NwHo"], "scam": false, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20250526", "ver": 1},
+  {"id": "IT0010", "name": "AI 인플루언서 운영·화장품 협찬", "cat": "AI", "country": "KR", "platform": "인스타그램/틱톡(Higgsfield MCP)", "model": "협찬·광고·UGC 제작", "cost": "구독료(Higgsfield)", "diff": 4, "ttapp": 3, "mentions": 1, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=oiZJO1_P_bk"], "scam": false, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20260628", "ver": 1},
+  {"id": "IT0009", "name": "AI 바이브코딩 SaaS 구축(AI 동화책)", "cat": "AI", "country": "KR", "platform": "웹(Next.js/Vercel/Supabase/Polar)", "model": "SaaS 결제·실물책 인쇄판매(북프린트 API)", "cost": "API·인프라 소액", "diff": 5, "ttapp": 3, "mentions": 1, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=Fh8U67i1yT8"], "scam": false, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20260618", "ver": 1},
+  {"id": "IT0004", "name": "에어드랍/예치 4% 이벤트 부업", "cat": "기타", "country": "KR", "platform": "코인거래소·증권/2금융 플랫폼", "model": "예치금 에어드랍·이벤트 보상", "cost": "예치금 필요", "diff": 2, "ttapp": 3, "mentions": 3, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=h84diPa9dPo", "https://www.youtube.com/watch?v=utzymBW9kZE", "https://www.youtube.com/watch?v=APHOELg7iks"], "scam": true, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20260201", "ver": 1},
+];
+
+</script>
+<script>
+  var ITEMS = window.ITEMS||[], META = window.META||{updated:"",total:0};
+  var CATMETA = {
+    "위탁판매":["📦","--green"], "위탁판매/드롭십":["📦","--green"],
+    "사입":["🛒","--green"], "사입/도소매":["🛒","--green"],
+    "구매대행":["✈️","--blue"], "구매대행/해외직구":["✈️","--blue"],
+    "제휴마케팅":["🔗","--blue"], "콘텐츠":["🎬","--purple"], "콘텐츠수익":["🎬","--purple"],
+    "디지털상품":["💾","--purple"], "AI":["🤖","--accent"], "AI서비스":["🤖","--accent"],
+    "서비스":["🛠️","--orange"], "프리랜스":["🛠️","--orange"],
+    "오프라인":["🏪","--orange"], "앱테크":["📱","--blue"], "기타":["➕","--sub"]
+  };
+  var curCat="전체", curFold="전체", curSrc="전체", curCC="전체", PG=1, PAGE=16;
+  /* JS 에러가 나면 조용히 죽지 말고 화면에 표시 */
+  window.onerror=function(msg,src,line){ var b=document.createElement('div');
+    b.style.cssText='position:fixed;top:0;left:0;right:0;background:#d23f3f;color:#fff;padding:8px 14px;font-size:12px;z-index:99;font-weight:700';
+    b.textContent='⚠️ 화면 오류: '+msg+' (줄 '+line+') — 이 메시지를 T봇에게 보여주세요'; document.body.appendChild(b); };
+  /* 국가 표시 */
+  var CCMAP={KR:["한국","#2563eb","#e8eefc"],US:["미국","#7c3aed","#f0e9fe"],USA:["미국","#7c3aed","#f0e9fe"],
+             JP:["일본","#db2777","#fce7f3"],CN:["중국","#d23f3f","#fde8e8"],EU:["유럽","#2e7d32","#e7f4e8"],
+             DE:["유럽","#2e7d32","#e7f4e8"],FR:["유럽","#2e7d32","#e7f4e8"],GB:["유럽","#2e7d32","#e7f4e8"]};
+  function ccOf(i){ return CCMAP[(i.country||"").toUpperCase()]||["글로벌","#475569","#eef2f7"]; }
+  function ccChip(i){ var c=ccOf(i); return '<span class="cc" style="background:'+c[2]+';color:'+c[1]+'">🌍 '+c[0]+'</span>'; }
+  function srcOf(i){ return srcPill((i.urls&&i.urls[0])||""); }
+  var FOLDS={"진행":["진행 예정","b-go","fb-go","f-go"],"보류":["보류","b-hold","fb-hold","f-hold"],"폐기":["폐기(보관)","b-drop","fb-drop","f-drop"]};
+
+  /* 폴더 저장: localStorage + data.js의 folder 필드 병합 (LS 우선) */
+  function loadF(){ try{return JSON.parse(localStorage.getItem('hustle_folders')||'{}')}catch(e){return{}} }
+  function saveF(m){ try{localStorage.setItem('hustle_folders',JSON.stringify(m))}catch(e){} }
+  function folderOf(i){ var m=loadF(); return m[i.id]||i.folder||""; }
+  function setFolder(id,f){ var m=loadF(); if(f)m[id]=f; else delete m[id]; saveF(m); openItem(id); buildFoldbar(); render(); }
+
+  function meta(c){ return CATMETA[c]||["🧩","--sub"]; }
+  function ymd(s){ return s? s.slice(0,4)+"-"+s.slice(4,6)+"-"+s.slice(6,8):""; }
+  function daysAgo(s){ if(!s)return 9999; var d=new Date(+s.slice(0,4),+s.slice(4,6)-1,+s.slice(6,8)); return Math.floor((new Date(META.updated+"T00:00:00")-d)/864e5); }
+  /* 신선도: 콘텐츠 게시일 기준 (오래된 부업정보 = 실행가치 낮음) */
+  function freshOf(i){
+    var p=i.pubDate||"";
+    if(!p) return {k:"unknown",lab:"⚪ 게시일 미확인",c:"#6b7280",bg:"#eef0f3"};
+    if(p<"20260101") return {k:"legacy",lab:"🔴 레거시 "+p.slice(0,4),c:"var(--red)",bg:"var(--red-bg)"};
+    var d=daysAgo(p);
+    if(d<=90) return {k:"fresh",lab:"🟢 최근 "+d+"일",c:"var(--green)",bg:"var(--green-bg)"};
+    return {k:"stale",lab:"🟡 "+d+"일 경과",c:"var(--orange)",bg:"var(--orange-bg)"};
+  }
+  function isUpd(i){ return i.lastSeen && i.firstSeen && i.lastSeen!==i.firstSeen; }
+  function diffTxt(d){ return "난이도 "+"●".repeat(d)+"○".repeat(5-d); }
+  function shorten(s,n){ return s.length>n? s.slice(0,n)+"…":s; }
+
+  function setHeader(){
+    var d=new Date(META.updated+"T00:00:00"), wd=["일","월","화","수","목","금","토"][d.getDay()];
+    document.getElementById('date').textContent = META.builtAt? "🤖 "+META.builtAt+" 수집·생성" : META.updated+" ("+wd+") 기준";
+    var scam=ITEMS.filter(function(i){return i.scam;}).length;
+    var upd=ITEMS.filter(function(i){return !i.scam&&isUpd(i);}).length;
+    var live=ITEMS.filter(function(i){return !i.scam;});
+    var freshN=live.filter(function(i){return freshOf(i).k==='fresh';}).length;
+    var legN=live.filter(function(i){return freshOf(i).k==='legacy';}).length;
+    document.getElementById('chips').innerHTML=
+      '<div class="chip">총 아이템<b>'+ITEMS.length+'</b></div>'+
+      '<div class="chip">🟢 최근 90일<b>'+freshN+'</b></div>'+
+      '<div class="chip">🔴 레거시<b>'+legN+'</b></div>'+
+      '<div class="chip">정보 갱신<b>'+upd+'</b></div>'+
+      '<div class="chip">사기의심 격리<b>'+scam+'</b></div>';
+    var months=[]; ITEMS.forEach(function(i){var m=i.firstSeen.slice(0,6); if(months.indexOf(m)<0)months.push(m);});
+    months.sort().reverse();
+    document.getElementById('mon').innerHTML='<option value="all">전체 월</option>'+
+      months.map(function(m){return '<option value="'+m+'">'+m.slice(0,4)+'-'+m.slice(4,6)+'</option>';}).join('');
+  }
+
+  function buildFoldbar(){
+    var live=ITEMS.filter(function(i){return !i.scam;});
+    var today=META.updated.replace(/-/g,"");
+    var cnt={"전체":live.length,"신규":live.filter(function(i){return i.firstSeen===today;}).length,"진행":0,"보류":0,"폐기":0};
+    live.forEach(function(i){var f=folderOf(i); if(cnt[f]!==undefined)cnt[f]++;});
+    var defs=[["전체","📂 전체 발굴함",""],["신규","🆕 신규",""],["진행","▶️ 진행 예정","f-go"],["보류","⏸️ 보류","f-hold"],["폐기","🗄️ 폐기(보관)","f-drop"]];
+    document.getElementById('foldbar').innerHTML=defs.map(function(x){
+      return '<button class="fold '+x[2]+(curFold===x[0]?' on':'')+'" onclick="pickFold(\''+x[0]+'\')">'+x[1]+'<span class="cnt">'+cnt[x[0]]+'</span></button>';
+    }).join('')+'<span class="foldnote">폐기도 삭제가 아닙니다 — 언제든 여기서 복구</span>';
+  }
+  function pickFold(f){ curFold=f; PG=1; buildFoldbar(); render(); }
+  function pickCat(c){ curCat=c; PG=1; buildCatbar(); render(); }
+  function resetPg(){ PG=1; render(); }
+
+  function buildCatbar(){
+    var live=ITEMS.filter(function(i){return !i.scam;});
+    var cnt={}; live.forEach(function(i){cnt[i.cat]=(cnt[i.cat]||0)+1;});
+    var cats=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];});
+    var html='<button class="catchip'+(curCat==="전체"?" on":"")+'" onclick="pickCat(\'전체\')">전체 <span class="cnt">'+live.length+'</span></button>';
+    html+=cats.map(function(c){
+      return '<button class="catchip'+(curCat===c?" on":"")+'" onclick="pickCat(\''+c+'\')">'+meta(c)[0]+' '+c+' <span class="cnt">'+cnt[c]+'</span></button>';
+    }).join('');
+    document.getElementById('catbar').innerHTML=html;
+  }
+
+  function filtered(){
+    var q=(document.getElementById('search').value||"").toLowerCase();
+    var per=document.getElementById('period').value, mon=document.getElementById('mon').value;
+    var frF=document.getElementById('fresh').value;
+    var today=META.updated.replace(/-/g,"");
+    return ITEMS.filter(function(i){
+      if(i.scam) return false;
+      if(curSrc!=="전체" && srcOf(i)!==curSrc) return false;
+      if(curCC!=="전체" && ccOf(i)[0]!==curCC) return false;
+      if(frF!=="all" && freshOf(i).k!==frF) return false;
+      var f=folderOf(i);
+      if(curFold==="신규"){ if(i.firstSeen!==today) return false; }
+      else if(curFold!=="전체"){ if(f!==curFold) return false; }
+      if(curCat!=="전체" && i.cat!==curCat) return false;
+      if(mon!=="all" && i.firstSeen.slice(0,6)!==mon) return false;
+      if(per==="today" && i.firstSeen!==today) return false;
+      if(per==="week" && daysAgo(i.lastSeen)>7) return false;
+      if(per==="month" && i.lastSeen.slice(0,6)!==today.slice(0,6)) return false;
+      if(q && (i.name+i.platform+i.cat+i.model).toLowerCase().indexOf(q)<0) return false;
+      return true;
+    });
+  }
+
+  function cardHtml(i){
+    var isNew=i.firstSeen===META.updated.replace(/-/g,"");
+    var m=meta(i.cat), f=folderOf(i), fr=freshOf(i);
+    var fb=f&&FOLDS[f]? '<span class="badge '+FOLDS[f][1]+'">'+FOLDS[f][0]+'</span>':'';
+    return '<div class="vcard'+(isNew?' new':'')+(f==="폐기"?' dim':'')+(fr.k==="legacy"?' dim':'')+'" onclick="openItem(\''+i.id+'\')">'+
+      '<div class="vtop"><div class="avatar" style="background:var('+m[1]+'-bg,#f0e9fe)">'+m[0]+'</div>'+
+      '<div><div class="vname">'+i.name+'</div><div class="vcat">'+i.cat+'</div></div></div>'+
+      ccChip(i)+'<span class="badge b-diff">📡 '+srcOf(i)+'</span>'+
+      '<span class="badge" style="background:'+fr.bg+';color:'+fr.c+'">'+fr.lab+'</span>'+
+      (isNew?'<span class="badge b-new">🆕 오늘 신규</span>':'')+
+      (isUpd(i)?'<span class="badge b-upd">🔄 최신 '+ymd(i.lastSeen).slice(5)+' 갱신</span>':'')+
+      (i.mentions>1?'<span class="badge b-merge">병합 '+i.mentions+'회</span>':'')+
+      fb+
+      '<span class="badge b-diff">'+diffTxt(i.diff)+'</span>'+
+      '<div class="vmeta"><div><div class="k">플랫폼</div><div class="v plat">'+shorten(i.platform,14)+'</div></div>'+
+      '<div style="text-align:right"><div class="k">TTAPP 자동화</div><div class="v">'+i.ttapp+'/5</div></div></div></div>';
+  }
+
+  function render(){
+    var list=filtered();
+    var ns=document.getElementById('newsect');
+    var today=META.updated.replace(/-/g,"");
+    var news=list.filter(function(i){return i.firstSeen===today;});
+    var showNewSect = news.length && curFold==="전체" && document.getElementById('period').value==='all' && PG===1;
+    var rest = showNewSect? list.filter(function(i){return i.firstSeen!==today;}) : list;
+
+    /* 페이지네이션 */
+    var totalPg=Math.max(1,Math.ceil(rest.length/PAGE));
+    if(PG>totalPg)PG=totalPg;
+    var pageItems=rest.slice((PG-1)*PAGE, PG*PAGE);
+
+    if(showNewSect){
+      var bt = META.builtAt? '<span class="tag" style="background:var(--green-bg);color:var(--green)">🤖 AI직원 수집 완료 · '+META.builtAt+'</span>'
+                           : '<span class="tag" style="background:#eef0f3;color:#6b7280">생성시각 미기록 — 다음 수집부터 표시</span>';
+      ns.innerHTML='<div class="sect">🆕 오늘의 신규 아이템 <span class="tag">'+news.length+'건</span>'+bt+'</div>'+
+        '<div class="grid">'+news.map(cardHtml).join('')+'</div>';
+      document.getElementById('view').innerHTML= pageItems.length? '<div class="sect">📋 전체 아이템</div><div class="grid">'+pageItems.map(cardHtml).join('')+'</div>':'';
+    } else {
+      ns.innerHTML='';
+      document.getElementById('view').innerHTML= pageItems.length? '<div class="grid">'+pageItems.map(cardHtml).join('')+'</div>':'<div class="foot">조건에 맞는 아이템이 없습니다.</div>';
+    }
+    renderFbar(list.length);
+    renderPager(totalPg, rest.length);
+    renderTrend();
+    renderScam();
+    document.getElementById('foot').textContent='💡 발굴된 아이템은 자동으로 지워지지 않습니다. 폴더 분류는 사장님만 할 수 있어요. ('+META.updated+' 기준 '+ITEMS.length+'건)';
+  }
+
+  function renderPager(total, n){
+    var pg=document.getElementById('pager'), info=document.getElementById('pginfo');
+    if(total<=1){ pg.innerHTML=''; info.textContent=''; return; }
+    info.textContent='총 '+n+'건 · '+PG+' / '+total+' 페이지 (페이지당 '+PAGE+'건)';
+    var h='<button class="pg" '+(PG===1?'disabled':'')+' onclick="goPg('+(PG-1)+')">‹</button>';
+    var st=Math.max(1,PG-3), en=Math.min(total,st+6); st=Math.max(1,en-6);
+    if(st>1)h+='<button class="pg" onclick="goPg(1)">1</button>'+(st>2?'<button class="pg" disabled>…</button>':'');
+    for(var p=st;p<=en;p++)h+='<button class="pg'+(p===PG?' on':'')+'" onclick="goPg('+p+')">'+p+'</button>';
+    if(en<total)h+=(en<total-1?'<button class="pg" disabled>…</button>':'')+'<button class="pg" onclick="goPg('+total+')">'+total+'</button>';
+    h+='<button class="pg" '+(PG===total?'disabled':'')+' onclick="goPg('+(PG+1)+')">›</button>';
+    pg.innerHTML=h;
+  }
+  function goPg(p){ PG=p; render(); document.getElementById('catbar').scrollIntoView({behavior:'smooth'}); }
+
+  function renderTrend(){
+    var t=ITEMS.filter(function(i){return !i.scam && i.mentions>1;}).sort(function(a,b){return b.mentions-a.mentions;}).slice(0,10);
+    if(!t.length){ document.getElementById('trendhd').style.display='none'; document.getElementById('trend').style.display='none'; return; }
+    document.getElementById('trendhd').style.display='flex'; document.getElementById('trend').style.display='block';
+    var mx=t[0].mentions;
+    document.getElementById('trend').innerHTML=t.map(function(i){
+      return '<div class="trow"><div class="tn">'+meta(i.cat)[0]+' '+i.name+'</div>'+
+        '<div class="tbar" style="width:'+Math.round(i.mentions/mx*160+30)+'px"></div>'+
+        '<div class="tc">'+i.mentions+'회</div></div>';
+    }).join('');
+  }
+  function renderScam(){
+    var s=ITEMS.filter(function(i){return i.scam;});
+    if(!s.length){ document.getElementById('scamwrap').innerHTML=''; return; }
+    document.getElementById('scamwrap').innerHTML='<details class="scam"><summary>⚠️ 사기의심 격리함 ('+s.length+'건) — 강의퍼널·선입금·수익인증 없는 아이템</summary>'+
+      s.map(function(i){return '<div class="si"><b>'+i.name+'</b> · '+i.cat+' · '+i.platform+'<br>'+i.model+'</div>';}).join('')+'</details>';
+  }
+
+  function srcPill(u){
+    if(u.indexOf('youtube')>=0||u.indexOf('youtu.be')>=0)return '유튜브';
+    if(u.indexOf('reddit')>=0)return 'Reddit';
+    if(u.indexOf('news.ycombinator')>=0)return 'HN';
+    if(u.indexOf('kmong')>=0)return '크몽';
+    if(u.indexOf('fiverr')>=0)return 'Fiverr';
+    if(u.indexOf('coconala')>=0)return 'ココナラ';
+    if(u.indexOf('naver')>=0)return '네이버';
+    return '웹';
+  }
+  function bar(label,ratio,color,val){
+    return '<div class="mbar"><div class="bl">'+label+'</div><div class="btrack"><div class="bfill" style="width:'+Math.round(ratio*100)+'%;background:'+color+'"></div></div><div class="bv" style="color:'+color+'">'+val+'</div></div>';
+  }
+
+  function openItem(id){
+    var i=ITEMS.filter(function(x){return x.id===id;})[0]; if(!i)return;
+    var m=meta(i.cat), f=folderOf(i);
+    var c='<div class="mhead"><div class="avatar" style="background:var('+m[1]+'-bg,#f0e9fe)">'+m[0]+'</div>'+
+      '<div><h2>'+i.name+'</h2><span class="badge b-diff">'+i.cat+' · '+i.country+'</span>'+
+      '<span class="badge" style="background:'+freshOf(i).bg+';color:'+freshOf(i).c+'">'+freshOf(i).lab+'</span>'+
+      (isUpd(i)?'<span class="badge b-upd">🔄 최신 '+ymd(i.lastSeen)+' 갱신</span>':'')+
+      (i.mentions>1?'<span class="badge b-merge">병합 '+i.mentions+'회</span>':'')+
+      (i.scam?'<span class="badge b-no">⚠️ 사기의심</span>':'')+'</div>'+
+      '<button class="close" onclick="closeModal()">✕</button></div>';
+    /* 한눈 요약 — 최소 3줄 설명 */
+    var ez0=6-i.diff;
+    var ezTxt=ez0>=4?'진입장벽이 낮아 초보도 바로 시작할 수 있습니다':ez0>=3?'난이도는 보통 — 초반 세팅만 넘기면 운영은 어렵지 않습니다':'난이도가 있는 편이라 초반에 배울 것이 좀 있습니다';
+    var atTxt=i.ttapp>=4?'TTAPP 자동화 적합도가 '+i.ttapp+'/5로 높아, T봇 직원이 대부분의 작업을 자동 처리하고 사람은 검수만 하면 됩니다.':i.ttapp>=3?'TTAPP 자동화 적합도는 '+i.ttapp+'/5 — 반복 작업 일부를 T봇에게 맡길 수 있습니다.':'자동화 적합도가 '+i.ttapp+'/5로 낮아 사람 손이 많이 가는 아이템입니다.';
+    var trTxt=i.mentions>=5?'국내외 소스에서 '+i.mentions+'회 반복 발견된, 관심이 붙고 있는 아이템입니다.':i.mentions>1?'지금까지 '+i.mentions+'회 발견됐습니다.':'이번에 처음 포착된 신규 아이템입니다.';
+    var desc = i.desc ? i.desc :
+       '이 부업은 <b>'+i.platform+'</b>에서 <b>'+i.model+'</b> 방식으로 수익을 만듭니다.<br>'+
+       '초기비용 <b>'+i.cost+'</b>으로 시작하며, '+ezTxt+'.<br>'+
+       atTxt+' '+trTxt;
+    c+='<div class="msub">💡 이게 뭔가요?</div>'+
+       '<div style="font-size:14px;font-weight:600;line-height:1.75">'+desc+'</div>';
+    /* 지표 시각화 */
+    var ez=6-i.diff;
+    c+='<div class="msub">📊 지표</div><div class="mbars">'+
+      bar('쉬움 (난이도 역순)', ez/5, ez>=4?'var(--green)':ez>=3?'var(--orange)':'var(--red)', ez>=4?'쉬움':ez>=3?'보통':'어려움')+
+      bar('TTAPP 자동화', i.ttapp/5, i.ttapp>=4?'var(--accent)':'var(--orange)', i.ttapp+'/5'+(i.ttapp>=4?' 자동화 강함':''))+
+      bar('트렌드 (병합횟수)', Math.min(1,i.mentions/10), i.mentions>=5?'var(--purple)':'#94a3b8', i.mentions+'회 발견')+
+      '</div>';
+    /* 핵심 정보 */
+    c+='<div class="msub">🗂 핵심 정보</div><div class="drow">'+
+      '<div class="di"><span>초기비용</span>'+i.cost+'</div>'+
+      '<div class="di"><span>난이도</span>'+i.diff+'/5</div>'+
+      '<div class="di"><span>콘텐츠 게시일</span>'+(i.pubDate?ymd(i.pubDate)+' ('+freshOf(i).lab+')':'미확인')+'</div>'+
+      '<div class="di"><span>최초 발견</span>'+ymd(i.firstSeen)+(i.foundAt?' '+i.foundAt:'')+'</div>'+
+      '<div class="di"><span>최근 확인</span>'+ymd(i.lastSeen)+'</div>'+
+      (i.score?'<div class="di"><span>점수</span>'+i.score+'</div>':'')+'</div>';
+    /* 이력 */
+    c+='<div class="hist">📜 이력: '+ymd(i.firstSeen)+' 최초 발견'+(isUpd(i)? ' → '+ymd(i.lastSeen)+' 재발견·정보 갱신 (총 '+i.mentions+'회) — 중복은 버리지 않고 최신·최상 정보로 갱신됩니다':' · 이후 재발견시 자동으로 최신 정보로 갱신')+'</div>';
+    /* 출처 */
+    c+='<div class="msub">📎 출처 (클릭하면 원본)</div><div class="srcs">'+
+      i.urls.map(function(u){return '<a href="'+u+'" target="_blank"><span class="pill">'+srcPill(u)+'</span><span class="u">'+u+'</span></a>';}).join('')+'</div>';
+    /* 폴더 지정 */
+    c+='<div class="msub">📂 이 아이템을 어디로? <span style="font-weight:500;color:var(--sub)">(지정 전까지 발굴함에 계속 보관 — 자동 삭제 없음)</span></div>'+
+      '<div class="fbtns">'+
+      Object.keys(FOLDS).map(function(k){var d=FOLDS[k];
+        return '<button class="fbtn '+d[2]+(f===k?' sel':'')+'" onclick="setFolder(\''+i.id+'\',\''+(f===k?'':k)+'\')">'+d[0]+(f===k?' ✓':'')+'</button>';
+      }).join('')+
+      (f?'<button class="fbtn fb-clear" onclick="setFolder(\''+i.id+'\',\'\')">분류 해제</button>':'')+
+      '</div>'+
+      '<div class="fnote">같은 버튼을 다시 누르면 해제됩니다. 분류는 이 컴퓨터에 저장돼요.</div>';
+    document.getElementById('modal').innerHTML=c;
+    document.getElementById('overlay').classList.add('on');
+  }
+  /* ── 현재 필터 요약줄: 무엇이든 클릭하면 여기가 즉시 바뀜 ── */
+  function renderFbar(n){
+    var chips=[];
+    if(curFold!=="전체") chips.push("📂 "+curFold);
+    if(curCat!=="전체") chips.push("🗂 "+curCat);
+    if(curSrc!=="전체") chips.push("📡 "+curSrc);
+    if(curCC!=="전체") chips.push("🌍 "+curCC);
+    var frS=document.getElementById('fresh'); if(frS&&frS.value!=="all") chips.push("🕐 "+frS.options[frS.selectedIndex].text);
+    var q=(document.getElementById('search').value||"").trim(); if(q) chips.push("🔍 "+q);
+    var h= chips.length? '현재 필터: '+chips.map(function(c){return '<span class="fchip">'+c+'</span>';}).join('')
+                       : '전체 표시 중';
+    h+=' <span class="fcnt">→ '+n+'건</span>';
+    if(chips.length) h+='<button class="rst" onclick="resetAll()">✕ 필터 초기화</button>';
+    document.getElementById('fbar').innerHTML=h;
+  }
+  function resetAll(){
+    curCat="전체"; curFold="전체"; curSrc="전체"; curCC="전체"; PG=1;
+    document.getElementById('search').value=""; document.getElementById('period').value="all";
+    document.getElementById('fresh').value="all"; document.getElementById('mon').value="all";
+    buildFoldbar(); buildCatbar(); renderSources(); render();
+  }
+  /* ── 우측: 발굴처 현황 패널 ── */
+  function pickSrc(s){ curSrc=s; PG=1; renderSources(); render(); }
+  function pickCC(k){ curCC=(curCC===k?"전체":k); PG=1; renderSources(); render(); }
+  function renderSources(){
+    var live=ITEMS.filter(function(i){return !i.scam;});
+    var cnt={}; live.forEach(function(i){ var s=srcOf(i); cnt[s]=(cnt[s]||0)+1; });
+    var names=Object.keys(cnt).sort(function(a,b){return cnt[b]-cnt[a];});
+    var SM=META.sources||{}; /* 직원이 넣으면 {유튜브:{status:"정상",last:"07-04 09:50",today:5}, ...} */
+    var h='<div class="ssec"><h4>📡 발굴처 <span style="font-weight:600;font-size:11px;color:var(--sub)">클릭하면 그 소스만</span></h4>';
+    h+='<div class="srow'+(curSrc==="전체"?' on':'')+'" onclick="pickSrc(\'전체\')"><span class="sdot" style="background:#4f46e5"></span><span class="sn">전체</span><span class="sc">'+live.length+'건</span></div>';
+    names.forEach(function(s){
+      var m=SM[s]||{};
+      var dc = m.status==="정상"?"#16a34a": m.status==="차단"?"#dc2626": m.status?"#e08600":"#cbd5e1";
+      h+='<div class="srow'+(curSrc===s?' on':'')+'" onclick="pickSrc(\''+s+'\')">'+
+         '<span class="sdot" style="background:'+dc+'"></span><span class="sn">'+s+'</span><span class="sc">'+cnt[s]+'건</span>'+
+         (m.last||m.status?'<span class="st">'+(m.status||'')+(m.today!=null?' · 오늘 '+m.today+'건':'')+(m.last?' · '+m.last:'')+'</span>':'')+
+         '</div>';
+    });
+    if(!Object.keys(SM).length) h+='<div class="snote">소스별 가동상태·수집시각은 직원이 data.js의 META.sources를 채우면 표시됩니다 (교육파일 참고)</div>';
+    h+='</div>';
+    /* 국가 분포 */
+    var cc={}; live.forEach(function(i){ var c=ccOf(i)[0]; cc[c]=(cc[c]||0)+1; });
+    var ks=Object.keys(cc).sort(function(a,b){return cc[b]-cc[a];});
+    var mx=Math.max.apply(null,ks.map(function(k){return cc[k];}).concat([1]));
+    h+='<div class="ssec"><h4>🌍 국가 분포</h4>';
+    ks.forEach(function(k){
+      var col={한국:"#2563eb",미국:"#7c3aed",일본:"#db2777",중국:"#d23f3f",유럽:"#2e7d32"}[k]||"#475569";
+      h+='<div class="cbarrow'+(curCC===k?' on':'')+'" onclick="pickCC(\''+k+'\')"><span class="cl" style="color:'+col+'">'+k+'</span>'+
+         '<span class="ctrack"><span class="cfill" style="display:block;width:'+Math.round(cc[k]/mx*100)+'%;background:'+col+'"></span></span>'+
+         '<span class="cv">'+cc[k]+'</span></div>';
+    });
+    h+='<div class="snote">막대 클릭 = 그 국가만 보기 (다시 클릭하면 해제). 해외 수집(수집B·D)이 가동되면 미국·일본·중국 막대가 늘어납니다</div></div>';
+    document.getElementById('spanel').innerHTML=h;
+  }
+  function closeModal(){document.getElementById('overlay').classList.remove('on');}
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+  setHeader(); buildFoldbar(); buildCatbar(); renderSources(); render();
+</script>
+</body>
+</html>
