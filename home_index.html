@@ -123,8 +123,9 @@ a{color:inherit;text-decoration:none}
 .memoinfo{font-size:11px;color:var(--sub)}
 .shortcuts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
 .sc{text-align:center;cursor:pointer;width:72px}
-.sc .tile{width:46px;height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;margin:0 auto;font-size:16px;font-weight:800;transition:transform .12s}
-.sc:hover .tile{transform:translateY(-3px)}
+.sc .tile{width:50px;height:50px;border-radius:15px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 1px 5px rgba(0,0,0,.06);transition:transform .12s}
+.sc .tile svg{display:block}
+.sc:hover .tile{transform:translateY(-3px);box-shadow:0 5px 14px rgba(0,0,0,.12)}
 .sc p{font-size:11px;color:var(--sub2);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 /* 반응형 (모바일은 추후 정밀화) */
 @media(max-width:900px){
@@ -243,13 +244,16 @@ const BIZ=[
     cards:[['📊 T봇 관제탑','직원 현황·보고','status.html'],['🧭 부업 발굴','아이템 발굴기','hustle.html'],['🤖 자동화 목록','워크플로우','#']]}
 ];
 const bizOf=k=>BIZ.find(b=>b.k===k)||BIZ[0];
+const IC_GMAIL='<svg viewBox="0 0 48 48" width="28" height="28"><rect x="5" y="12" width="38" height="24" rx="4" fill="#fff" stroke="#EADFC0"/><path d="M8 15v19M40 15v19" stroke="#EA4335" stroke-width="3.4" stroke-linecap="round"/><path d="M8 15l16 13 16-13" fill="none" stroke="#EA4335" stroke-width="3.4" stroke-linejoin="round"/></svg>';
+const IC_NAVER='<svg viewBox="0 0 48 48" width="28" height="28"><rect width="48" height="48" rx="13" fill="#03C75A"/><path d="M17 14h6.6l7 10.2V14H37v20h-6.6l-7-10.2V34H17z" fill="#fff"/></svg>';
+const IC_GCAL='<svg viewBox="0 0 48 48" width="28" height="28"><rect x="8" y="9" width="32" height="31" rx="6" fill="#fff" stroke="#E3E3E3"/><rect x="8" y="9" width="32" height="10" rx="6" fill="#4285F4"/><rect x="8" y="14" width="32" height="5" fill="#4285F4"/><text x="24" y="35" font-size="16" font-weight="800" fill="#3C6FD6" text-anchor="middle" font-family="Arial,sans-serif">31</text></svg>';
 const SHORTCUTS=[
-  ['Gmail','M','#FCEBEB','#A32D2D','https://mail.google.com'],
-  ['네이버 메일','N','#EAF3DE','#3B6D11','https://mail.naver.com'],
-  ['구글 캘린더','31','#E6F1FB','#185FA5','https://calendar.google.com']
+  ['Gmail', IC_GMAIL, 'https://mail.google.com'],
+  ['네이버 메일', IC_NAVER, 'https://mail.naver.com'],
+  ['구글 캘린더', IC_GCAL, 'https://calendar.google.com']
 ];
 function scGo(u){ if(/^https?:/.test(u)) window.open(u,'_blank'); else location.href=u; }
-function shortcutRow(){ return `<div class="shortcuts">${SHORTCUTS.map(s=>`<div class="sc" onclick="scGo('${s[4]}')" title="${esc(s[0])}"><div class="tile" style="background:${s[2]};color:${s[3]}">${s[1]}</div><p>${esc(s[0])}</p></div>`).join('')}</div>`; }
+function shortcutRow(){ return `<div class="shortcuts">${SHORTCUTS.map(s=>`<div class="sc" onclick="scGo('${s[2]}')" title="${esc(s[0])}"><div class="tile">${s[1]}</div><p>${esc(s[0])}</p></div>`).join('')}</div>`; }
 const pad=n=>String(n).padStart(2,'0');
 const key=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
 const todayKey=()=>key(new Date());
