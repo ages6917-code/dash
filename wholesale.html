@@ -86,23 +86,30 @@
 </style>
 </head>
 <body>
-<div id="pwgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif">
-  <div style="color:#fff;font-size:20px;margin-bottom:6px">🔒 위탁 거래처 대시보드</div>
-  <div style="color:#9fb3d1;font-size:13px;margin-bottom:18px">팀 전용 · 비밀번호를 입력하세요</div>
-  <input id="pwin" type="password" autocomplete="off" style="padding:13px 14px;font-size:16px;border-radius:10px;border:1px solid #2a3b5e;width:240px;background:#1a2540;color:#fff;outline:none" placeholder="비밀번호">
-  <div id="pwerr" style="color:#f87171;margin-top:12px;height:18px;font-size:13px"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
+  <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
+  <div style="color:#9fb3d1;font-size:13px">사장님 구글 계정으로 로그인하세요</div>
+  <button id="agbtn" style="border:none;background:#fff;color:#1a2540;border-radius:10px;padding:12px 22px;font-size:14px;cursor:pointer;font-weight:700">Google로 로그인</button>
+  <div id="agmsg" style="color:#f87171;font-size:13px;height:18px"></div>
 </div>
 <script>
 (function(){
-  var PW="5생활관!";
-  var g=document.getElementById('pwgate');
-  if(sessionStorage.getItem('cdash_ok')==='1'){g.style.display='none';return;}
+  var cfg={apiKey:"AIzaSyCAdQ2KkU5Nui6l2vJxnpZKBM65iJXRLn8",authDomain:"consult-crm-cfef6.firebaseapp.com",databaseURL:"https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"consult-crm-cfef6",appId:"1:519553114688:web:d0a4c9bd66e276984275a5"};
+  try{ if(!firebase.apps.length) firebase.initializeApp(cfg); }catch(e){}
+  var OWNER='ages6917@gmail.com';
+  var g=document.getElementById('authgate');
   document.body.style.overflow='hidden';
-  function ok(){sessionStorage.setItem('cdash_ok','1');g.style.display='none';document.body.style.overflow='';}
-  function check(){var v=document.getElementById('pwin').value;if(v===PW){ok();}else{document.getElementById('pwerr').textContent='비밀번호가 틀렸습니다';}}
-  var i=document.getElementById('pwin');
-  i.addEventListener('keydown',function(e){if(e.key==='Enter')check();});
-  setTimeout(function(){i.focus();},100);
+  document.getElementById('agbtn').onclick=function(){
+    var p=new firebase.auth.GoogleAuthProvider();
+    firebase.auth().signInWithPopup(p).catch(function(){firebase.auth().signInWithRedirect(p);});
+  };
+  firebase.auth().onAuthStateChanged(function(u){
+    if(u && u.email===OWNER){ g.style.display='none'; document.body.style.overflow=''; }
+    else if(u){ document.getElementById('agmsg').textContent='권한 없는 계정: '+u.email; firebase.auth().signOut(); g.style.display='flex'; }
+    else { g.style.display='flex'; }
+  });
 })();
 </script>
 
