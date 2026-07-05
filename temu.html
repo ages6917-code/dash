@@ -53,6 +53,7 @@ tr:hover td{background:#f8fafc}
 </style>
 </head>
 <body>
+<div id="pwgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif"><div style="color:#fff;font-size:20px;margin-bottom:6px">🔒 테무 통합 대시보드</div><div style="color:#9fb3d1;font-size:13px;margin-bottom:18px">팀 전용 · 비밀번호를 입력하세요</div><input id="pwin" type="password" autocomplete="off" style="padding:13px 14px;font-size:16px;border-radius:10px;border:1px solid #2a3b5e;width:240px;background:#1a2540;color:#fff;outline:none" placeholder="비밀번호"><div id="pwerr" style="color:#f87171;margin-top:12px;height:18px;font-size:13px"></div></div><script>(function(){var PW="5생활관!";var g=document.getElementById('pwgate');if(sessionStorage.getItem('cdash_ok')==='1'){g.style.display='none';return;}document.body.style.overflow='hidden';function ok(){sessionStorage.setItem('cdash_ok','1');g.style.display='none';document.body.style.overflow='';}function check(){var v=document.getElementById('pwin').value;if(v===PW){ok();}else{document.getElementById('pwerr').textContent='비밀번호가 틀렸습니다';}}var i=document.getElementById('pwin');i.addEventListener('keydown',function(e){if(e.key==='Enter')check();});setTimeout(function(){i.focus();},100);})();</script>
 <div class="hero">
   <h1>🛒 테무 통합 대시보드</h1>
   <div class="meta">운영: <span id="m-op"></span><br>시장수집: <span id="m-mk"></span><br>
