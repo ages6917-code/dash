@@ -115,6 +115,10 @@ a{color:inherit;text-decoration:none}
 .log .st.done{background:#EAF3DE;color:#27500A}.log .st.new{background:#E6F1FB;color:#0C447C}.log .st.warn{background:#FAEEDA;color:#8A5A0B}
 .links{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
 .lk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px;font-size:12.5px;font-weight:700;cursor:pointer}.lk .d{font-size:11px;color:var(--sub);font-weight:400;margin-top:3px}
+.dchart{display:flex;gap:8px;align-items:flex-end;height:92px;padding-top:6px}
+.dbar{flex:1;text-align:center;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-end}
+.dbf{border-radius:5px 5px 0 0;min-height:4px;margin:0 auto;width:62%}
+.dbl{font-size:10.5px;color:var(--sub);margin-top:5px}
 #memo,.bnote{width:100%;min-height:120px;border:none;background:transparent;resize:vertical;font-family:inherit;font-size:13px;color:var(--txt);line-height:1.7;outline:none}
 .memoinfo{font-size:11px;color:var(--sub)}
 .shortcuts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
@@ -159,6 +163,7 @@ a{color:inherit;text-decoration:none}
       <a class="nav" href="hustle.html">🧭 부업 발굴</a>
       <a class="nav" href="consult.html">💼 컨설팅</a>
       <a class="nav" href="wholesale.html">📦 위탁거래처</a>
+      <a class="nav" href="temu.html">🛒 테무 통합 대시보드</a>
       <div class="aimini" id="aiMini" onclick="location.href='status.html'">🤖 AI 직원 현황 불러오는 중… — 관제탑 →</div>
     </aside>
     <main class="main">
@@ -204,7 +209,7 @@ const BIZ=[
     fu:[['Pharmacity','견적 회신 대기','D-2'],['신규 바이어','샘플 문의','오늘']],
     log:[['07-05','신규 바이어 28건 발굴','신규','new'],['07-05','검수 통과 12건 마스터 이관','완료','done'],['07-04','콜드메일 23통 발송','발송','new']],
     cards:[['🧭 부업/해외 발굴','서비스 수요처','hustle.html'],['📧 콜드메일 발송','승인분만 발송','#'],['📄 바이어풀 마스터','340건 DB','#']]},
-  {k:'경영컨설팅', icon:'💼', desc:'정책자금 · 보험 · 세무 컨설팅', c:'#378ADD', bg:'#E6F1FB', tc:'#0C447C',
+  {k:'경영컨설팅', icon:'💼', desc:'정책자금 · 보험 · 세무 컨설팅', c:'#378ADD', bg:'#E6F1FB', tc:'#0C447C', redirect:'consult.html',
     badge:'🟢 진행중 · 오늘 처리할 신규 8건', hero:[['컨설팅 CRM','consult.html']],
     kpi:[['8','신규 연락 대기','▲ 오늘 +3','up'],['23','진행 관리고객','▲ 이번주 +2','up'],['3,200만','이번달 계약·수수료','▲ 전월比 +18%','up'],['5','재연락 예정','오늘 2건 마감','down']],
     pipeTitle:'고객 진행 파이프라인', pipe:[['신규DB',8,false,''],['상담',12,false,''],['서류',6,true,'3일+ 정체'],['접수',4,false,''],['마무리',3,false,'']],
@@ -228,7 +233,7 @@ const BIZ=[
     fu:[['셀러A','정산 처리','오늘'],['공급사','재고 보충','D-2']],
     log:[['07-05','신규 공구 2건 오픈','신규','new'],['07-04','셀러 3곳 매칭','완료','done'],['07-04','정산 1건 완료','완료','done']],
     cards:[['🎬 라이브방송 연계','방송 상품','#'],['📄 공구 진행표','셀러·상품','#'],['💰 정산 관리','수수료 정산','#']]},
-  {k:'AI사업', icon:'🤖', desc:'TTAPP 활용 AI 자동화', c:'#7F77DD', bg:'#EEEDFE', tc:'#3C3489',
+  {k:'AI사업', icon:'🤖', desc:'TTAPP 활용 AI 자동화', c:'#7F77DD', bg:'#EEEDFE', tc:'#3C3489', redirect:'status.html',
     badge:'🟢 AI 직원 17명 가동중', hero:[['T봇 관제탑','status.html'],['부업 발굴','hustle.html']],
     kpi:[['17','AI 직원','가동 12명','up'],['8','오늘 산출물','▲ +8','up'],['3','개입 대기','▼ -1','down'],['47만','월 AI 비용','전월 유지','up']],
     pipeTitle:'AI 직원 상태', pipe:[['가동중',12,false,''],['주의',5,false,''],['개입대기',3,true,'확인要'],['검수대기',3,false,''],['중지',2,false,'']],
@@ -241,11 +246,7 @@ const bizOf=k=>BIZ.find(b=>b.k===k)||BIZ[0];
 const SHORTCUTS=[
   ['Gmail','M','#FCEBEB','#A32D2D','https://mail.google.com'],
   ['네이버 메일','N','#EAF3DE','#3B6D11','https://mail.naver.com'],
-  ['구글 캘린더','31','#E6F1FB','#185FA5','https://calendar.google.com'],
-  ['T봇 관제탑','T','#EEEDFE','#534AB7','status.html'],
-  ['부업 발굴','부','#E1F5EE','#0F6E56','hustle.html'],
-  ['컨설팅','컨','#FBEAF0','#993556','consult.html'],
-  ['위탁거래처','핫','#FAECE7','#993C1D','wholesale.html']
+  ['구글 캘린더','31','#E6F1FB','#185FA5','https://calendar.google.com']
 ];
 function scGo(u){ if(/^https?:/.test(u)) window.open(u,'_blank'); else location.href=u; }
 function shortcutRow(){ return `<div class="shortcuts">${SHORTCUTS.map(s=>`<div class="sc" onclick="scGo('${s[4]}')" title="${esc(s[0])}"><div class="tile" style="background:${s[2]};color:${s[3]}">${s[1]}</div><p>${esc(s[0])}</p></div>`).join('')}</div>`; }
@@ -267,6 +268,7 @@ fb.auth().onAuthStateChanged(u=>{
 /* 상태 */
 let started=false, curView='home';
 let tasks={}, ddays={}, evs={}, bizNotes={}, bizdata={}, memoVal='', summary=null, crm={n:null,memo:''};
+let hd={};  // 핫딜연합 전용 데이터 (재고·매출·거래처·결제·계산서)
 let calBase=new Date(new Date().getFullYear(),new Date().getMonth(),1), selDay=todayKey();
 
 function start(){
@@ -280,6 +282,7 @@ function start(){
   db.ref('home/events').on('value',s=>{evs=s.val()||{}; refresh();});
   db.ref('home/biz').on('value',s=>{bizNotes=s.val()||{}; refresh();});
   db.ref('home/bizdata').on('value',s=>{bizdata=s.val()||{}; refresh();});
+  db.ref('home/hotdeal').on('value',s=>{hd=s.val()||{}; refresh();});
   db.ref('home/memo').on('value',s=>{memoVal=s.val()||''; var m=document.getElementById('memo'); if(m&&document.activeElement!==m)m.value=memoVal;});
   db.ref('.info/connected').on('value',s=>{const el=document.getElementById('sync'); el.textContent=s.val()?'● 동기화됨':'○ 오프라인'; el.style.color=s.val()?'var(--green)':'var(--red)';});
   db.ref('home/summary').on('value',s=>{ if(s.exists()){summary=s.val(); renderAiMini();} });
@@ -294,8 +297,9 @@ function refresh(){ renderNav(); renderView(); renderSubline(); }
 function renderNav(){
   document.getElementById('navBiz').innerHTML=BIZ.map(b=>{
     const open=Object.values(tasks).filter(t=>t.biz===b.k&&!t.done).length;
-    return `<div class="nav ${curView==='biz:'+b.k?'on':''}" onclick="setView('biz:${b.k}')">
-      <span class="dot" style="background:${b.c}"></span>${b.k}${open?`<span class="sd">${open}</span>`:''}</div>`;
+    const act=b.redirect?`scGo('${b.redirect}')`:`setView('biz:${b.k}')`;
+    return `<div class="nav ${curView==='biz:'+b.k?'on':''}" onclick="${act}">
+      <span class="dot" style="background:${b.c}"></span>${b.k}${b.redirect?'<span class="sd">↗</span>':(open?`<span class="sd">${open}</span>`:'')}</div>`;
   }).join('');
   document.querySelectorAll('.nav[data-v]').forEach(n=>n.classList.toggle('on',n.getAttribute('data-v')===curView));
 }
@@ -370,6 +374,7 @@ function memoCard(){
 function renderView(){
   const v=document.getElementById('view');
   if(curView==='home') v.innerHTML=homeView();
+  else if(curView==='biz:핫딜연합') v.innerHTML=hotdealView();
   else if(curView.startsWith('biz:')) v.innerHTML=bizView(curView.slice(4));
   else if(curView==='tasks') v.innerHTML=`<div class="grid" style="max-width:720px">${tasksCard('')}</div>`;
   else if(curView==='dday') v.innerHTML=`<div class="grid" style="max-width:720px">${ddCard('')}</div>`;
@@ -467,6 +472,67 @@ function editPipe(k,i){ const a=(effPipe(k)||[]).slice(); const label=bizOf(k).p
 function editBadge(k){ const v=prompt('상태 배지 (예: 🟢 진행중 · ...)', effBadge(k)); if(v===null)return; db.ref('home/bizdata/'+k+'/badge').set(v.trim()); }
 function addFu(k){ const v=prompt('다시 연락할 사람 — "이름 | 내용 | 시점"\n예: 김대표 | 대납 확인 | 오늘', ''); if(!v)return; const p=v.split('|').map(s=>s.trim()); const a=cloneArr(effFu(k)); a.push([p[0]||'',p[1]||'',p[2]||'']); db.ref('home/bizdata/'+k+'/fu').set(a); }
 function delFu(k,i){ const a=cloneArr(effFu(k)); a.splice(i,1); db.ref('home/bizdata/'+k+'/fu').set(a); }
+
+/* ── 핫딜연합 전용 (온/오프라인) ── */
+function num(v){ return (v==null||v==='')?'–':v; }
+function editHdStat(f,label){ const v=prompt(label,(hd.stats&&hd.stats[f])||''); if(v===null)return; db.ref('home/hotdeal/stats/'+f).set(v.trim()); }
+function editHdDaily(){ const cur=(hd.stats&&hd.stats.daily)||[]; const v=prompt('최근 7일 일매출 — 쉼표로 7개 (만원)\n예: 120,90,150,80,200,60,40', cur.join(',')); if(v===null)return; db.ref('home/hotdeal/stats/daily').set(v.split(',').map(x=>parseInt(x.trim(),10)||0)); }
+function addVendor(){ const v=prompt('거래처 추가 — "거래처명 | 매출(만) | 미정산(만)"',''); if(!v)return; const p=v.split('|').map(s=>s.trim()); db.ref('home/hotdeal/vendors/v'+Date.now()).set({name:p[0]||'',sales:p[1]||'0',unpaid:p[2]||'0'}); }
+function delVendor(id){ db.ref('home/hotdeal/vendors/'+id).remove(); }
+function addPay(){ const v=prompt('결제 내역 — "내용 | 금액(만) | 날짜(MM/DD)"',''); if(!v)return; const p=v.split('|').map(s=>s.trim()); db.ref('home/hotdeal/pays/p'+Date.now()).set({txt:p[0]||'',amt:p[1]||'',date:p[2]||''}); }
+function delPay(id){ db.ref('home/hotdeal/pays/'+id).remove(); }
+function addBill(){ const v=prompt('계산서 발행 — "거래처/내용 | 금액(만) | 날짜(MM/DD)"',''); if(!v)return; const p=v.split('|').map(s=>s.trim()); db.ref('home/hotdeal/bills/b'+Date.now()).set({txt:p[0]||'',amt:p[1]||'',date:p[2]||''}); }
+function delBill(id){ db.ref('home/hotdeal/bills/'+id).remove(); }
+
+function hotdealView(){
+  const b=bizOf('핫딜연합'), st=hd.stats||{};
+  const daily=(st.daily&&st.daily.length)?st.daily:[0,0,0,0,0,0,0];
+  const mx=Math.max.apply(null,daily.concat([1]));
+  const dw=['월','화','수','목','금','토','일'];
+  const barH=daily.map((n,i)=>`<div class="dbar" onclick="editHdDaily()" title="${n}만"><div class="dbf" style="height:${Math.round(n/mx*66+4)}px;background:${b.c}"></div><div class="dbl">${dw[i]||''}</div></div>`).join('');
+  const V=Object.entries(hd.vendors||{}).map(([id,v])=>({id,...v}));
+  const vrows=V.length?V.map(v=>`<div class="row"><span class="txt">${esc(v.name)}</span><span style="font-weight:700">${esc(v.sales)}만</span><span class="due ${(+v.unpaid)>0?'over':''}" style="min-width:78px;text-align:right">미정산 ${esc(v.unpaid)}만</span><span class="del" onclick="delVendor('${v.id}')">✕</span></div>`).join(''):'<div class="empty">거래처 없음 — 아래 + 추가</div>';
+  const unpaidTot=V.reduce((s,v)=>s+(parseInt(v.unpaid,10)||0),0);
+  const P=Object.entries(hd.pays||{}).map(([id,p])=>({id,...p}));
+  const prows=P.length?P.map(p=>`<div class="row"><span class="txt">${esc(p.txt)} <span style="color:var(--sub);font-size:11px">${esc(p.date)}</span></span><span style="font-weight:700;color:var(--green)">${esc(p.amt)}만</span><span class="del" onclick="delPay('${p.id}')">✕</span></div>`).join(''):'<div class="empty">결제 내역 없음</div>';
+  const Bl=Object.entries(hd.bills||{}).map(([id,x])=>({id,...x}));
+  const brows=Bl.length?Bl.map(x=>`<div class="row"><span class="txt">${esc(x.txt)} <span style="color:var(--sub);font-size:11px">${esc(x.date)}</span></span><span style="font-weight:700">${esc(x.amt)}만</span><span class="del" onclick="delBill('${x.id}')">✕</span></div>`).join(''):'<div class="empty">계산서 발행 내역 없음</div>';
+  const ok=effKpi('핫딜연합');
+  return `<div class="bizhero" style="background:linear-gradient(120deg,${b.c},${b.tc})">
+      <div><h1>📦 핫딜연합</h1><p>온라인(테무 위탁) + 오프라인 도소매</p>
+        <span class="badge" onclick="editBadge('핫딜연합')">${esc(effBadge('핫딜연합'))} ✎</span></div>
+      <div class="ql"><a onclick="scGo('wholesale.html')">📦 위탁판매 거래처 →</a><a onclick="scGo('temu.html')">🛒 테무 통합 대시보드 →</a></div></div>
+    <div class="kpis">
+      <div class="kpi" style="border-color:${b.c}" onclick="editHdStat('inv','보유 재고 자산 (예: 1억 2,000만)')"><div class="v">${num(st.inv)}</div><div class="l">보유 재고 자산 ✎</div></div>
+      <div class="kpi" style="border-color:${b.c}" onclick="editHdStat('today','오늘 매출')"><div class="v">${num(st.today)}</div><div class="l">오늘 매출 ✎</div></div>
+      <div class="kpi" style="border-color:${b.c}" onclick="editHdStat('month','이번달 매출')"><div class="v">${num(st.month)}</div><div class="l">이번달 매출 ✎</div></div>
+      <div class="kpi" style="border-color:var(--red)"><div class="v" style="color:var(--red)">${unpaidTot?unpaidTot+'만':'0'}</div><div class="l">오프라인 미정산 합계</div></div>
+    </div>
+    <div class="card" style="margin-bottom:14px"><h2>📈 최근 7일 일매출 <span class="cnt">막대 클릭 → 수정 · 만원</span></h2><div class="dchart">${barH}</div></div>
+    <div class="grid g2">
+      <div class="col">
+        <div class="card"><h2>🏪 오프라인 · 거래처별 매출 <span class="cnt">${V.length}곳</span></h2>${vrows}
+          <div class="addrow"><button onclick="addVendor()">+ 거래처 추가</button></div></div>
+        <div class="card"><h2>💳 결제 내역 <span class="cnt">입금·결제</span></h2>${prows}
+          <div class="addrow"><button onclick="addPay()">+ 결제 추가</button></div></div>
+        <div class="card"><h2>🧾 계산서 발행 내역 <span class="cnt">세금계산서</span></h2>${brows}
+          <div class="addrow"><button onclick="addBill()">+ 계산서 추가</button></div></div>
+      </div>
+      <div class="col">
+        <div class="card"><h2>🌐 온라인 · 테무 위탁판매 <span class="cnt">현재 위탁판매중</span></h2>
+          <div class="money">
+            <div class="m"><div class="mv">${(ok[0]||[])[0]||'–'}</div><div class="ml">진행 딜</div></div>
+            <div class="m"><div class="mv" style="color:var(--green)">${(ok[2]||[])[0]||'–'}</div><div class="ml">판매 매출</div></div>
+            <div class="m"><div class="mv">${(ok[3]||[])[0]||'–'}</div><div class="ml">마진율</div></div>
+          </div>
+          <div class="addrow"><button onclick="scGo('temu.html')">🛒 테무 통합 대시보드 열기 →</button></div></div>
+        ${tasksCard('핫딜연합')}
+        ${ddCard('핫딜연합')}
+        <div class="card"><h2>📝 현황 메모</h2>
+          <textarea class="bnote" id="bnote" onblur="db.ref('home/biz/핫딜연합').set(this.value.trim())">${esc(bizNotes['핫딜연합']||'')}</textarea></div>
+      </div>
+    </div>`;
+}
 </script>
 </body>
 </html>
