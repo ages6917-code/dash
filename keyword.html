@@ -1,0 +1,134 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>키워드 발굴 · 아이템스카우트 라이트</title>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+:root{--c:#E8590C;--bg:#FBF7F2;--card:#fff;--line:#eee;--txt:#2b2622;--sub:#8a8078}
+*{box-sizing:border-box}
+body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Malgun Gothic",sans-serif;background:var(--bg);color:var(--txt);padding:14px}
+.hd{background:linear-gradient(120deg,#E8590C,#F08c00);color:#fff;border-radius:16px;padding:20px 22px;margin-bottom:14px}
+.hd h1{margin:0;font-size:22px}.hd p{margin:6px 0 0;opacity:.92;font-size:13px}
+.tabs{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:14px}
+.tabs a{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:7px 14px;text-decoration:none;color:var(--txt);font-size:13px;font-weight:600}
+.tabs a.on{background:var(--c);color:#fff;border-color:var(--c)}
+.cards{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:14px}
+@media(max-width:640px){.cards{grid-template-columns:repeat(2,1fr)}}
+.kpi{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:14px}
+.kpi .n{font-size:24px;font-weight:800}.kpi .l{font-size:12px;color:var(--sub);margin-top:2px}
+.box{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin-bottom:14px}
+.box h3{margin:0 0 10px;font-size:15px}
+textarea{width:100%;min-height:70px;border:1px solid var(--line);border-radius:10px;padding:10px;font-size:14px;font-family:inherit;resize:vertical}
+button{background:var(--c);color:#fff;border:0;border-radius:10px;padding:9px 16px;font-weight:700;cursor:pointer;font-size:14px}
+button.gray{background:#f1ede8;color:#555}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th,td{padding:9px 8px;border-bottom:1px solid var(--line);text-align:left;white-space:nowrap}
+th{color:var(--sub);font-size:12px;cursor:pointer;user-select:none}
+th:hover{color:var(--c)}
+td.r,th.r{text-align:right}
+.bar{display:inline-block;height:8px;border-radius:4px;background:#F08c00;vertical-align:middle}
+.bdg{padding:2px 8px;border-radius:20px;font-size:11px;font-weight:700}
+.b-g{background:#E6F4EA;color:#1E7E34}.b-y{background:#FFF4E0;color:#B26A00}.b-r{background:#FDE7E7;color:#C0392B}.b-w{background:#EEE;color:#777}
+.wrap{overflow-x:auto}
+.note{font-size:12px;color:var(--sub);line-height:1.7;margin-top:10px}
+.stat{font-size:12px;color:var(--sub);margin-top:8px}
+</style>
+
+<div class="hd">
+  <h1>🔑 키워드 발굴 <span style="font-size:13px;opacity:.9">· 아이템스카우트 라이트</span></h1>
+  <p>수요(네이버 검색 트렌드) 대비 경쟁(상품수)을 분석해 <b>블루오션 키워드</b>를 찾습니다. 기회점수 ↑ = 수요 높고 경쟁 적음.</p>
+</div>
+
+<div class="tabs">
+  <a href="temu.html">🛒 테무 운영</a>
+  <a href="hotdeal.html">🔥 핫딜연합</a>
+  <a class="on" href="keyword.html">🔑 키워드 발굴</a>
+</div>
+
+<div class="cards">
+  <div class="kpi"><div class="n" id="k-total">–</div><div class="l">분석 키워드</div></div>
+  <div class="kpi"><div class="n" style="color:#1E7E34" id="k-blue">–</div><div class="l">🟢 블루오션</div></div>
+  <div class="kpi"><div class="n" style="color:#C0392B" id="k-red">–</div><div class="l">🔴 레드오션</div></div>
+  <div class="kpi"><div class="n" style="font-size:15px;padding-top:6px" id="k-upd">–</div><div class="l">최종 리서치</div></div>
+</div>
+
+<div class="box">
+  <h3>➕ 키워드 추가 (조사 요청)</h3>
+  <textarea id="addIn" placeholder="한 줄에 하나씩. 예:&#10;유통기한 임박 우유&#10;냉동 만두 벌크&#10;수입 과자 특가"></textarea>
+  <div style="margin-top:8px;display:flex;gap:8px;align-items:center">
+    <button onclick="addKw()">📋 리서치 대기열에 추가</button>
+    <button class="gray" onclick="document.getElementById('addIn').value=''">지우기</button>
+    <span class="stat" id="addStat"></span>
+  </div>
+  <div class="note">추가한 키워드는 <b>대기열</b>에 저장돼요. T봇이 다음 리서치를 돌리면(하루 1회 자동 or "키워드 리서치 돌려줘") 수요·경쟁이 채워져 아래 표에 나타납니다.</div>
+</div>
+
+<div class="box">
+  <h3>📊 키워드 분석 <span class="stat" id="pendCnt"></span></h3>
+  <div class="wrap">
+    <table>
+      <thead><tr>
+        <th onclick="sortBy('judge')">판정</th>
+        <th onclick="sortBy('kw')">키워드</th>
+        <th onclick="sortBy('cat')">카테고리</th>
+        <th class="r" onclick="sortBy('demand')">수요지수 ▾</th>
+        <th class="r" onclick="sortBy('comp')">상품수(경쟁)</th>
+        <th class="r" onclick="sortBy('intensity')">경쟁강도</th>
+        <th class="r" onclick="sortBy('score')">기회점수 ▾</th>
+      </tr></thead>
+      <tbody id="tb"><tr><td colspan="7" style="text-align:center;color:#aaa;padding:24px">불러오는 중…</td></tr></tbody>
+    </table>
+  </div>
+  <div class="note">
+    <b>수요지수</b> = 네이버 검색 트렌드(최근 3개월 평균, "유통기한 임박"=100 기준 상대값) · <b>상품수</b> = 네이버 쇼핑 등록 상품 수(경쟁 강도) · <b>경쟁강도</b> = 상품수 ÷ 수요(낮을수록 유리) · <b>기회점수</b> = 수요÷상품수 (높을수록 블루오션).<br>
+    판정: 🟢 블루오션(수요 있고 경쟁 적음) · 🟡 무난 · 🔴 레드오션(경쟁 과열) · ⚪ 수요저조(검색 유입 자체가 적은 롱테일).<br>
+    ※ 네이버 데이터 기준(한국 검색 수요 대용). 테무 내부 판매량과는 다를 수 있으니 방향 참고용.
+  </div>
+</div>
+
+<script>
+var firebaseConfig={apiKey:"AIzaSyCAdQ2KkU5Nui6l2vJxnpZKBM65iJXRLn8",authDomain:"consult-crm-cfef6.firebaseapp.com",databaseURL:"https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"consult-crm-cfef6"};
+firebase.initializeApp(firebaseConfig);var db=firebase.database();
+var ROWS=[],sortKey='score',sortDir=-1;
+function badge(j){var c='b-w';if(j.indexOf('블루')>=0)c='b-g';else if(j.indexOf('레드')>=0)c='b-r';else if(j.indexOf('무난')>=0)c='b-y';return '<span class="bdg '+c+'">'+j+'</span>';}
+function esc(s){return String(s==null?'':s).replace(/[&<>]/g,function(m){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[m];});}
+function render(){
+  var tb=document.getElementById('tb');
+  if(!ROWS.length){tb.innerHTML='<tr><td colspan="7" style="text-align:center;color:#aaa;padding:24px">아직 데이터가 없어요 — 키워드를 추가하거나 T봇에게 "키워드 리서치 돌려줘"</td></tr>';return;}
+  var maxComp=Math.max.apply(null,ROWS.map(function(r){return r.comp||0}));
+  var arr=ROWS.slice().sort(function(a,b){var x=a[sortKey],y=b[sortKey];if(typeof x==='string')return sortDir*String(x).localeCompare(String(y));return sortDir*((x||0)-(y||0));});
+  tb.innerHTML=arr.map(function(r){
+    var dw=Math.max(2,Math.round((r.demand||0)*0.9));
+    return '<tr>'+
+      '<td>'+badge(r.judge||'')+'</td>'+
+      '<td><b>'+esc(r.kw)+'</b></td>'+
+      '<td style="color:#999;font-size:12px">'+esc(r.cat||'')+'</td>'+
+      '<td class="r"><span class="bar" style="width:'+dw+'px"></span> '+(r.demand||0)+'</td>'+
+      '<td class="r">'+(r.comp||0).toLocaleString()+'</td>'+
+      '<td class="r">'+(r.intensity||0).toLocaleString()+'</td>'+
+      '<td class="r"><b style="color:var(--c)">'+(r.score||0)+'</b></td>'+
+    '</tr>';
+  }).join('');
+}
+function sortBy(k){if(sortKey===k)sortDir*=-1;else{sortKey=k;sortDir=(k==='kw'||k==='cat')?1:-1;}render();}
+db.ref('shared/keyword').on('value',function(s){
+  var d=s.val()||{};var res=d.results||{};
+  ROWS=Object.keys(res).map(function(k){return res[k];});
+  document.getElementById('k-total').textContent=ROWS.length;
+  document.getElementById('k-blue').textContent=ROWS.filter(function(r){return (r.judge||'').indexOf('블루')>=0}).length;
+  document.getElementById('k-red').textContent=ROWS.filter(function(r){return (r.judge||'').indexOf('레드')>=0}).length;
+  document.getElementById('k-upd').textContent=d.updated||'–';
+  render();
+});
+db.ref('shared/keyword/pending').on('value',function(s){
+  var p=s.val()||{};var n=Object.keys(p).length;
+  document.getElementById('pendCnt').textContent=n?('· 리서치 대기 '+n+'개'):'';
+});
+function addKw(){
+  var raw=document.getElementById('addIn').value.split('\n').map(function(x){return x.trim();}).filter(Boolean);
+  if(!raw.length){document.getElementById('addStat').textContent='키워드를 입력하세요';return;}
+  var now=Date.now();raw.forEach(function(k,i){db.ref('shared/keyword/pending/p'+(now+i)).set({kw:k});});
+  document.getElementById('addIn').value='';
+  document.getElementById('addStat').textContent='✅ '+raw.length+'개 대기열 추가 — 다음 리서치 때 반영';
+}
+</script>
