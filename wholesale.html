@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
-<head>
+<head><link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>위탁 거래처 대시보드</title>
@@ -103,6 +103,11 @@
 
   <div id="view"></div>
   <div class="foot" id="foot"></div>
+
+  <div style="background:#fff;border:1px solid var(--line);border-radius:12px;padding:14px;margin-top:14px">
+    <div style="font-weight:700;margin-bottom:8px">📝 메모장 <span style="font-weight:400;color:var(--sub);font-size:12px">· 팀 공유 · 자동 저장</span></div>
+    <textarea id="wmemo" placeholder="거래처 이슈·배송·전달사항·할 일…" style="width:100%;min-height:120px;border:1px solid var(--line);border-radius:9px;padding:10px;font-family:inherit;font-size:13px;resize:vertical;box-sizing:border-box;outline:none"></textarea>
+  </div>
 
   <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
     <div class="modal" id="modal"></div>
@@ -267,6 +272,21 @@ function _img(n){return (window.__IMG__&&window.__IMG__[n])||('images/'+n);}
       '</div>';
     }
     if(s.note) c+='<div class="mnote">📝 '+s.note+'</div>';
+    // ✏️ 편집 가능한 배송·상세 정보 + 메모 (Firebase 저장·공유)
+    var vk=(window.wholeKey?window.wholeKey(s.name):s.name), vm=(window.VMETA&&window.VMETA[vk])||{};
+    var ev=function(t){return String(t==null?'':t).replace(/&/g,'&amp;').replace(/"/g,'&quot;').replace(/</g,'&lt;');};
+    var detOpts=['미정','있음','없음','작업중'].map(function(o){return '<option'+(vm.detail===o?' selected':'')+'>'+o+'</option>';}).join('');
+    var inS='width:100%;padding:7px;border:1px solid var(--line);border-radius:7px;margin-top:3px;font-size:13px;box-sizing:border-box';
+    c+='<div style="background:#f7f9fc;border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0">'+
+      '<div style="font-weight:700;font-size:13px;margin-bottom:8px">✏️ 배송·상세 정보 <span style="font-weight:400;color:var(--sub);font-size:11px">· 입력 즉시 저장</span></div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+        '<label style="font-size:12px;color:var(--sub)">배송비<input type="text" value="'+ev(vm.ship)+'" placeholder="예: 3,500원 / 착불" onchange="saveVMeta(\''+vk+'\',\'ship\',this.value)" style="'+inS+'"></label>'+
+        '<label style="font-size:12px;color:var(--sub)">무료배송 기준<input type="text" value="'+ev(vm.free)+'" placeholder="예: 5만원 이상" onchange="saveVMeta(\''+vk+'\',\'free\',this.value)" style="'+inS+'"></label>'+
+        '<label style="font-size:12px;color:var(--sub)">상세페이지<select onchange="saveVMeta(\''+vk+'\',\'detail\',this.value)" style="'+inS+'">'+detOpts+'</select></label>'+
+        '<label style="font-size:12px;color:var(--sub)">기타<input type="text" value="'+ev(vm.etc)+'" placeholder="특이사항" onchange="saveVMeta(\''+vk+'\',\'etc\',this.value)" style="'+inS+'"></label>'+
+      '</div>'+
+      '<textarea placeholder="메모…" onchange="saveVMeta(\''+vk+'\',\'memo\',this.value)" style="'+inS+';min-height:56px;margin-top:8px;font-family:inherit;resize:vertical">'+ev(vm.memo)+'</textarea>'+
+    '</div>';
     // 품목 — 카테고리가 2개 이상이면 칩으로 나눠 보기
     var cats=[]; s.products.forEach(function(p){ var g=p.g||'전체'; if(cats.indexOf(g)<0)cats.push(g); });
     if(cats.length>1){
@@ -285,6 +305,23 @@ function _img(n){return (window.__IMG__&&window.__IMG__[n])||('images/'+n);}
   function closeModal(){document.getElementById('overlay').classList.remove('on');}
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
   setHeader(); render();
+</script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script>
+(function(){
+  try{
+    var cfg={apiKey:"AIzaSyCAdQ2KkU5Nui6l2vJxnpZKBM65iJXRLn8",authDomain:"consult-crm-cfef6.firebaseapp.com",databaseURL:"https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"consult-crm-cfef6"};
+    if(!firebase.apps.length)firebase.initializeApp(cfg);
+    var wdb=firebase.database();
+    window.VMETA={};
+    window.wholeKey=function(name){return String(name||'').replace(/[.#$\[\]\/'"\\\s]/g,'_').slice(0,80)||'_';};
+    window.saveVMeta=function(key,field,val){ wdb.ref('shared/wholesale/meta/'+key+'/'+field).set(val); if(!window.VMETA[key])window.VMETA[key]={}; window.VMETA[key][field]=val; };
+    wdb.ref('shared/wholesale/meta').on('value',function(s){ window.VMETA=s.val()||{}; });
+    var mref=wdb.ref('shared/wholesale/memo'), m=document.getElementById('wmemo');
+    if(m){ mref.on('value',function(s){ if(document.activeElement!==m)m.value=s.val()||''; }); m.addEventListener('blur',function(){mref.set(this.value);}); }
+  }catch(e){ console.log('firebase init 실패',e); }
+})();
 </script>
 </body>
 </html>
