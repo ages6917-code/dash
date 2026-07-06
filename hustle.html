@@ -190,32 +190,6 @@
 </style>
 </head>
 <body>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
-  <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
-  <div style="color:#9fb3d1;font-size:13px">사장님 구글 계정으로 로그인하세요</div>
-  <button id="agbtn" style="border:none;background:#fff;color:#1a2540;border-radius:10px;padding:12px 22px;font-size:14px;cursor:pointer;font-weight:700">Google로 로그인</button>
-  <div id="agmsg" style="color:#f87171;font-size:13px;height:18px"></div>
-</div>
-<script>
-(function(){
-  var cfg={apiKey:"AIzaSyCAdQ2KkU5Nui6l2vJxnpZKBM65iJXRLn8",authDomain:"consult-crm-cfef6.firebaseapp.com",databaseURL:"https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"consult-crm-cfef6",appId:"1:519553114688:web:d0a4c9bd66e276984275a5"};
-  try{ if(!firebase.apps.length) firebase.initializeApp(cfg); }catch(e){}
-  var OWNER='ages6917@gmail.com';
-  var g=document.getElementById('authgate');
-  document.body.style.overflow='hidden';
-  document.getElementById('agbtn').onclick=function(){
-    var p=new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(p).catch(function(){firebase.auth().signInWithRedirect(p);});
-  };
-  firebase.auth().onAuthStateChanged(function(u){
-    if(u && u.email===OWNER){ g.style.display='none'; document.body.style.overflow=''; }
-    else if(u){ document.getElementById('agmsg').textContent='권한 없는 계정: '+u.email; firebase.auth().signOut(); g.style.display='flex'; }
-    else { g.style.display='flex'; }
-  });
-})();
-</script>
   <div class="hero">
     <span class="date" id="date"></span>
     <h1>🧭 부업 아이템 발굴기</h1>
@@ -273,7 +247,7 @@
 
 <script>
 // 부업 아이템 발굴기 — 대시보드 데이터 (build_dashboard.py 자동생성, 직접편집 금지)
-window.META = {"updated": "2026-07-04", "total": 12, "newToday": 1, "byCat": {"앱테크": 2, "AI": 4, "콘텐츠": 3, "서비스": 2}, "builtAt": "2026-07-04 13:27:46"};
+window.META = {"updated": "2026-07-06", "total": 12, "newToday": 0, "byCat": {"앱테크": 2, "AI": 4, "콘텐츠": 3, "서비스": 2}, "builtAt": "2026-07-06 11:29:37"};
 window.ITEMS = [
   {"id": "IT0001", "name": "리워드 출석체크 앱테크(7종)", "cat": "앱테크", "country": "KR", "platform": "리워드앱(피그머니/머니쿤/캐시라운드 등)", "model": "출석·룰렛·광고 보상", "cost": "0원", "diff": 1, "ttapp": 3, "mentions": 1, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=rh-kosm9YMU"], "scam": false, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20250829", "ver": 1},
   {"id": "IT0011", "name": "위치기반 스톡 사진 판매(스탠바이)", "cat": "콘텐츠", "country": "KR", "platform": "스탠바이(StandBy)", "model": "사진 1년 사용권 판매", "cost": "0원", "diff": 1, "ttapp": 3, "mentions": 1, "firstSeen": "20260703", "lastSeen": "20260703", "urls": ["https://www.youtube.com/watch?v=q9oTIy0aOJI"], "scam": false, "score": "", "status": "후보", "desc": "", "foundAt": "", "pubDate": "20250428", "ver": 1},
