@@ -76,6 +76,7 @@
     <img id="aiThumb"/>
     <div class="aibtns">
       <button class="aibtn go" onclick="runAI()">🤖 AI 요약</button>
+      <button class="aibtn go" onclick="extractToDashboard()" style="background:#2f9e44">📊 매출 대시보드 반영</button>
       <button class="aibtn sub" onclick="clearAI()">지우기</button>
       <button class="aibtn sub" onclick="toggleKey()">🔑 내 제미나이 키</button>
       <span id="aiStat" style="font-size:12px;color:var(--sub)"></span>
@@ -215,6 +216,31 @@ async function runAI(){
   }catch(e){document.getElementById('aiStat').textContent='오류: '+e.message;}
 }
 function saveAI(txt){const t=new Date();const ts=(t.getMonth()+1)+'/'+t.getDate()+' '+String(t.getHours()).padStart(2,'0')+':'+String(t.getMinutes()).padStart(2,'0');db.ref('shared/hotdeal/ainotes/a'+Date.now()).set({txt:txt,ts:ts});clearAI();document.getElementById('aiStat').textContent='✅ 저장됨';}
+/* ── 매출 보고서(엑셀/텍스트) → 숫자 자동추출 → 대시보드 카드·차트·거래처 시각화 반영 ── */
+async function extractToDashboard(){
+  const txt=aiIn.value.trim();
+  if(!txt){document.getElementById('aiStat').textContent='먼저 매출 보고서(엑셀/텍스트)를 붙여넣거나 드래그하세요';return;}
+  const key=gkey();
+  if(!key){document.getElementById('aiStat').textContent='먼저 🔑 제미나이 키를 입력하세요 ↓';document.getElementById('keyPanel').style.display='block';document.getElementById('keyIn').focus();return;}
+  document.getElementById('aiStat').textContent='📊 매출 숫자 추출 중…';
+  const ep='너는 핫딜연합 매출 데이터 추출기다. 아래 일간 매출 보고서(엑셀 표에서 추출한 텍스트)에서 핵심 수치를 JSON으로만 출력해라. 금액 단위는 반드시 "만원"(숫자, 소수1자리 허용). 원 단위 값이면 10000으로 나눠 만원으로 변환. 최근 7일 일매출은 "일자별 매출 추이"에서 최근 7일을 만원 숫자로(7개 미만이면 앞을 0으로 채움). 거래처는 매출(또는 발주 합계) 상위 최대 6곳, 미정산 모르면 0. 형식: {"today":숫자,"month":숫자,"daily":[7개숫자],"vendors":[{"name":"","sales":숫자,"unpaid":숫자}]} — 설명 없이 JSON만.';
+  try{
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:ep+'\n\n---\n'+txt}]}],generationConfig:{responseMimeType:'application/json'}})});
+    const j=await r.json();
+    if(!r.ok||!j.candidates){document.getElementById('aiStat').innerHTML='❌ 추출 실패: '+((j.error&&j.error.message)||'응답 없음');return;}
+    let s=(j.candidates[0].content.parts[0].text||'').trim().replace(/^```json/i,'').replace(/```$/,'').trim();
+    const d=JSON.parse(s);
+    const updates={};
+    const rd=function(x){return Math.round((+x)*10)/10;};
+    if(d.today!=null&&!isNaN(+d.today))updates['shared/hotdeal/stats/today']=rd(d.today)+'만';
+    if(d.month!=null&&!isNaN(+d.month))updates['shared/hotdeal/stats/month']=rd(d.month)+'만';
+    if(Array.isArray(d.daily)&&d.daily.length)updates['shared/hotdeal/stats/daily']=d.daily.slice(-7).map(x=>Math.round(+x||0));
+    const vend=Array.isArray(d.vendors)?d.vendors.slice(0,6):[];
+    vend.forEach(function(v,i){updates['shared/hotdeal/vendors/ai'+i]={name:String(v.name||''),sales:String(Math.round(+v.sales||0)),unpaid:String(Math.round(+v.unpaid||0))};});
+    await db.ref().update(updates);
+    document.getElementById('aiStat').innerHTML='✅ 대시보드 반영 완료 — 오늘 '+(d.today!=null?rd(d.today)+'만원':'')+' · 이번달 '+(d.month!=null?rd(d.month)+'만원':'')+' · 거래처 '+vend.length+'곳 · 7일 차트 갱신 (위로 스크롤해 확인)';
+  }catch(e){document.getElementById('aiStat').innerHTML='❌ 추출/반영 오류: '+e.message+' (엑셀 표가 맞는지 확인)';}
+}
 </script>
 </body>
 </html>
