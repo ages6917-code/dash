@@ -148,14 +148,51 @@ const aiIn=document.getElementById('aiIn'),aibox=document.getElementById('aibox'
 aiIn.addEventListener('paste',e=>{const it=(e.clipboardData||{}).items||[];for(const x of it){if(x.type.indexOf('image')===0){const f=x.getFile?x.getFile():x.getAsFile();readImg(f);e.preventDefault();}}});
 ['dragover','dragenter'].forEach(ev=>aibox.addEventListener(ev,e=>{e.preventDefault();aibox.classList.add('drag');}));
 ['dragleave','drop'].forEach(ev=>aibox.addEventListener(ev,e=>{e.preventDefault();aibox.classList.remove('drag');}));
-aibox.addEventListener('drop',e=>{const f=e.dataTransfer.files[0];if(!f)return;if(f.type.indexOf('image')===0)readImg(f);else{const r=new FileReader();r.onload=()=>{aiIn.value=r.result.slice(0,8000);};r.readAsText(f);}});
+aibox.addEventListener('drop',async e=>{const f=e.dataTransfer.files[0];if(!f)return;
+  if(f.type.indexOf('image')===0){readImg(f);return;}
+  const nm=(f.name||'').toLowerCase();
+  if(nm.endsWith('.xlsx')){document.getElementById('aiStat').textContent='📊 엑셀 읽는 중…';
+    try{const buf=await f.arrayBuffer();const txt=await xlsxToText(new Uint8Array(buf));aiIn.value=txt.slice(0,8000);document.getElementById('aiStat').textContent='📊 '+f.name+' 불러옴 ('+txt.split('\n').length+'행)';}
+    catch(err){document.getElementById('aiStat').textContent='엑셀 파싱 실패: '+err.message;}
+  }else if(nm.endsWith('.xls')){document.getElementById('aiStat').textContent='⚠️ 구형 .xls는 지원 안 됨 — 엑셀에서 .xlsx로 저장 후 넣어주세요';
+  }else{const r=new FileReader();r.onload=()=>{aiIn.value=String(r.result).slice(0,8000);};r.readAsText(f);}});
 function readImg(f){const r=new FileReader();r.onload=()=>{pastedImg=r.result;const t=document.getElementById('aiThumb');t.src=pastedImg;t.style.display='block';document.getElementById('aiStat').textContent='📷 캡처 첨부됨';};r.readAsDataURL(f);}
+/* ── .xlsx → 텍스트 (브라우저 내장 압축해제, 외부 라이브러리 없음) ── */
+async function xlsxToText(data){
+  const u16=o=>data[o]|(data[o+1]<<8),u32=o=>(data[o]|(data[o+1]<<8)|(data[o+2]<<16)|(data[o+3]<<24))>>>0;
+  let eo=-1;for(let i=data.length-22;i>=0;i--){if(u32(i)===0x06054b50){eo=i;break;}}
+  if(eo<0)throw new Error('올바른 엑셀 파일이 아님');
+  let cdOff=u32(eo+16),cdCnt=u16(eo+10),p=cdOff;const files={};
+  for(let i=0;i<cdCnt;i++){if(u32(p)!==0x02014b50)break;
+    const method=u16(p+10),compSize=u32(p+20),nameLen=u16(p+28),extraLen=u16(p+30),commLen=u16(p+32),lho=u32(p+42);
+    files[new TextDecoder().decode(data.slice(p+46,p+46+nameLen))]={method,compSize,lho};p+=46+nameLen+extraLen+commLen;}
+  async function inflate(b){const ds=new DecompressionStream('deflate-raw');const s=new Response(new Blob([b]).stream().pipeThrough(ds));return new Uint8Array(await s.arrayBuffer());}
+  async function get(name){const f=files[name];if(!f)return '';const ln=u16(f.lho+26),le=u16(f.lho+28),start=f.lho+30+ln+le;const comp=data.slice(start,start+f.compSize);const raw=f.method===0?comp:await inflate(comp);return new TextDecoder('utf-8').decode(raw);}
+  const dec=s=>s.replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&#x([0-9a-fA-F]+);/g,(m,h)=>String.fromCodePoint(parseInt(h,16))).replace(/&#(\d+);/g,(m,d)=>String.fromCodePoint(+d)).replace(/&amp;/g,'&');
+  const sstXml=await get('xl/sharedStrings.xml'),sst=[];
+  sstXml.replace(/<si>([\s\S]*?)<\/si>/g,(m,inner)=>{let s='';inner.replace(/<t[^>]*>([\s\S]*?)<\/t>/g,(x,t)=>{s+=t;return'';});sst.push(dec(s));return'';});
+  const wb=await get('xl/workbook.xml'),rels=await get('xl/_rels/workbook.xml.rels'),relMap={};
+  rels.replace(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"[^>]*>/g,(m,id,tg)=>{relMap[id]=tg;return'';});
+  const sheets=[];wb.replace(/<sheet\b[^>]*name="([^"]*)"[^>]*r:id="([^"]+)"[^>]*\/?>/g,(m,snm,rid)=>{let tg=relMap[rid]||'';if(tg&&tg[0]!=='/'&&tg.indexOf('xl/')!==0)tg='xl/'+tg.replace(/^\//,'');sheets.push({nm:dec(snm),path:tg});return'';});
+  const order=sheets.length?sheets:Object.keys(files).filter(k=>/^xl\/worksheets\/sheet\d+\.xml$/.test(k)).sort().map(k=>({nm:k,path:k}));
+  const outAll=[];
+  for(const sh of order){const xml=await get(sh.path);if(!xml)continue;const rows=[];
+    xml.replace(/<row\b[^>]*>([\s\S]*?)<\/row>/g,(m,r)=>{const cells=[];
+      r.replace(/<c\b([^>]*?)(?:\/>|>([\s\S]*?)<\/c>)/g,(mm,attr,inner)=>{const tm=/t="([^"]+)"/.exec(attr),t=tm?tm[1]:'';let val='';
+        if(inner){if(t==='s'){const vm=/<v>([\s\S]*?)<\/v>/.exec(inner);if(vm)val=sst[+vm[1]]||'';}
+          else if(t==='inlineStr'){let s='';inner.replace(/<t[^>]*>([\s\S]*?)<\/t>/g,(x,tx)=>{s+=tx;return'';});val=dec(s);}
+          else{const vm=/<v>([\s\S]*?)<\/v>/.exec(inner);if(vm)val=dec(vm[1]);}}
+        cells.push(val);return'';});
+      rows.push(cells.join('\t').replace(/\t+$/,''));return'';});
+    if(rows.length)outAll.push((order.length>1?('# '+sh.nm+'\n'):'')+rows.join('\n'));}
+  return outAll.join('\n\n').trim()||'(엑셀에서 읽을 텍스트가 없습니다)';
+}
 function clearAI(){aiIn.value='';pastedImg=null;document.getElementById('aiThumb').style.display='none';document.getElementById('aiResult').style.display='none';document.getElementById('aiStat').textContent='';}
 async function runAI(){
   const txt=aiIn.value.trim();if(!txt&&!pastedImg){document.getElementById('aiStat').textContent='내용을 붙여넣으세요';return;}
   const key=gkey();
   if(!key){ if(confirm('AI 요약을 쓰려면 제미나이 무료 키가 필요해요 (1분 발급).\n\n확인 = 발급 페이지 열기\n취소 = 키 직접 입력')){window.open('https://aistudio.google.com/apikey','_blank');} setKey(); return; }
-  const prompt='너는 핫딜연합(도소매·위탁판매) 거래처 담당 비서다. 아래 통화/카톡 내용을 3~5줄로 요약해라. ①핵심 합의 ②금액/수량 ③다음 할 일 위주. 불릿으로.';
+  const prompt='너는 핫딜연합(도소매·위탁판매) 거래처 담당 비서다. 아래 내용(통화/카톡 대화 또는 엑셀 표 데이터)을 3~6줄로 요약해라. 표면 항목·거래처·수량/금액 합계·눈에 띄는 값 위주. 대화면 ①핵심 합의 ②금액/수량 ③다음 할 일 위주. 불릿으로.';
   document.getElementById('aiStat').textContent='🤖 요약 중…';
   let parts=pastedImg?[{inline_data:{mime_type:'image/png',data:pastedImg.split(',')[1]}},{text:prompt}]:[{text:prompt+'\n\n---\n'+txt}];
   try{
