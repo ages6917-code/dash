@@ -196,7 +196,7 @@ async function runAI(){
   document.getElementById('aiStat').textContent='🤖 요약 중…';
   let parts=pastedImg?[{inline_data:{mime_type:'image/png',data:pastedImg.split(',')[1]}},{text:prompt}]:[{text:prompt+'\n\n---\n'+txt}];
   try{
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+key,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts}]})});
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+key,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts}]})});
     const j=await r.json();
     const out=(j.candidates&&j.candidates[0]&&j.candidates[0].content.parts[0].text)||('요약 실패: '+(j.error?j.error.message:'응답 없음')+' — 🔑 키 확인');
     const el=document.getElementById('aiResult');el.textContent=out;el.style.display='block';
