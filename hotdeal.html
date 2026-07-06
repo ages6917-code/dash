@@ -77,10 +77,19 @@
     <div class="aibtns">
       <button class="aibtn go" onclick="runAI()">🤖 AI 요약</button>
       <button class="aibtn sub" onclick="clearAI()">지우기</button>
-      <button class="aibtn sub" onclick="setKey()">🔑 내 제미나이 키</button>
+      <button class="aibtn sub" onclick="toggleKey()">🔑 내 제미나이 키</button>
       <span id="aiStat" style="font-size:12px;color:var(--sub)"></span>
     </div>
-    <div style="font-size:11px;color:var(--sub);margin-top:6px">처음 한 번 <b>무료 제미나이 키</b>를 넣으면(<a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--c)">1분 발급</a>) 이 브라우저에서 계속 AI 요약이 됩니다. 각자 본인 키 사용.</div>
+    <div id="keyPanel" style="display:none;margin-top:8px;padding:10px;border:1px solid var(--line);border-radius:8px;background:#faf8f5">
+      <div style="font-size:12px;color:var(--sub);margin-bottom:6px">제미나이 API 키 (이 브라우저에만 저장) · <a href="https://aistudio.google.com/apikey" target="_blank" style="color:var(--c)">무료 발급 1분</a></div>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;align-items:center">
+        <input id="keyIn" type="text" placeholder="AIza... 또는 AQ... 키 붙여넣기" style="flex:1;min-width:220px;padding:8px;border:1px solid var(--line);border-radius:6px;font-size:13px" autocomplete="off" spellcheck="false">
+        <button class="aibtn go" onclick="saveKey()">저장</button>
+        <button class="aibtn sub" onclick="testKey()">🧪 키 테스트</button>
+      </div>
+      <div id="keyStat" style="font-size:12px;margin-top:6px;color:var(--sub)"></div>
+    </div>
+    <div style="font-size:11px;color:var(--sub);margin-top:6px">처음 한 번 <b>무료 제미나이 키</b>를 넣으면 이 브라우저에서 계속 AI 요약이 됩니다. 각자 본인 키 사용.</div>
     <div class="airesult" id="aiResult"></div>
   </div>
   <div style="margin-top:12px"><div style="font-size:12px;color:var(--sub);margin-bottom:4px">📋 저장된 요약</div><div id="aiNotes"></div></div>
@@ -111,8 +120,10 @@
 const firebaseConfig={apiKey:"AIzaSyCAdQ2KkU5Nui6l2vJxnpZKBM65iJXRLn8",authDomain:"consult-crm-cfef6.firebaseapp.com",databaseURL:"https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"consult-crm-cfef6"};
 firebase.initializeApp(firebaseConfig);const db=firebase.database();
 /* AI: 각 사용자가 자기 제미나이 무료 키를 브라우저에 저장(코드엔 없음 → 안전) */
-function gkey(){ return localStorage.getItem('gemini_key')||''; }
-function setKey(){ const v=prompt('제미나이 API 키 입력\n무료 발급(1분): https://aistudio.google.com/apikey\n(이 브라우저에만 저장됩니다)', gkey()); if(v===null)return; localStorage.setItem('gemini_key',(v||'').trim()); document.getElementById('aiStat').textContent=gkey()?'🔑 키 저장됨 — 이제 AI 요약 가능':'키 삭제됨'; }
+function gkey(){ return (localStorage.getItem('gemini_key')||'').trim(); }
+function toggleKey(){ var p=document.getElementById('keyPanel'); var show=(p.style.display==='none'||!p.style.display); p.style.display=show?'block':'none'; if(show){ document.getElementById('keyIn').value=gkey(); document.getElementById('keyStat').textContent=gkey()?'저장된 키 있음 — 🧪 키 테스트로 확인 가능':'키 없음 — 붙여넣고 저장하세요'; document.getElementById('keyIn').focus(); } }
+function saveKey(){ var v=(document.getElementById('keyIn').value||'').trim(); localStorage.setItem('gemini_key',v); document.getElementById('keyStat').innerHTML=v?'✅ 저장됨 — 🧪 키 테스트로 정상 여부 확인하세요':'키 삭제됨'; }
+async function testKey(){ var k=(document.getElementById('keyIn').value||'').trim(); var s=document.getElementById('keyStat'); if(!k){ s.textContent='키를 먼저 붙여넣으세요'; return; } s.textContent='🧪 테스트 중…'; try{ var r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+encodeURIComponent(k),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts:[{text:'ping'}]}]})}); var j=await r.json(); if(r.ok&&j.candidates){ localStorage.setItem('gemini_key',k); s.innerHTML='✅ 키 정상! 저장 완료 — 이제 AI 요약이 됩니다.'; } else { s.innerHTML='❌ 오류('+r.status+'): '+((j.error&&j.error.message)||'응답 없음')+'<br><span style="color:#999">→ 키가 틀렸거나, 이 키의 프로젝트에 제미나이 API가 꺼져 있거나, 키에 사용제한(HTTP 리퍼러)이 걸려 있을 수 있어요.</span>'; } }catch(e){ s.innerHTML='❌ 네트워크 오류: '+e.message; } }
 const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
 let hd={};
 db.ref('shared/hotdeal').on('value',s=>{hd=s.val()||{};render();});
@@ -191,12 +202,12 @@ function clearAI(){aiIn.value='';pastedImg=null;document.getElementById('aiThumb
 async function runAI(){
   const txt=aiIn.value.trim();if(!txt&&!pastedImg){document.getElementById('aiStat').textContent='내용을 붙여넣으세요';return;}
   const key=gkey();
-  if(!key){ if(confirm('AI 요약을 쓰려면 제미나이 무료 키가 필요해요 (1분 발급).\n\n확인 = 발급 페이지 열기\n취소 = 키 직접 입력')){window.open('https://aistudio.google.com/apikey','_blank');} setKey(); return; }
+  if(!key){ document.getElementById('aiStat').textContent='먼저 🔑 제미나이 키를 입력하세요 ↓'; var kp=document.getElementById('keyPanel'); kp.style.display='block'; document.getElementById('keyIn').focus(); return; }
   const prompt='너는 핫딜연합(도소매·위탁판매) 거래처 담당 비서다. 아래 내용(통화/카톡 대화 또는 엑셀 표 데이터)을 3~6줄로 요약해라. 표면 항목·거래처·수량/금액 합계·눈에 띄는 값 위주. 대화면 ①핵심 합의 ②금액/수량 ③다음 할 일 위주. 불릿으로.';
   document.getElementById('aiStat').textContent='🤖 요약 중…';
   let parts=pastedImg?[{inline_data:{mime_type:'image/png',data:pastedImg.split(',')[1]}},{text:prompt}]:[{text:prompt+'\n\n---\n'+txt}];
   try{
-    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+key,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts}]})});
+    const r=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key='+encodeURIComponent(key),{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({contents:[{parts}]})});
     const j=await r.json();
     const out=(j.candidates&&j.candidates[0]&&j.candidates[0].content.parts[0].text)||('요약 실패: '+(j.error?j.error.message:'응답 없음')+' — 🔑 키 확인');
     const el=document.getElementById('aiResult');el.textContent=out;el.style.display='block';
