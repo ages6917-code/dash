@@ -475,7 +475,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-06 18:38",
+    "asof": "07-06 19:56",
     "ago": "2일 전",
     "ok": false,
     "date": "2026-07-04 08:50",
@@ -543,8 +543,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-06 18:38",
-    "ago": "13시간 전",
+    "asof": "07-06 19:56",
+    "ago": "14시간 전",
     "ok": true,
     "date": "2026-07-06 05:19",
     "stale_days": 0,
@@ -617,7 +617,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-06 18:38",
+    "asof": "07-06 19:56",
     "ago": "어제",
     "ok": false,
     "date": "2026-07-05 16:33",
@@ -703,8 +703,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-06 18:38",
-    "ago": "3시간 전",
+    "asof": "07-06 19:56",
+    "ago": "4시간 전",
     "ok": true,
     "date": "2026-07-06 15:01",
     "stale_days": 0,
@@ -752,7 +752,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-06 18:38",
+    "asof": "07-06 19:56",
     "ago": "2일 전",
     "ok": false,
     "date": "2026-07-03 23:08",
@@ -791,8 +791,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-06 18:38",
-    "ago": "23시간 전",
+    "asof": "07-06 19:56",
+    "ago": "어제",
     "ok": false,
     "date": "2026-07-05 18:59",
     "stale_days": 1,
@@ -831,7 +831,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-06 18:38",
+    "asof": "07-06 19:56",
     "ago": "9일 전",
     "ok": false,
     "date": "2026-06-27 11:08",
@@ -868,10 +868,10 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-06 18:38",
-    "ago": "37분 전",
+    "asof": "07-06 19:56",
+    "ago": "56분 전",
     "ok": true,
-    "date": "2026-07-06 18:01",
+    "date": "2026-07-06 19:00",
     "stale_days": 0,
     "state": "가동"
    }
@@ -905,12 +905,13 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-06 18:38",
-    "ago": "5분 전",
+    "asof": "07-06 19:56",
+    "ago": "50분 전",
     "ok": true,
-    "date": "2026-07-06 18:33",
+    "date": "2026-07-06 19:06",
     "stale_days": 0,
-    "state": "가동"
+    "state": "가동",
+    "headline": "오늘 발굴 46건(검수대기)"
    }
   },
   {
@@ -1334,7 +1335,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-07-06 18:38",
+ "_autosync": "2026-07-06 19:56",
  "perf": {
   "overseas_total": 61,
   "by_country": [
@@ -1366,30 +1367,28 @@ body{background:#eef0f7;color:var(--ink)}
   "asof": "2026-07-06"
  }
 };window.__BACKEND__=false;</script>
-</head><body><script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
-<div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
+</head><body><div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
   <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
-  <div style="color:#9fb3d1;font-size:13px">사장님 구글 계정으로 로그인하세요</div>
-  <button id="agbtn" style="border:none;background:#fff;color:#1a2540;border-radius:10px;padding:12px 22px;font-size:14px;cursor:pointer;font-weight:700">Google로 로그인</button>
+  <div style="color:#9fb3d1;font-size:13px">접속 비밀번호를 입력하세요</div>
+  <input id="agpw" type="password" inputmode="text" autocomplete="off" style="border:none;background:#fff;color:#1a2540;border-radius:10px;padding:12px 16px;font-size:15px;width:220px;text-align:center" placeholder="비밀번호">
+  <button id="agbtn" style="border:none;background:#4f46e5;color:#fff;border-radius:10px;padding:12px 22px;font-size:14px;cursor:pointer;font-weight:700;width:220px">입장</button>
   <div id="agmsg" style="color:#f87171;font-size:13px;height:18px"></div>
 </div>
 <script>
 (function(){
-  var cfg={apiKey:"AIzaSyCAdQ2KkU5Nui6l2vJxnpZKBM65iJXRLn8",authDomain:"consult-crm-cfef6.firebaseapp.com",databaseURL:"https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"consult-crm-cfef6",appId:"1:519553114688:web:d0a4c9bd66e276984275a5"};
-  try{ if(!firebase.apps.length) firebase.initializeApp(cfg); }catch(e){}
-  var OWNER='ages6917@gmail.com';
+  var PW='5todghkfrhks!';
+  var KEY='tbot_status_gate';
   var g=document.getElementById('authgate');
+  function ok(){ g.style.display='none'; document.body.style.overflow=''; }
   document.body.style.overflow='hidden';
-  document.getElementById('agbtn').onclick=function(){
-    var p=new firebase.auth.GoogleAuthProvider();
-    firebase.auth().signInWithPopup(p).catch(function(){firebase.auth().signInWithRedirect(p);});
-  };
-  firebase.auth().onAuthStateChanged(function(u){
-    if(u && u.email===OWNER){ g.style.display='none'; document.body.style.overflow=''; }
-    else if(u){ document.getElementById('agmsg').textContent='권한 없는 계정: '+u.email; firebase.auth().signOut(); g.style.display='flex'; }
-    else { g.style.display='flex'; }
-  });
+  try{ if(localStorage.getItem(KEY)===PW){ ok(); return; } }catch(e){}
+  function go(){
+    var v=document.getElementById('agpw').value;
+    if(v===PW){ try{localStorage.setItem(KEY,PW);}catch(e){} ok(); }
+    else { document.getElementById('agmsg').textContent='비밀번호가 틀렸습니다'; }
+  }
+  document.getElementById('agbtn').onclick=go;
+  document.getElementById('agpw').addEventListener('keydown',function(e){ if(e.key==='Enter') go(); });
 })();
 </script>
 <div class="wrap">
