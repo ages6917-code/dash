@@ -1922,5 +1922,15 @@ function copyShare(){
 }
 applyMe();
 </script>
+<!--PWAINSTALL-->
+<button id="pwaInstall" style="display:none;position:fixed;right:16px;bottom:18px;z-index:9998;border:none;background:#4f46e5;color:#fff;border-radius:24px;padding:12px 18px;font-size:14px;font-weight:800;box-shadow:0 6px 18px rgba(79,70,229,.45);cursor:pointer;font-family:'Malgun Gothic',sans-serif">📲 앱으로 설치</button>
+<script>
+(function(){
+  var dp=null, btn=document.getElementById('pwaInstall');
+  window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); dp=e; if(btn) btn.style.display=''; });
+  if(btn) btn.onclick=function(){ if(!dp){ alert('이미 설치됐거나, 브라우저 메뉴(⋮)의 "앱 설치"를 이용하세요.'); return; } dp.prompt(); dp.userChoice.then(function(){ dp=null; btn.style.display='none'; }); };
+  window.addEventListener('appinstalled',function(){ if(btn) btn.style.display='none'; });
+})();
+</script>
 </body>
 </html>
