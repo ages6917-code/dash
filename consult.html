@@ -837,7 +837,7 @@ function recHtml(id,c){
   }).join('');
   return `<div class="recbox"><div class="dh" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px"><b>🎙️ 음성·통화 녹음 <span style="color:#b9a96b;font-weight:600">(${recs.length})</span></b></div>
     <label class="reczone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="recDrop(event,'${id}')"><input type="file" accept="audio/*" multiple style="display:none" onchange="recUpload('${id}',this.files)">
-      <div class="recz-ic">🎙️</div><div><b>음성 파일 추가</b><div class="recz-sub">📞 폰: 통화 녹음 선택 · 💻 데탑: 끌어다 놓기 또는 파일 선택</div></div></label>
+      <div class="recz-ic">🎙️</div><div><b>음성 파일 추가</b><div class="recz-sub">📞 폰: 눌러서 [파일] → [내 파일] → 통화녹음(Call) 폴더 · 💻 데탑: 끌어다 놓기/파일 선택</div></div></label>
     ${items||'<div class="docempty">아직 음성이 없습니다. 끌어다 놓거나 위를 눌러 추가하세요.</div>'}</div>`;
 }
 async function recUpload(id,fileList){
@@ -973,9 +973,9 @@ function newMode(mode){
       <div id="dropZone" class="dropzone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="reqDrop(event)">
         📎 여기로 파일을 <b>끌어다 놓기</b><br><label class="filelabel">또는 파일 선택<input type="file" multiple style="display:none" onchange="reqAddFiles(this.files)"></label></div>
       <div id="reqList"></div>
-      <label style="margin-top:8px">🎙️ 음성·통화 녹음 첨부 <span style="color:#94a3b8;font-weight:500">· 폰에서 누르면 통화 녹음 선택</span></label>
+      <label style="margin-top:8px">🎙️ 음성·통화 녹음 첨부 <span style="color:#94a3b8;font-weight:500">· 폰: [파일]→[내 파일]→통화녹음 폴더에서 선택</span></label>
       <label class="reczone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="event.preventDefault();this.classList.remove('drag');if(event.dataTransfer&&event.dataTransfer.files)reqAddAudio(event.dataTransfer.files)"><input type="file" accept="audio/*" multiple style="display:none" onchange="reqAddAudio(this.files)">
-        <div class="recz-ic">🎙️</div><div><b>음성 파일 추가</b><div class="recz-sub">📞 폰: 통화 녹음 선택 · 💻 데탑: 끌어다 놓기 또는 파일 선택</div></div></label>
+        <div class="recz-ic">🎙️</div><div><b>음성 파일 추가</b><div class="recz-sub">📞 폰: 눌러서 [파일] → [내 파일] → 통화녹음(Call) 폴더 · 💻 데탑: 끌어다 놓기/파일 선택</div></div></label>
       <div id="reqAudioList"></div>
       <label>요청 내용 (간략히)</label><input id="reqNote" placeholder="예: 재무 분석해서 가능 자금·추천 상품 정리">
       <div class="guidebox" style="margin-top:14px;font-size:12.5px">📌 <b>[요청 만들기]</b>를 누르면 고객이 등록되고, 첨부한 <b>PDF·이미지 서류를 제미나이(무료 AI)가 즉시 읽어</b> 매출추이·자산/부채·대출현황을 <b>이 카드에 자동으로 채웁니다</b>.<br><span style="color:#94a3b8">· 지원: PDF·사진·스캔 이미지·zip(안의 PDF/이미지). hwp·엑셀 원본은 미지원 → PDF로 저장해 첨부.</span></div>
