@@ -1923,13 +1923,21 @@ function copyShare(){
 applyMe();
 </script>
 <!--PWAINSTALL-->
-<button id="pwaInstall" style="display:none;position:fixed;right:16px;bottom:18px;z-index:9998;border:none;background:#4f46e5;color:#fff;border-radius:24px;padding:12px 18px;font-size:14px;font-weight:800;box-shadow:0 6px 18px rgba(79,70,229,.45);cursor:pointer;font-family:'Malgun Gothic',sans-serif">📲 앱으로 설치</button>
+<button id="pwaInstall" style="position:fixed;right:14px;bottom:16px;z-index:9998;border:none;background:#4f46e5;color:#fff;border-radius:24px;padding:12px 18px;font-size:14px;font-weight:800;box-shadow:0 6px 18px rgba(79,70,229,.45);cursor:pointer;font-family:'Malgun Gothic',sans-serif">📲 앱으로 설치</button>
 <script>
+if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 (function(){
   var dp=null, btn=document.getElementById('pwaInstall');
-  window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); dp=e; if(btn) btn.style.display=''; });
-  if(btn) btn.onclick=function(){ if(!dp){ alert('이미 설치됐거나, 브라우저 메뉴(⋮)의 "앱 설치"를 이용하세요.'); return; } dp.prompt(); dp.userChoice.then(function(){ dp=null; btn.style.display='none'; }); };
+  var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if(standalone && btn){ btn.style.display='none'; }  // 이미 앱으로 열림
+  window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); dp=e; });
   window.addEventListener('appinstalled',function(){ if(btn) btn.style.display='none'; });
+  if(btn) btn.onclick=function(){
+    if(dp){ dp.prompt(); dp.userChoice.then(function(){ dp=null; }); return; }
+    var ios=/iphone|ipad|ipod/i.test(navigator.userAgent);
+    alert(ios ? '설치 방법 (아이폰)\n① 하단 공유 버튼 ⬆️ 탭\n② "홈 화면에 추가" 선택'
+              : '설치 방법 (안드로이드)\n① 우측 상단 ⋮ 메뉴 탭\n② "앱 설치"(또는 홈 화면에 추가) 선택\n\n※ ⋮ 메뉴가 안 보이면 화면을 위로 살짝 쓸어올리면 나타나요.');
+  };
 })();
 </script>
 </body>
