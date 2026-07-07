@@ -1,15 +1,1 @@
-{
-  "name": "컨설팅 CRM",
-  "short_name": "컨설팅 CRM",
-  "description": "정책자금·보험·세무 컨설팅 고객관리",
-  "start_url": "/dash/consult.html?ns=demo",
-  "scope": "/dash/",
-  "display": "standalone",
-  "orientation": "portrait",
-  "background_color": "#101a36",
-  "theme_color": "#101a36",
-  "icons": [
-    {"src": "icon192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
-    {"src": "icon512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}
-  ]
-}
+{"name": "컨설팅 CRM", "short_name": "컨설팅 CRM", "description": "정책자금·보험·세무 컨설팅 고객관리", "start_url": "/dash/consult.html", "scope": "/dash/consult.html", "display": "standalone", "orientation": "portrait", "background_color": "#101a36", "theme_color": "#101a36", "icons": [{"src": "icon192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"}, {"src": "icon512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable"}], "id": "/dash/consult.html"}

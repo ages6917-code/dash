@@ -73,7 +73,7 @@ for key, fname, title, short, char, c1, c2 in APPS:
     # 2) manifest
     man = {
         "name": title, "short_name": short,
-        "start_url": BASE + "/" + fname, "scope": BASE + "/",
+        "start_url": BASE + "/" + fname, "scope": BASE + "/" + fname, "id": BASE + "/" + fname,
         "display": "standalone", "background_color": c1, "theme_color": c1,
         "icons": [
             {"src": BASE+"/pwa/"+key+"/icon192.png", "sizes": "192x192", "type": "image/png", "purpose": "any maskable"},
