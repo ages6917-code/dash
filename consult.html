@@ -377,8 +377,22 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 let storage=null; try{ storage=firebase.storage(); }catch(e){ console.warn('storage init',e); }
 
-const STAGE={연락전:'#94a3b8',통화완료:'#3b82f6',심사중:'#f59e0b',자금접수완료:'#8b5cf6',승인완료:'#10b981','부재중·재연락':'#ec4899','부결':'#ef4444'};
-const STAGES=['연락전','통화완료','심사중','자금접수완료','승인완료','부재중·재연락','부결'];
+const STAGE={연락전:'#94a3b8',통화완료:'#3b82f6',접수대기:'#64748b',심사중:'#f59e0b',확인필요:'#f97316',자금접수완료:'#8b5cf6',재접수:'#06b6d4',승인완료:'#10b981','부재중·재연락':'#ec4899','부결':'#ef4444'};
+const STAGES=['연락전','통화완료','접수대기','심사중','확인필요','자금접수완료','재접수','승인완료','부재중·재연락','부결'];
+/* 단계 다중선택: c.stages[] 가 진실. c.stage=대표(가장 진행된 단계) — 카드뱃지·필터 하위호환 */
+function custStages(c){ return (c&&Array.isArray(c.stages)&&c.stages.length)?c.stages:(c&&c.stage?[c.stage]:[]); }
+function toggleStage(id,st){
+  const c=getCust(id)||{}; let arr=custStages(c).slice();
+  const i=arr.indexOf(st); if(i>=0)arr.splice(i,1); else arr.push(st);
+  const primary=arr.length?arr.slice().sort((a,b)=>STAGES.indexOf(b)-STAGES.indexOf(a))[0]:'연락전';
+  setCust(id,{stages:arr,stage:primary,contacted:arr.some(s=>s!=='연락전')});
+}
+/* 인라인 편집창(피커) 바깥 클릭 시 닫기 — 잘못 눌러도 사라짐 */
+function _closePickers(e){
+  const open=document.querySelector('.shrpick,.refpick,.bizpick,.typepick,.selpick');
+  if(open && !open.contains(e.target) && !e.target.closest('.ev,.hedit')) rerender();
+}
+document.addEventListener('click',_closePickers);
 
 /* ===== 시드(최초 1회 채움) ===== */
 /* 🔒 보안: 실고객 데이터는 SEED에서 제거됨 (실데이터는 Firebase RTDB에만 존재, ages6917 로그인 시에만 접근).
@@ -856,13 +870,34 @@ function iArea(box,id,key){
 }
 
 /* ===== 재무 요약 ===== */
+/* 서류 없이도 '있는 내용'으로 재무 요약 자동 생성 (비-AI, 입력필드 기반) */
+function autoSummaryText(c){
+  const L=[]; c=c||{};
+  const biz=custBizNames(c); if(biz.length)L.push('• 사업자: '+biz.join(', '));
+  const ty=custTypes(c); if(ty.length)L.push('• 유형: '+ty.join('·'));
+  if(c.fund&&c.fund!=='-')L.push('• 신청 금액: '+c.fund);
+  const stg=custStages(c); if(stg.length)L.push('• 진행 단계: '+stg.join(', '));
+  const shr=custSharerNames(c); if(shr.length)L.push('• 담당 팀장: '+shr.join(', '));
+  const ref=custReferrerNames(c); if(ref.length)L.push('• 소개자: '+ref.join(', '));
+  if(c.received)L.push('• 최초 접수일: '+c.received);
+  if(c.fu)L.push('• ⏰ 재연락 예정: '+c.fu);
+  try{ const done=custTotal(c,'완료'), pend=custTotal(c,'예정'); if(done||pend)L.push('• 수수료: 완료 '+fmtMan(done)+'원 · 예정 '+fmtMan(pend)+'원'); }catch(e){}
+  if(c.memo&&c.memo.trim())L.push('• 메모: '+c.memo.trim());
+  return L.join('\n');
+}
 function summaryHtml(id,c){
   const sm=c.summary;
   if(GENNING.has(id)){
     return `<div class="fsum"><div class="empty"><div class="spin"></div><b style="color:#3b82f6;font-size:14px">🤖 제미나이가 재무요약 생성 중…</b><br><br>첨부한 서류를 읽고 있어요. 잠시만요.</div></div>`;
   }
   if(!sm||!Object.keys(sm).length){
-    return `<div class="fsum"><div class="empty">📊 재무 요약 없음<br><br>서류(PDF·이미지)를 올리면 <b>제미나이가 자동으로</b><br>매출추이·자산/부채·대출현황을 채웁니다.<br><br><span class="add" onclick="pickAndSummarize('${id}')" style="display:inline-block;margin-top:6px;margin-right:6px">🤖 서류로 자동요약</span><span class="add" onclick="editSummary('${id}')" style="display:inline-block;margin-top:6px">✍️ 직접 입력</span></div></div>`;
+    const auto=autoSummaryText(c);
+    if(auto){
+      return `<div class="fsum"><div style="font-size:11.5px;color:#94a3b8;font-weight:700;margin-bottom:6px">🧾 입력된 정보 기반 자동 요약 <span style="font-weight:500">· 서류 올리면 재무 상세로 대체</span></div>
+        <div style="white-space:pre-wrap;font-size:13px;line-height:1.75;color:#334155">${esc(auto)}</div>
+        <div style="text-align:right;margin-top:10px"><span class="add" onclick="editSummary('${id}')">✍️ 재무 직접 입력</span></div></div>`;
+    }
+    return `<div class="fsum"><div class="empty">📊 재무 요약 없음<br><br>고객 정보(금액·단계·메모 등)를 입력하면<br>여기에 <b>자동 요약</b>이 뜹니다.<br><br><span class="add" onclick="editSummary('${id}')" style="display:inline-block;margin-top:6px">✍️ 직접 입력</span></div></div>`;
   }
   if(sm.note && !(sm.sales&&sm.sales.length)){
     return `<div class="fsum"><div style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:#334155">${esc(sm.note)}</div><div style="text-align:right;margin-top:10px"><span class="add" onclick="editSummary('${id}')">✏️ 요약 수정</span></div></div>`;
@@ -1382,7 +1417,7 @@ function renderCustomer(id){
  <div class="tlhead"><div class="av" style="background:#3b82f6">${esc((c.nm||'·')[0])}</div>
    <div style="flex:1;min-width:170px"><div class="nm"><span class="hedit" onclick="iText(this,'${id}','nm')" title="이름 수정 (클릭)">${esc(c.nm)||'(이름 입력)'}</span> <span class="hedit" style="font-size:13px;color:#94a3b8;font-weight:600" onclick="iText(this,'${id}','type')" title="유형 수정">${esc(c.type)||'개인'}</span></div><div class="og"><span class="hedit" onclick="iText(this,'${id}','bizName')" title="상호 수정 (클릭)">${esc(c.bizName)||'(상호 입력)'}</span> · 📞 <span class="hedit" onclick="iText(this,'${id}','phone')" title="번호 수정 (클릭)">${esc(c.phone)||'(번호 입력)'}</span></div></div>
    <div class="sum" style="flex-wrap:wrap;justify-content:flex-end;max-width:60%;gap:6px">
-     ${STAGES.map(st=>`<span class="stagepill ${c.stage===st?'on':''}" style="${c.stage===st?`background:${STAGE[st]};border-color:${STAGE[st]}`:''}" onclick="setCust('${id}',{stage:'${st}',contacted:${st!=='연락전'}})">${esc(st)}</span>`).join('')}
+     ${(()=>{const on=custStages(c);return STAGES.map(st=>`<span class="stagepill ${on.includes(st)?'on':''}" style="${on.includes(st)?`background:${STAGE[st]};border-color:${STAGE[st]}`:''}" onclick="toggleStage('${id}','${st}')">${esc(st)}</span>`).join('');})()}
    </div></div>
  ${aiBoxHtml(id)}
  <div class="grid2">
