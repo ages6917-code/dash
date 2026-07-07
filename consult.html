@@ -601,13 +601,26 @@ function iFeeAmt(box,id,k){ if(box.querySelector('input'))return;
 function feeShr(c,k){ const f=((c&&c.fees)||{})[k]; return (f&&f.shr) || (c&&c.sharer) || ''; }   // 명시 없으면 메인 담당으로 폴백
 function shrShort(name){ return (name||'').replace(/\s*(팀장님|과장님|팀장|대표님)\s*$/,''); }
 function iFeeSharer(box,id,k){
-  if(box.querySelector('select'))return;
+  if(box.querySelector('select,input'))return;
   const cur=(((getCust(id)||{}).fees||{})[k]||{}).shr||'';
   const opts=[['','메인 담당']].concat(sharerArr().map(s=>[s.id,s.name]));
+  opts.push(['__new','➕ 새 팀장 추가…']);
   box.innerHTML=`<select class="iedit">${opts.map(([v,l])=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
   const sel=box.querySelector('select'); sel.focus();
-  const done=()=>{ if(box.dataset.done)return; box.dataset.done='1'; setFee(id,k,{shr:sel.value}); };
+  const done=()=>{ if(box.dataset.done)return;
+    if(sel.value==='__new'){ box.dataset.done='1'; return feeNewSharer(box,id,k); }
+    box.dataset.done='1'; setFee(id,k,{shr:sel.value}); };
   sel.onchange=done; sel.onblur=done;
+}
+/* 수수료 쉐어에서 바로 새 팀장 등록 → 쉐어처 풀에 추가되고 이 수수료에 배정 */
+function feeNewSharer(box,id,k){
+  box.innerHTML=`<input class="iedit" style="width:160px" placeholder="새 팀장 이름 후 Enter">`;
+  const inp=box.querySelector('input'); inp.focus();
+  let h=false; const ok=()=>{ if(h)return; h=true; const nm=(inp.value||'').trim();
+    if(nm){ const sid=addSharer(nm); setFee(id,k,{shr:sid}); toast('새 팀장 「'+nm+'」 추가 ✓'); }
+    else rerender(); };
+  inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();inp.blur();} else if(e.key==='Escape'){h=true;rerender();} };
+  inp.onblur=ok;
 }
 /* 쉐어 비율(%) 선택 — 5% 단위 5~100%, + 직접입력 (보통 30~70% 쉐어) */
 function iFeeSharePct(box,id,k){
