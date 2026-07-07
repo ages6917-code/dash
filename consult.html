@@ -381,35 +381,12 @@ const STAGE={연락전:'#94a3b8',통화완료:'#3b82f6',심사중:'#f59e0b',자�
 const STAGES=['연락전','통화완료','심사중','자금접수완료','승인완료','부재중·재연락','부결'];
 
 /* ===== 시드(최초 1회 채움) ===== */
+/* 🔒 보안: 실고객 데이터는 SEED에서 제거됨 (실데이터는 Firebase RTDB에만 존재, ages6917 로그인 시에만 접근).
+   SEED는 최초 1회 빈 DB 부팅용 뼈대일 뿐 — 여기에 실명/전화 절대 넣지 말 것. */
 const SEED={
- sharers:{
-  dowon:{name:'도원 팀장님',org:'정책자금 진행 쉐어',color:'#3b82f6',phone:''},
-  wonwoo:{name:'원우 팀장',org:'정책자금 진행 쉐어',color:'#10b981',phone:''},
-  choi:{name:'최병진 과장님',org:'쉐어 진행 · 세무이관',color:'#f59e0b',phone:''}
- },
- customers:{
-  c1:{nm:'미지향',biz:'-',stage:'서류검토',fund:'-',ins:'',insStatus:'대기',memo:'진행중',type:'개인',sharer:'',contacted:true,phone:''},
-  c2:{nm:'윤종선',biz:'제일피앤비',stage:'서류검토',fund:'-',ins:'',insStatus:'대기',memo:'진행중',type:'법인',sharer:'dowon',contacted:true,phone:''},
-  c3:{nm:'가이드컴',biz:'-',stage:'서류검토',fund:'-',ins:'',insStatus:'대기',memo:'진행중',type:'법인',sharer:'dowon',contacted:true,phone:''},
-  c4:{nm:'국도상사',biz:'전라도',stage:'서류검토',fund:'-',ins:'',insStatus:'대기',memo:'진행중',type:'법인',sharer:'wonwoo',contacted:true,phone:''},
-  c5:{nm:'대한홍삼㈜',biz:'-',stage:'서류검토',fund:'-',ins:'',insStatus:'대기',memo:'진행중',type:'법인',sharer:'wonwoo',contacted:true,phone:''},
-  c6:{nm:'아이디씨',biz:'-',stage:'통화완료',fund:'-',ins:'',insStatus:'대기',memo:'대기중',type:'개인',sharer:'',contacted:true,phone:''},
-  c7:{nm:'맥스앤맥스',biz:'-',stage:'본부장접수',fund:'-',ins:'',insStatus:'대기',memo:'대기중 · 심사중',type:'법인',sharer:'',contacted:true,phone:''},
-  c8:{nm:'피앤더블류',biz:'-',stage:'통화완료',fund:'-',ins:'',insStatus:'대기',memo:'대기중',type:'개인',sharer:'',contacted:true,phone:''},
-  c9:{nm:'데코비앤에스',biz:'-',stage:'통화완료',fund:'-',ins:'',insStatus:'대기',memo:'대기중',type:'법인',sharer:'',contacted:true,phone:''},
-  c10:{nm:'박진아',biz:'벤처·특허·기타',stage:'서류검토',fund:'-',ins:'',insStatus:'대기',memo:'[영태 신규] 서류 요청 완료',type:'개인',sharer:'',contacted:true,phone:'010-2908-0576'},
-  c11:{nm:'배정환',biz:'제조업·서울',stage:'재연락',fund:'5~10억',ins:'',insStatus:'대기',memo:'[영태 신규] 해외 출장중, 편할 때 연락 요청',type:'개인',sharer:'',contacted:true,phone:'010-2788-0132'},
-  c12:{nm:'손정익',biz:'광명·성남',stage:'재연락',fund:'36억',ins:'',insStatus:'대기',memo:'[영태 신규] AI · 서류 받음, 갑자기 전화 안됨',type:'개인',sharer:'',contacted:true,phone:'010-8609-8013'},
-  c13:{nm:'김창희',biz:'뚝섬',stage:'서류검토',fund:'6억',ins:'',insStatus:'대기',memo:'[영태 신규] AI · 서류 요청 완료',type:'개인',sharer:'',contacted:true,phone:'010-5396-8933'},
-  c14:{nm:'박정선(㈜한국경공사)',biz:'-',stage:'본부장접수',fund:'-',ins:'',insStatus:'대기',memo:'[영태 신규] 서류 받아 IP 인수보증 접수 · 부:010-2654-0110',type:'법인',sharer:'',contacted:true,phone:'010-2654-0110'},
-  c15:{nm:'여동엽',biz:'도소매업·서울',stage:'통화완료',fund:'10~20억',ins:'',insStatus:'대기',memo:'[최과장 쉐어]',type:'개인',sharer:'choi',contacted:true,phone:'010-3259-5866'},
-  c16:{nm:'아라리',biz:'대전',stage:'승인완료',fund:'-',ins:'',insStatus:'대기',memo:'[최과장 쉐어] 진행중 · 세무이관 완료',type:'법인',sharer:'choi',contacted:true,phone:''},
-  c17:{nm:'한국그린데이터',biz:'IT·서울',stage:'서류검토',fund:'5~10억',ins:'',insStatus:'대기',memo:'[최과장 쉐어] 진행중',type:'법인',sharer:'choi',contacted:true,phone:'010-8862-8778'},
-  c18:{nm:'경상 제조사',biz:'제조업·경상권',stage:'본부장접수',fund:'1~20억',ins:'',insStatus:'대기',memo:'최과장→도원 팀장님 접수',type:'법인',sharer:'dowon',contacted:true,phone:'010-2003-4243'},
-  c19:{nm:'전라 도소매사',biz:'도소매·전라도',stage:'서류검토',fund:'50억',ins:'',insStatus:'대기',memo:'[최과장 쉐어] 서류 요청 완료',type:'법인',sharer:'choi',contacted:true,phone:'010-9082-1797'},
-  c20:{nm:'김태준',biz:'제조업·경상',stage:'서류검토',fund:'5~10억',ins:'',insStatus:'대기',memo:'[최과장 쉐어] 서류 요청 완료',type:'개인',sharer:'choi',contacted:true,phone:'010-5142-7711'}
- },
- revenue:{consulting:{v:'—',s:'진행 20건 · 수치 입력 예정'},insurance:{v:'—',s:'보험 정보 입력 시 집계'},tax:{personal:0,corp:1,perFee:60,corpFee:90}}
+ sharers:{},
+ customers:{},
+ revenue:{consulting:{v:'—',s:'수치 입력 예정'},insurance:{v:'—',s:'보험 정보 입력 시 집계'},tax:{personal:0,corp:0,perFee:60,corpFee:90}}
 };
 
 let DATA={sharers:{},customers:{},revenue:{}};
@@ -449,8 +426,8 @@ function startApp(){
 
 /* ===== 🔐 로그인 게이트 (실데이터 보호) ===== */
 /* AUTH_REQUIRED=false 면 지금과 100% 동일(게이트 OFF). 콘솔 셋업+이메일 확정 후 true 로. */
-const AUTH_REQUIRED=false;          // ← 준비 끝나면 true
-const AUTH_WHITELIST=[];            // ← 허용 Gmail 목록 (비우면 로그인한 전원 허용)
+const AUTH_REQUIRED=true;           // 🔒 로그인 강제 ON (2026-07-07 보안 잠금)
+const AUTH_WHITELIST=['ages6917@gmail.com'];   // 허용 Gmail (팀원 추가 시 이 배열에 이메일 추가)
 let ME_EMAIL='';
 function authNeeded(){ return AUTH_REQUIRED && !shareId && NS!=='demo'; }   // 데모/공유뷰는 로그인 불필요
 if(authNeeded()){
