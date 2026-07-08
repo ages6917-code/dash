@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>부업 아이템 발굴기</title><!--PWA--><link rel="manifest" href="/dash/pwa/hustle/manifest.json"><meta name="theme-color" content="#6d5ef0"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="부업"><link rel="apple-touch-icon" href="/dash/pwa/hustle/icon180.png">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260708205444">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260708212322">
 <script>(function(){var B=(document.querySelector('meta[name=app-build]')||{}).content;function c(){fetch(location.pathname+'?_c='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/name="app-build" content="([^"]+)"/);if(m&&m[1]&&m[1]!=B){location.replace(location.pathname+'?v='+encodeURIComponent(m[1]))}}).catch(function(){})}setTimeout(c,700);document.addEventListener('visibilitychange',function(){if(!document.hidden)c()})})();</script>
 <style>
   :root{
@@ -156,7 +156,7 @@
   .foot{text-align:center;color:var(--sub);font-size:12px;margin:22px 0 6px}
   /* ── 반응형: 태블릿 이하 1단 (레일→가로 칩, 발굴처→하단) ── */
   @media(max-width:1150px){
-    .layout{grid-template-columns:1fr;gap:10px}
+    .layout{grid-template-columns:minmax(0,1fr);gap:10px}.rail,.spanel{min-width:0;max-width:100%}
     .rail,.spanel{position:static}
     .railsec{margin-bottom:8px;padding:10px}
     .vlist{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;gap:8px;padding-bottom:4px;-webkit-overflow-scrolling:touch}
