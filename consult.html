@@ -1248,15 +1248,18 @@ function quadDocList(state){
 
 /* ===== 검색 (이름·상호·전화번호 일부·업종) ===== */
 let SEARCHQ='';
+/* 공용 고객 매칭기 — 고객DB·검색 뷰 공용 */
+function custMatch(c,q){
+  q=(''+(q||'')).trim().toLowerCase(); if(!q) return true;
+  const qd=q.replace(/\D/g,'');
+  const hay=[c.nm,custBizNames(c).join(' '),custTypes(c).join(' '),c.fund,c.memo,c.stage,(c.summary&&c.summary.note)||c.summaryNote,custSharerNames(c).join(' '),custReferrerNames(c).join(' ')].map(x=>(''+(x||'')).toLowerCase()).join(' ');
+  const ph=(''+(c.phone||'')).replace(/\D/g,'');
+  return hay.includes(q) || (qd.length>=2 && ph.includes(qd));
+}
 function searchResultsHtml(q){
   q=(''+(q||'')).trim().toLowerCase();
   if(!q) return '<div class="row" style="color:#94a3b8;padding:14px 4px">이름·상호·전화번호 일부·업종을 입력하세요</div>';
-  const qd=q.replace(/\D/g,'');
-  const res=custArr().filter(c=>{
-    const hay=[c.nm,custBizNames(c).join(' '),custTypes(c).join(' '),c.fund,c.memo,c.stage,(c.summary&&c.summary.note)||c.summaryNote,custSharerNames(c).join(' '),custReferrerNames(c).join(' ')].map(x=>(''+(x||'')).toLowerCase()).join(' ');
-    const ph=(''+(c.phone||'')).replace(/\D/g,'');
-    return hay.includes(q) || (qd.length>=2 && ph.includes(qd));
-  });
+  const res=custArr().filter(c=>custMatch(c,q));
   if(!res.length) return '<div class="row" style="color:#94a3b8;padding:14px 4px">검색 결과 없음</div>';
   return res.map(c=>`<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
     <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.bizName||c.biz||'')}</span></b><div class="memo">📞 ${esc(c.phone||'-')}${c.fund&&c.fund!=='-'?' · '+esc(c.fund):''}</div></div>${chip(c.stage)}</div>`).join('');
@@ -1503,16 +1506,18 @@ function delCustomer(id){
 }
 
 /* ===== 고객 DB ===== */
-let DBMONTH=0, DBPAGE=0;
+let DBMONTH=0, DBPAGE=0, DBQ='';
 function setDBMonth(m){ DBMONTH=m; DBPAGE=0; rerender(); }
 function setDBPage(i){ DBPAGE=i; rerender(); }
-function renderDB(){
- buildNav('db');
+function dbFilteredCusts(){
+  let cs=custArr();
+  if(DBMONTH) cs=cs.filter(c=>{ const r=c.received||''; return r.length>=7 && parseInt(r.slice(5,7),10)===DBMONTH; });
+  if(DBQ.trim()) cs=cs.filter(c=>custMatch(c,DBQ));
+  return cs;
+}
+function dbGridHtml(){
  const avc=['#3b82f6','#10b981','#f59e0b','#8b5cf6','#ec4899','#06b6d4','#ef4444','#0ea5e9'];
- let cs=custArr();
- if(DBMONTH) cs=cs.filter(c=>{ const r=c.received||''; return r.length>=7 && parseInt(r.slice(5,7),10)===DBMONTH; });
- const months=['전체'].concat(Array.from({length:12},(_,i)=>(i+1)+'월'));
- const monthBar=`<div class="monthbar"><span class="myear">2026년</span>${months.map((mn,i)=>`<span class="mtab ${DBMONTH===i?'on':''}" onclick="setDBMonth(${i})">${mn}</span>`).join('')}</div>`;
+ const cs=dbFilteredCusts();
  const per=15, pages=Math.max(1,Math.ceil(cs.length/per)); let pg=Math.min(DBPAGE,pages-1); if(pg<0)pg=0;
  const slice=cs.slice(pg*per,pg*per+per);
  const cards=slice.map((c,i)=>{
@@ -1528,12 +1533,23 @@ function renderDB(){
    </div>`;
  }).join('');
  const pager= pages>1 ? '<div class="pager" style="margin-top:18px">'+Array.from({length:pages},(_,i)=>`<button class="${i===pg?'on':''}" onclick="setDBPage(${i})">${i+1}</button>`).join('')+'</div>' : '';
+ const hint= DBQ.trim() ? `<div style="font-size:13px;color:#64748b;font-weight:700;margin:2px 2px 12px">🔍 “${esc(DBQ.trim())}” 검색 결과 ${cs.length}건${cs.length?'':' — 없음'}</div>` : '';
+ const empty= DBQ.trim() ? '검색 결과가 없습니다.' : '해당 월 접수 고객이 없습니다.';
+ return hint+`<div class="cdbgrid">${cards||'<div class="panel" style="color:#94a3b8">'+empty+'</div>'}</div>`+pager;
+}
+function dbSearchUpdate(v){ DBQ=v; DBPAGE=0; const el=document.getElementById('dbGridWrap'); if(el) el.innerHTML=dbGridHtml(); }
+function renderDB(){
+ buildNav('db');
+ const months=['전체'].concat(Array.from({length:12},(_,i)=>(i+1)+'월'));
+ const monthBar=`<div class="monthbar"><span class="myear">2026년</span>${months.map((mn,i)=>`<span class="mtab ${DBMONTH===i?'on':''}" onclick="setDBMonth(${i})">${mn}</span>`).join('')}</div>`;
  $('#main').innerHTML=`<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
-   <div><h1>고객 DB</h1><div class="date">전체 ${custArr().length}명${DBMONTH?` · ${DBMONTH}월 접수 ${cs.length}명`:''} · 카드를 누르면 관리</div></div></div>
+   <div><h1>고객 DB</h1><div class="date">전체 ${custArr().length}명 · 카드를 누르면 관리</div></div></div>
    <button class="btn b" onclick="openNew()">+ 신규 고객</button></div>
    ${monthBar}
-   <div class="cdbgrid">${cards||'<div class="panel" style="color:#94a3b8">해당 월 접수 고객이 없습니다.</div>'}</div>
-   ${pager}`;
+   <input id="dbSearchInput" value="${esc(DBQ)}" oninput="dbSearchUpdate(this.value)" placeholder="🔍 이름·상호·업종·전화·메모로 검색" autocomplete="off"
+     style="width:100%;padding:12px 16px;font-size:15px;border:1.6px solid var(--brand);border-radius:12px;outline:none;margin:4px 0 14px;font-family:inherit;box-sizing:border-box">
+   <div id="dbGridWrap">${dbGridHtml()}</div>`;
+ if(DBQ) setTimeout(()=>{ const el=document.getElementById('dbSearchInput'); if(el){ el.focus(); el.setSelectionRange(el.value.length,el.value.length); } },10);
 }
 function renderStub(t){
  const T={call:'📞 오늘 콜',docs:'📁 서류함',meet:'📅 미팅',rev:'💰 수익·정산',report:'📈 리포트'}[t];
@@ -1952,7 +1968,7 @@ applyMe();
 <script>
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 /* 자동 최신화: 서버의 version.txt와 현재 빌드가 다르면 캐시 무시하고 1회 새로고침 */
-window.BUILD_VER='20260708-113702';
+window.BUILD_VER='20260708-134453';
 (function(){ try{
   fetch('version.txt',{cache:'no-store'}).then(function(r){return r.ok?r.text():null;}).then(function(v){
     if(!v) return; v=v.trim(); if(!v) return;
