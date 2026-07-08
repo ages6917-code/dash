@@ -1,0 +1,546 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head><link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏢</text></svg>">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+<title>사업 홈 대시보드</title><!--PWA--><link rel="manifest" href="/dash/pwa/home/manifest.json"><meta name="theme-color" content="#2563eb"><meta name="mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-status-bar-style" content="black-translucent"><meta name="apple-mobile-web-app-title" content="사업홈"><link rel="apple-touch-icon" href="/dash/pwa/home/icon180.png">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+:root{
+  --bg:#F5EEDC; --card:#FFFDF6; --line:#EDE6CE; --line2:#D8CFA8;
+  --txt:#3E3A28; --sub:#8A8264; --sub2:#6B6448;
+  --side:#2A2620; --sideink:#EDE6CE; --sidehi:#3B362C;
+  --red:#C0392B; --blue:#185FA5; --green:#3B6D11; --accent:#7F77DD;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{overflow-x:hidden}
+body{background:var(--bg);color:var(--txt);font-family:'Malgun Gothic','Apple SD Gothic Neo',sans-serif}
+a{color:inherit;text-decoration:none}
+/* 로그인 */
+#loginView{min-height:90vh;display:flex;align-items:center;justify-content:center;flex-direction:column;gap:16px}
+#loginView h1{font-size:22px}#loginView p{font-size:13px;color:var(--sub)}
+#loginBtn{border:none;background:#3E3A28;color:#F5EEDC;border-radius:10px;padding:12px 26px;font-size:14px;cursor:pointer;font-family:inherit}
+/* 레이아웃 */
+#app{display:none;min-height:100vh}
+.wrap{display:grid;grid-template-columns:224px 1fr;min-height:100vh}
+/* 사이드바 */
+.side{background:var(--side);color:var(--sideink);padding:16px 12px;display:flex;flex-direction:column;gap:3px;position:sticky;top:0;height:100vh;overflow-y:auto}
+.brand{font-size:16px;font-weight:800;padding:6px 10px 14px;display:flex;align-items:center;gap:8px}
+.navlabel{font-size:10.5px;color:#9A9075;font-weight:800;letter-spacing:.5px;margin:14px 10px 5px}
+.nav{display:flex;align-items:center;gap:9px;padding:9px 11px;border-radius:9px;font-size:13.5px;cursor:pointer;color:#D9D1B8;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.nav:hover{background:var(--sidehi);color:#fff}
+.nav.on{background:var(--accent);color:#fff}
+.nav .dot{width:9px;height:9px;border-radius:50%;flex:none}
+.nav .sd{font-size:10.5px;color:#9A9075;font-weight:500;margin-left:auto}
+.aimini{margin-top:auto;padding:11px;border-radius:9px;background:#221F19;font-size:11px;color:#9A9075;cursor:pointer;line-height:1.5}
+.aimini b{color:#D9D1B8}
+/* 메인 */
+.main{padding:22px 26px;min-width:0}
+.top{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:20px;gap:10px;flex-wrap:wrap}
+.top h1{font-size:22px;font-weight:800}
+.top .sub{color:var(--sub);font-size:12.5px;margin-top:5px}
+.sync{color:var(--green);font-size:11px}
+.date{text-align:right;color:var(--sub2);font-size:13px}.date b{font-size:15px}
+.date .out{font-size:11px;color:var(--sub);cursor:pointer;text-decoration:underline;margin-top:4px;display:inline-block}
+/* 카드 */
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:1.05fr 1.3fr 1fr}
+.col{display:flex;flex-direction:column;gap:14px}
+.card{background:var(--card);border-radius:14px;padding:15px 17px;border:1px solid rgba(0,0,0,.03)}
+.card h2{font-size:13.5px;margin-bottom:11px;display:flex;align-items:center;justify-content:space-between;gap:8px}
+.card h2 .cnt{font-size:11px;color:var(--sub);font-weight:400}
+/* 업무 */
+.task,.dd{display:flex;align-items:center;gap:8px;padding:8px 0;border-bottom:1px solid var(--line);font-size:13px}
+.task:last-child,.dd:last-child{border-bottom:none}
+.task input[type=checkbox]{accent-color:var(--accent)}
+.task .txt,.dd .txt{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.task.done .txt{text-decoration:line-through;color:var(--sub)}
+.tag{font-size:11px;border-radius:5px;padding:2px 7px;white-space:nowrap}
+.due{font-size:11px;color:var(--sub);white-space:nowrap}.due.over{color:var(--red);font-weight:700}
+.del{cursor:pointer;color:var(--line2);font-size:14px;padding:0 2px}.del:hover{color:var(--red)}
+.dd .dot{width:8px;height:8px;border-radius:50%;flex:none}
+.dd .cd{font-size:12px;font-weight:800;white-space:nowrap;padding:2px 9px;border-radius:20px}
+.dd .cd.soon{background:#FBEAEA;color:var(--red)}.dd .cd.near{background:#FAEEDA;color:#8A5A0B}.dd .cd.far{background:#EEF0F3;color:var(--sub2)}
+.addrow{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
+.addrow input,.addrow select{border:1px solid var(--line2);border-radius:7px;padding:7px 8px;font-size:12px;background:#fff;color:var(--txt);font-family:inherit}
+.addrow input[type=text]{flex:1;min-width:80px}
+.addrow button{border:none;background:#3E3A28;color:#F5EEDC;border-radius:7px;padding:7px 12px;font-size:12px;cursor:pointer}
+.empty{font-size:12px;color:var(--sub);padding:8px 0}
+/* 캘린더 */
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.calhead b{font-size:13.5px}
+.calnav{cursor:pointer;border:1px solid var(--line2);border-radius:6px;width:26px;height:26px;line-height:24px;text-align:center;font-size:13px;color:var(--sub2);background:#fff}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;text-align:center}
+.cal .dw{font-size:10.5px;color:var(--sub);padding:4px 0}.cal .dw:first-child{color:#D4537E}
+.day{font-size:12px;padding:7px 0 9px;border-radius:8px;cursor:pointer;position:relative}
+.day:hover{background:var(--line)}.day.dim{cursor:default}.day.dim:hover{background:none}
+.day.today{background:#3E3A28;color:#F5EEDC;font-weight:700}.day.sel{outline:2px solid var(--accent);outline-offset:-2px}
+.day .d{position:absolute;bottom:3px;left:50%;transform:translateX(-50%);width:4px;height:4px;border-radius:50%;background:#D85A30}
+.ev{display:flex;gap:10px;padding:6px 0;font-size:13px;align-items:baseline;border-bottom:1px solid var(--line)}
+.ev:last-child{border-bottom:none}.ev .t{color:var(--blue);font-weight:700;min-width:44px;font-size:12.5px}.ev .del{margin-left:auto}
+/* 사업 미니카드 (홈) */
+.bizgrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.bizc{border:1px solid var(--line);border-radius:12px;padding:12px 13px;cursor:pointer;transition:transform .12s;background:#fff}
+.bizc:hover{transform:translateY(-2px);border-color:var(--line2)}
+.bizc .bh{display:flex;align-items:center;gap:8px;font-weight:800;font-size:13.5px}
+.bizc .bh .dot{width:10px;height:10px;border-radius:50%}
+.bizc .bd{font-size:11px;color:var(--sub);margin-top:3px}
+.bizc .bs{font-size:12px;color:var(--sub2);margin-top:8px;border-top:1px dashed var(--line);padding-top:7px;min-height:16px}
+.bizc .bmeta{font-size:11px;color:var(--sub);margin-top:6px}
+/* 사업 상세 헤더 */
+.bizhero{border-radius:16px;padding:18px 22px;color:#fff;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap}
+.bizhero h1{font-size:22px;font-weight:800}
+.bizhero p{font-size:13px;opacity:.9;margin-top:3px}
+.bizhero .badge{background:rgba(255,255,255,.22);border-radius:20px;padding:4px 12px;font-size:12px;font-weight:700;display:inline-block;margin-top:8px;cursor:pointer}
+.bizhero .ql{display:flex;gap:8px;flex-wrap:wrap}
+.bizhero .ql a{background:rgba(255,255,255,.2);border-radius:9px;padding:8px 13px;font-size:12.5px;font-weight:700;color:#fff;cursor:pointer}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:14px}
+.kpi{background:var(--card);border-radius:14px;padding:15px 16px;border-left:4px solid var(--accent);cursor:pointer}
+.kpi .v{font-size:25px;font-weight:800}.kpi .l{font-size:11.5px;color:var(--sub);margin-top:3px}
+.kpi .dt{font-size:11px;font-weight:700;margin-top:5px}.kpi .dt.up{color:var(--green)}.kpi .dt.down{color:var(--red)}
+.pipe{display:flex;gap:6px}
+.step{flex:1;text-align:center;background:#F3EDD8;border-radius:9px;padding:10px 4px;position:relative;cursor:pointer}
+.step.hot{background:#FBEAEA}.step .n{font-size:19px;font-weight:800}.step .s{font-size:10.5px;color:var(--sub)}.step.hot .n{color:var(--red)}
+.pill{font-size:10px;background:#FBEAEA;color:var(--red);border-radius:10px;padding:1px 7px;position:absolute;top:-7px;right:6px;font-weight:700}
+.money{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;text-align:center}
+.money .m{background:var(--bg);border-radius:10px;padding:10px;cursor:pointer}.money .mv{font-size:16px;font-weight:800}.money .ml{font-size:10.5px;color:var(--sub);margin-top:2px}
+.fu{display:flex;align-items:center;gap:8px;padding:7px 0;border-bottom:1px solid var(--line);font-size:12.5px}.fu:last-child{border-bottom:none}
+.fu .dot{width:7px;height:7px;border-radius:50%;background:var(--accent);flex:none}.fu .when{margin-left:auto;font-size:11px;color:var(--red);font-weight:700}
+.fu .del{color:var(--line2);cursor:pointer;padding-left:4px}.fu .del:hover{color:var(--red)}
+.log{font-size:12px;color:var(--sub2)}.log>div{padding:6px 0;border-bottom:1px solid var(--line);display:flex;gap:8px}.log>div:last-child{border-bottom:none}
+.log .t{color:var(--sub);white-space:nowrap;font-size:11px}.log .st{margin-left:auto;font-size:10.5px;border-radius:10px;padding:1px 8px;white-space:nowrap}
+.log .st.done{background:#EAF3DE;color:#27500A}.log .st.new{background:#E6F1FB;color:#0C447C}.log .st.warn{background:#FAEEDA;color:#8A5A0B}
+.links{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-top:14px}
+.lk{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px;font-size:12.5px;font-weight:700;cursor:pointer}.lk .d{font-size:11px;color:var(--sub);font-weight:400;margin-top:3px}
+.dchart{display:flex;gap:8px;align-items:flex-end;height:92px;padding-top:6px}
+.dbar{flex:1;text-align:center;cursor:pointer;display:flex;flex-direction:column;justify-content:flex-end}
+.dbf{border-radius:5px 5px 0 0;min-height:4px;margin:0 auto;width:62%}
+.dbl{font-size:10.5px;color:var(--sub);margin-top:5px}
+#memo,.bnote{width:100%;min-height:120px;border:none;background:transparent;resize:vertical;font-family:inherit;font-size:13px;color:var(--txt);line-height:1.7;outline:none}
+.memoinfo{font-size:11px;color:var(--sub)}
+.shortcuts{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:18px}
+.sc{text-align:center;cursor:pointer;width:72px}
+.sc .tile{width:50px;height:50px;border-radius:15px;background:#fff;border:1px solid var(--line);display:flex;align-items:center;justify-content:center;margin:0 auto;box-shadow:0 1px 5px rgba(0,0,0,.06);transition:transform .12s}
+.sc .tile svg{display:block}
+.sc:hover .tile{transform:translateY(-3px);box-shadow:0 5px 14px rgba(0,0,0,.12)}
+.sc p{font-size:11px;color:var(--sub2);margin-top:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+/* 반응형 (모바일은 추후 정밀화) */
+@media(max-width:900px){
+  .wrap{grid-template-columns:1fr}
+  .side{position:static;height:auto;flex-direction:row;flex-wrap:wrap;gap:4px;overflow-x:auto}
+  .side .navlabel{width:100%}
+  .aimini{margin:8px 0 0}
+  .g3,.g2{grid-template-columns:1fr}
+  .main{padding:16px}
+}
+</style>
+</head>
+<body>
+
+<div id="loginView">
+  <h1>사업 홈 대시보드</h1>
+  <p>사장님 전용 공간입니다. 구글 계정으로 로그인하세요.</p>
+  <button id="loginBtn" onclick="doLogin()">Google로 로그인</button>
+  <p id="loginMsg" style="color:var(--red)"></p>
+</div>
+
+<div id="app">
+  <div class="wrap">
+    <aside class="side">
+      <div class="brand">🏠 사업 홈</div>
+      <div class="nav" data-v="home" onclick="setView('home')">🏠 대시보드</div>
+      <div class="navlabel">내 사업</div>
+      <div id="navBiz"></div>
+      <div class="navlabel">모아보기</div>
+      <div class="nav" data-v="tasks" onclick="setView('tasks')">✅ 전체 업무</div>
+      <div class="nav" data-v="dday" onclick="setView('dday')">🔥 전체 마감</div>
+      <div class="nav" data-v="cal" onclick="setView('cal')">📅 일정</div>
+      <div class="nav" data-v="memo" onclick="setView('memo')">📝 메모장</div>
+      <div class="navlabel">대시보드 바로가기</div>
+      <a class="nav" href="status.html">📊 T봇 관제탑</a>
+      <a class="nav" href="hustle.html">🧭 부업 발굴</a>
+      <a class="nav" href="consult.html">💼 컨설팅</a>
+      <a class="nav" href="wholesale.html">📦 위탁거래처</a>
+      <a class="nav" href="temu.html">🛒 테무 통합 대시보드</a>
+      <div class="aimini" id="aiMini" onclick="location.href='status.html'">🤖 AI 직원 현황 불러오는 중… — 관제탑 →</div>
+    </aside>
+    <main class="main">
+      <div class="top">
+        <div>
+          <h1 id="greet"></h1>
+          <div class="sub"><span id="subline"></span> <span class="sync" id="sync">● 동기화됨</span></div>
+        </div>
+        <div class="date"><b id="dateStr"></b><div id="dowStr"></div><span class="out" onclick="fb.auth().signOut()">로그아웃</span></div>
+      </div>
+      <div id="view"></div>
+    </main>
+  </div>
+</div>
+
+<script>
+const firebaseConfig = {
+  apiKey: "AIzaSyCAdQ2KkU5Nui6l2vJxnpZKBM65iJXRLn8",
+  authDomain: "consult-crm-cfef6.firebaseapp.com",
+  databaseURL: "https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "consult-crm-cfef6",
+  storageBucket: "consult-crm-cfef6.firebasestorage.app",
+  messagingSenderId: "519553114688",
+  appId: "1:519553114688:web:d0a4c9bd66e276984275a5"
+};
+const OWNER='ages6917@gmail.com';
+const fb=firebase; fb.initializeApp(firebaseConfig); const db=fb.database();
+
+const BIZ=[
+  {k:'핫딜연합', icon:'📦', desc:'덤핑·제조·수입·매입 · 테무 위탁판매', c:'#D85A30', bg:'#FAECE7', tc:'#712B13',
+    badge:'🟢 진행중 · 오늘 등록 딜 12건', hero:[['위탁거래처 수집','wholesale.html']],
+    kpi:[['34','진행 딜','▲ 오늘 +12','up'],['4,800만','이번달 매입','▲ 전월比 +15%','up'],['8,200만','판매 매출','▲ +9%','up'],['22%','평균 마진율','▼ -2%','down']],
+    pipeTitle:'소싱 → 판매', pipe:[['소싱',18,false,''],['검수',9,false,''],['등록',6,true,'정체'],['판매중',24,false,''],['정산',3,false,'']],
+    moneyTitle:'💰 정산 현황', money:[['8,200만','판매 매출','green'],['4,800만','매입 원가','red'],['1,900만','순익(추정)','']],
+    fu:[['나침반식품','재입고 문의','오늘'],['OO도매','단가 협의','오늘'],['신규셀러','위탁계약','D-1']],
+    log:[['07-05','신규 위탁 거래처 18건 수집','완료','done'],['07-05','핫딜샵 34개 신상 등록','등록','new'],['07-04','반품 3건 처리','주의','warn']],
+    cards:[['📦 위탁거래처 수집','거래처 자동수집 · 🟢','wholesale.html'],['🛒 핫딜샵 34개','상품 등록·관리','#'],['🤖 담당 자동화','위탁 수집 봇 · 🟢','status.html']]},
+  {k:'사이언숯', icon:'🌿', desc:'생활용품 제조 · 수출 예정', c:'#639922', bg:'#EAF3DE', tc:'#27500A',
+    badge:'🟡 준비중 · 바이어 발굴 진행', hero:[['부업/해외 발굴','hustle.html']],
+    kpi:[['340','확보 바이어(누적)','▲ 오늘 +28','up'],['33','검증 이메일','','up'],['55','콜드메일 발송','','up'],['4','회신','▲ +2','up']],
+    pipeTitle:'발굴 → 회신', pipe:[['발굴',340,false,''],['검증',33,false,''],['발송',55,false,''],['회신',4,true,'요확인'],['상담',1,false,'']],
+    moneyTitle:'📦 수출 진행', money:[['3','샘플 발송',''],['2','견적 협의',''],['0','계약','']],
+    fu:[['Pharmacity','견적 회신 대기','D-2'],['신규 바이어','샘플 문의','오늘']],
+    log:[['07-05','신규 바이어 28건 발굴','신규','new'],['07-05','검수 통과 12건 마스터 이관','완료','done'],['07-04','콜드메일 23통 발송','발송','new']],
+    cards:[['🧭 부업/해외 발굴','서비스 수요처','hustle.html'],['📧 콜드메일 발송','승인분만 발송','#'],['📄 바이어풀 마스터','340건 DB','#']]},
+  {k:'경영컨설팅', icon:'💼', desc:'정책자금 · 보험 · 세무 컨설팅', c:'#378ADD', bg:'#E6F1FB', tc:'#0C447C', redirect:'consult.html',
+    badge:'🟢 진행중 · 오늘 처리할 신규 8건', hero:[['컨설팅 CRM','consult.html']],
+    kpi:[['8','신규 연락 대기','▲ 오늘 +3','up'],['23','진행 관리고객','▲ 이번주 +2','up'],['3,200만','이번달 계약·수수료','▲ 전월比 +18%','up'],['5','재연락 예정','오늘 2건 마감','down']],
+    pipeTitle:'고객 진행 파이프라인', pipe:[['신규DB',8,false,''],['상담',12,false,''],['서류',6,true,'3일+ 정체'],['접수',4,false,''],['마무리',3,false,'']],
+    moneyTitle:'💰 정산 현황', money:[['3,200만','확정 매출','green'],['1,150만','미수금','red'],['2,050만','순익(추정)','']],
+    fu:[['미지향 김대표','대납 일정 확인','오늘'],['대성상사','추가 서류 요청','오늘'],['신규 이사장','1차 상담','D-1'],['한빛물류','보험 갱신','D-3']],
+    log:[['07-05','미지향 재무요약 자동분석 완료','완료','done'],['07-05','신규 고객 3명 DB 유입','신규','new'],['07-04','대성상사 보험 계약 체결','계약','done']],
+    cards:[['💼 컨설팅 CRM','고객·서류·재무요약','consult.html'],['📄 고객 서류함','계약서·정산표','#'],['🤖 담당 자동화','재무요약 봇 · 🟢','status.html']]},
+  {k:'라이브방송', icon:'🎬', desc:'라이브 커머스 방송', c:'#D4537E', bg:'#FBEAF0', tc:'#72243E',
+    badge:'🟢 방송 예정 3건 · 오늘 1건', hero:[],
+    kpi:[['3','예정 방송','오늘 1건','up'],['640만','최근 방송매출','▲ +12%','up'],['1,200','평균 시청','▲ +80','up'],['3.4%','구매 전환','▼ -0.3%','down']],
+    pipeTitle:'상품섭외 → 방송', pipe:[['섭외',5,false,''],['편성',3,false,''],['리허설',1,true,'오늘'],['방송',2,false,''],['정산',2,false,'']],
+    moneyTitle:'💰 정산 현황', money:[['640만','방송 매출','green'],['90만','수수료','red'],['420만','순익','']],
+    fu:[['공급업체','상품 확정','오늘'],['협력벤더','재고 확인','D-1']],
+    log:[['07-04','주말 방송 640만 매출','완료','done'],['07-04','신상 5건 섭외','신규','new'],['07-03','리허설 진행','진행','warn']],
+    cards:[['🎬 상품 편성표','방송 스케줄','#'],['🤝 밴더(공구)','상품 공급 연계','#'],['📊 방송 실적','매출·시청 기록','#']]},
+  {k:'밴더', icon:'🤝', desc:'라방 · 공구 벤더', c:'#BA7517', bg:'#FAEEDA', tc:'#633806',
+    badge:'🟢 진행 공구 4건', hero:[],
+    kpi:[['4','진행 공구','','up'],['12','협력 셀러','','up'],['380만','벤더 수수료(월)','','up'],['2','정산 대기','','down']],
+    pipeTitle:'상품제안 → 정산', pipe:[['상품제안',8,false,''],['셀러매칭',5,false,''],['공구진행',4,false,''],['마감',3,false,''],['정산',2,true,'대기']],
+    moneyTitle:'💰 정산 현황', money:[['1,600만','공구 총매출','green'],['380만','벤더 수수료',''],['2건','정산 대기','red']],
+    fu:[['셀러A','정산 처리','오늘'],['공급사','재고 보충','D-2']],
+    log:[['07-05','신규 공구 2건 오픈','신규','new'],['07-04','셀러 3곳 매칭','완료','done'],['07-04','정산 1건 완료','완료','done']],
+    cards:[['🎬 라이브방송 연계','방송 상품','#'],['📄 공구 진행표','셀러·상품','#'],['💰 정산 관리','수수료 정산','#']]},
+  {k:'AI사업', icon:'🤖', desc:'TTAPP 활용 AI 자동화', c:'#7F77DD', bg:'#EEEDFE', tc:'#3C3489', redirect:'status.html',
+    badge:'🟢 AI 직원 17명 가동중', hero:[['T봇 관제탑','status.html'],['부업 발굴','hustle.html']],
+    kpi:[['17','AI 직원','가동 12명','up'],['8','오늘 산출물','▲ +8','up'],['3','개입 대기','▼ -1','down'],['47만','월 AI 비용','전월 유지','up']],
+    pipeTitle:'AI 직원 상태', pipe:[['가동중',12,false,''],['주의',5,false,''],['개입대기',3,true,'확인要'],['검수대기',3,false,''],['중지',2,false,'']],
+    moneyTitle:'💰 비용 · 효과', money:[['47만','월 AI 비용','red'],['5개','신규 자동화',''],['152만','원가 절감(추정)','green']],
+    fu:[['직원9 밴더풀','재개 검토','보류'],['직원5 지식인','중지 상태','–']],
+    log:[['07-05','해외 서비스수요처 28건 수집','완료','done'],['07-05','부업 신규 1건 발굴','신규','new'],['07-04','컨설팅 재무요약 자동처리','완료','done']],
+    cards:[['📊 T봇 관제탑','직원 현황·보고','status.html'],['🧭 부업 발굴','아이템 발굴기','hustle.html'],['🤖 자동화 목록','워크플로우','#']]}
+];
+const bizOf=k=>BIZ.find(b=>b.k===k)||BIZ[0];
+const BIZL=['핫딜연합','사이언숯','라이브방송','밴더','경영컨설팅','AI사업'].map(bizOf);
+const IC_GMAIL='<svg viewBox="0 0 48 48" width="28" height="28"><rect x="5" y="12" width="38" height="24" rx="4" fill="#fff" stroke="#EADFC0"/><path d="M8 15v19M40 15v19" stroke="#EA4335" stroke-width="3.4" stroke-linecap="round"/><path d="M8 15l16 13 16-13" fill="none" stroke="#EA4335" stroke-width="3.4" stroke-linejoin="round"/></svg>';
+const IC_NAVER='<svg viewBox="0 0 48 48" width="28" height="28"><rect width="48" height="48" rx="13" fill="#03C75A"/><path d="M17 14h6.6l7 10.2V14H37v20h-6.6l-7-10.2V34H17z" fill="#fff"/></svg>';
+const IC_GCAL='<svg viewBox="0 0 48 48" width="28" height="28"><rect x="8" y="9" width="32" height="31" rx="6" fill="#fff" stroke="#E3E3E3"/><rect x="8" y="9" width="32" height="10" rx="6" fill="#4285F4"/><rect x="8" y="14" width="32" height="5" fill="#4285F4"/><text x="24" y="35" font-size="16" font-weight="800" fill="#3C6FD6" text-anchor="middle" font-family="Arial,sans-serif">31</text></svg>';
+const SHORTCUTS=[
+  ['Gmail', IC_GMAIL, 'https://mail.google.com'],
+  ['네이버 메일', IC_NAVER, 'https://mail.naver.com'],
+  ['구글 캘린더', IC_GCAL, 'https://calendar.google.com']
+];
+function scGo(u){ if(/^https?:/.test(u)) window.open(u,'_blank'); else location.href=u; }
+function shortcutRow(){ return `<div class="shortcuts">${SHORTCUTS.map(s=>`<div class="sc" onclick="scGo('${s[2]}')" title="${esc(s[0])}"><div class="tile">${s[1]}</div><p>${esc(s[0])}</p></div>`).join('')}</div>`; }
+const pad=n=>String(n).padStart(2,'0');
+const key=d=>d.getFullYear()+'-'+pad(d.getMonth()+1)+'-'+pad(d.getDate());
+const todayKey=()=>key(new Date());
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+
+/* 인증 */
+function doLogin(){ const p=new fb.auth.GoogleAuthProvider(); fb.auth().signInWithPopup(p).catch(()=>fb.auth().signInWithRedirect(p)); }
+fb.auth().onAuthStateChanged(u=>{
+  if(!u){ document.getElementById('app').style.display='none'; document.getElementById('loginView').style.display='flex'; return; }
+  if(u.email!==OWNER){ document.getElementById('loginMsg').textContent='접근 권한이 없는 계정: '+u.email; fb.auth().signOut(); return; }
+  document.getElementById('loginView').style.display='none';
+  document.getElementById('app').style.display='block';
+  start();
+});
+
+/* 상태 */
+let started=false, curView='home';
+let tasks={}, ddays={}, evs={}, bizNotes={}, bizdata={}, memoVal='', summary=null, crm={n:null,memo:''};
+let hd={};  // 핫딜연합 전용 데이터 (재고·매출·거래처·결제·계산서)
+let calBase=new Date(new Date().getFullYear(),new Date().getMonth(),1), selDay=todayKey();
+
+function start(){
+  if(started) return; started=true;
+  const now=new Date(), H=now.getHours();
+  document.getElementById('greet').textContent=(H<5?'늦은 밤까지 고생 많으세요, 사장님':H<12?'좋은 아침이에요, 사장님':H<18?'좋은 오후예요, 사장님':'오늘도 수고 많으셨어요, 사장님')+'.';
+  document.getElementById('dateStr').textContent=now.getFullYear()+'년 '+(now.getMonth()+1)+'월 '+now.getDate()+'일';
+  document.getElementById('dowStr').textContent=['일','월','화','수','목','금','토'][now.getDay()]+'요일';
+  db.ref('home/tasks').on('value',s=>{tasks=s.val()||{}; refresh();});
+  db.ref('home/deadlines').on('value',s=>{ddays=s.val()||{}; refresh();});
+  db.ref('home/events').on('value',s=>{evs=s.val()||{}; refresh();});
+  db.ref('home/biz').on('value',s=>{bizNotes=s.val()||{}; refresh();});
+  db.ref('home/bizdata').on('value',s=>{bizdata=s.val()||{}; refresh();});
+  db.ref('shared/hotdeal').on('value',s=>{hd=s.val()||{}; refresh();});
+  db.ref('home/memo').on('value',s=>{memoVal=s.val()||''; var m=document.getElementById('memo'); if(m&&document.activeElement!==m)m.value=memoVal;});
+  db.ref('.info/connected').on('value',s=>{const el=document.getElementById('sync'); el.textContent=s.val()?'● 동기화됨':'○ 오프라인'; el.style.color=s.val()?'var(--green)':'var(--red)';});
+  db.ref('home/summary').on('value',s=>{ if(s.exists()){summary=s.val(); renderAiMini();} });
+  loadSummary(); loadCrm();
+  renderNav(); renderView();
+}
+
+function setView(v){ curView=v; renderNav(); renderView(); if(window.innerWidth<=900)window.scrollTo(0,0); }
+function refresh(){ renderNav(); renderView(); renderSubline(); }
+
+/* 사이드바 */
+function renderNav(){
+  document.getElementById('navBiz').innerHTML=BIZL.map(b=>{
+    const open=Object.values(tasks).filter(t=>t.biz===b.k&&!t.done).length;
+    const act=b.redirect?`scGo('${b.redirect}')`:`setView('biz:${b.k}')`;
+    return `<div class="nav ${curView==='biz:'+b.k?'on':''}" onclick="${act}">
+      <span class="dot" style="background:${b.c}"></span>${b.k}${b.redirect?'<span class="sd">↗</span>':(open?`<span class="sd">${open}</span>`:'')}</div>`;
+  }).join('');
+  document.querySelectorAll('.nav[data-v]').forEach(n=>n.classList.toggle('on',n.getAttribute('data-v')===curView));
+}
+function renderSubline(){
+  const open=Object.values(tasks).filter(t=>!t.done).length;
+  const over=Object.values(tasks).filter(t=>!t.done&&t.due&&t.due<todayKey()).length;
+  document.getElementById('subline').textContent=`진행 중 업무 ${open}건`+(over?` · 지연 ${over}건`:'');
+}
+
+/* 공통 빌더 */
+function dueLabel(d){ if(!d)return{t:'',o:false}; const diff=Math.round((new Date(d)-new Date(todayKey()))/864e5); return diff<0?{t:'지연 D+'+(-diff),o:true}:diff===0?{t:'오늘',o:true}:{t:'D-'+diff,o:false}; }
+function taskRow(id,t){ const b=bizOf(t.biz), dl=dueLabel(t.due);
+  return `<div class="task ${t.done?'done':''}"><input type="checkbox" ${t.done?'checked':''} onchange="db.ref('home/tasks/${id}/done').set(this.checked)">
+    <span class="tag" style="background:${b.bg};color:${b.tc}">${esc(t.biz)}</span>
+    <span class="txt">${esc(t.txt)}</span><span class="due ${dl.o?'over':''}">${dl.t}</span>
+    <span class="del" onclick="db.ref('home/tasks/${id}').remove()">✕</span></div>`; }
+function ddRow(id,d){ const b=bizOf(d.biz); const diff=Math.round((new Date(d.date)-new Date(todayKey()))/864e5);
+  const L=diff<0?{t:'지남',c:'far'}:diff===0?{t:'D-DAY',c:'soon'}:{t:'D-'+diff,c:diff<=3?'soon':diff<=7?'near':'far'};
+  const md=d.date?(+d.date.split('-')[1])+'/'+(+d.date.split('-')[2]):'';
+  return `<div class="dd"><span class="dot" style="background:${b.c}"></span>
+    <span class="txt">${esc(d.txt)} <span style="color:var(--sub);font-size:11px">${md}</span></span>
+    <span class="cd ${L.c}">${L.t}</span><span class="del" onclick="db.ref('home/deadlines/${id}').remove()">✕</span></div>`; }
+function sortTasks(arr){ return arr.sort((a,b)=>(a.done-b.done)||((a.due||'9999')<(b.due||'9999')?-1:1)); }
+function sortDd(arr){ return arr.sort((a,b)=>(a.date||'9999')<(b.date||'9999')?-1:1); }
+function bizOpts(sel){ return BIZ.map(b=>`<option ${b.k===sel?'selected':''}>${b.k}</option>`).join(''); }
+
+function tasksCard(bizFilter){
+  const arr=sortTasks(Object.entries(tasks).map(([id,t])=>({id,...t})).filter(t=>!bizFilter||t.biz===bizFilter));
+  const rows=arr.map(t=>taskRow(t.id,t)).join('')||'<div class="empty">등록된 업무가 없어요. 아래에서 추가하세요.</div>';
+  const open=arr.filter(t=>!t.done).length;
+  return `<div class="card"><h2>${bizFilter?'이 사업 업무':'오늘의 우선순위 업무'} <span class="cnt">진행 ${open}건</span></h2>
+    <div>${rows}</div>
+    <div class="addrow"><select id="tBiz">${bizOpts(bizFilter)}</select>
+      <input type="text" id="tTxt" placeholder="업무 내용" onkeydown="if(event.key==='Enter')addTask()">
+      <input type="date" id="tDue"><button onclick="addTask()">추가</button></div></div>`;
+}
+function ddCard(bizFilter){
+  const arr=sortDd(Object.entries(ddays).map(([id,d])=>({id,...d})).filter(d=>!bizFilter||d.biz===bizFilter));
+  const rows=arr.map(d=>ddRow(d.id,d)).join('')||'<div class="empty">등록된 마감이 없어요.</div>';
+  return `<div class="card"><h2>🔥 ${bizFilter?'이 사업 마감':'마감 · D-day'} <span class="cnt">놓치면 안 되는 날</span></h2>
+    <div>${rows}</div>
+    <div class="addrow"><select id="dBiz">${bizOpts(bizFilter)}</select>
+      <input type="text" id="dTxt" placeholder="마감 내용 (예: 대납, 세금신고)" onkeydown="if(event.key==='Enter')addDday()">
+      <input type="date" id="dDate"><button onclick="addDday()">추가</button></div></div>`;
+}
+function calCard(){
+  const y=calBase.getFullYear(),m=calBase.getMonth();
+  const first=new Date(y,m,1).getDay(),days=new Date(y,m+1,0).getDate();
+  const evDays=new Set(Object.values(evs).map(e=>e.date));
+  let c=['일','월','화','수','목','금','토'].map(d=>`<div class="dw">${d}</div>`).join('');
+  for(let i=0;i<first;i++)c+='<div class="day dim"></div>';
+  for(let d=1;d<=days;d++){const k=y+'-'+pad(m+1)+'-'+pad(d);
+    c+=`<div class="day ${k===todayKey()?'today':''} ${k===selDay?'sel':''}" onclick="pickDay('${k}')">${d}${evDays.has(k)?'<span class="d"></span>':''}</div>`;}
+  const list=Object.entries(evs).map(([id,e])=>({id,...e})).filter(e=>e.date===selDay).sort((a,b)=>a.time<b.time?-1:1);
+  const [,mm,dd]=selDay.split('-');
+  const evrows=list.map(e=>`<div class="ev"><span class="t">${esc(e.time)}</span><span>${esc(e.txt)}</span><span class="del" onclick="db.ref('home/events/${e.id}').remove()">✕</span></div>`).join('')||'<div class="empty">등록된 일정이 없어요.</div>';
+  return `<div class="card"><h2>캘린더 <span class="cnt"><a href="https://calendar.google.com" target="_blank" style="color:var(--blue)">구글 캘린더 →</a></span></h2>
+    <div class="calhead"><span class="calnav" onclick="moveM(-1)">‹</span><b>${y}년 ${m+1}월</b><span class="calnav" onclick="moveM(1)">›</span></div>
+    <div class="cal">${c}</div>
+    <div style="margin-top:12px;border-top:1px solid var(--line);padding-top:8px">
+      <div style="font-size:12px;color:var(--sub2);margin-bottom:4px">${selDay===todayKey()?'오늘':(+mm)+'월 '+(+dd)+'일'} 일정 ${list.length?list.length+'건':''}</div>
+      <div>${evrows}</div>
+      <div class="addrow"><input type="time" id="eTime"><input type="text" id="eTxt" placeholder="일정 내용" onkeydown="if(event.key==='Enter')addEv()"><button onclick="addEv()">추가</button></div>
+    </div></div>`;
+}
+function memoCard(){
+  return `<div class="card"><h2>메모장 <span class="cnt memoinfo" id="memoSaved">자동 저장·동기화</span></h2>
+    <textarea id="memo" placeholder="떠오르는 생각, 전화 메모, 오늘 챙길 것...">${esc(memoVal)}</textarea></div>`;
+}
+
+/* 뷰 라우터 */
+function renderView(){
+  const v=document.getElementById('view');
+  if(curView==='home') v.innerHTML=homeView();
+  else if(curView==='biz:핫딜연합') v.innerHTML=hotdealView();
+  else if(curView.startsWith('biz:')) v.innerHTML=bizView(curView.slice(4));
+  else if(curView==='tasks') v.innerHTML=`<div class="grid" style="max-width:720px">${tasksCard('')}</div>`;
+  else if(curView==='dday') v.innerHTML=`<div class="grid" style="max-width:720px">${ddCard('')}</div>`;
+  else if(curView==='cal') v.innerHTML=`<div class="grid" style="max-width:720px">${calCard()}</div>`;
+  else if(curView==='memo') v.innerHTML=`<div class="grid" style="max-width:720px">${memoCard()}</div>`;
+  renderSubline();
+}
+function homeView(){
+  return shortcutRow()+`<div class="grid g3">
+    <div class="col">${tasksCard('')}${ddCard('')}</div>
+    <div class="col">${calCard()}</div>
+    <div class="col">
+      <div class="card"><h2>📊 사업 현황 <span class="cnt">클릭 → 사업별 화면</span></h2>
+        <div class="bizgrid">${BIZL.map(b=>{
+          const open=Object.values(tasks).filter(t=>t.biz===b.k&&!t.done).length;
+          const nx=sortDd(Object.entries(ddays).map(([id,d])=>({id,...d})).filter(d=>d.biz===b.k))[0];
+          return `<div class="bizc" onclick="setView('biz:${b.k}')">
+            <div class="bh"><span class="dot" style="background:${b.c}"></span>${b.k}</div>
+            <div class="bs">${esc(bizNotes[b.k])||'<span style="color:var(--sub)">현황 메모 없음</span>'}</div>
+            <div class="bmeta">업무 ${open}건${nx?` · 가장 가까운 마감 ${(+nx.date.split('-')[1])}/${(+nx.date.split('-')[2])}`:''}</div></div>`;
+        }).join('')}</div></div>
+      ${memoCard()}
+    </div></div>`;
+}
+/* 사업 상세: 설정 기본값 + Firebase 오버라이드(수정분) 병합 */
+function bd(k){ return bizdata[k]||{}; }
+function effBadge(k){ return bd(k).badge ?? bizOf(k).badge; }
+function effKpi(k){ return bd(k).kpi || bizOf(k).kpi; }
+function effMoney(k){ return bd(k).money || bizOf(k).money; }
+function effFu(k){ return bd(k).fu || bizOf(k).fu; }
+function effPipe(k){ return bd(k).pipe || bizOf(k).pipe.map(p=>p[1]); }
+function moneyCol(c){ return c==='green'?'var(--green)':c==='red'?'var(--red)':'inherit'; }
+
+function bizView(k){
+  const b=bizOf(k);
+  const kpis=effKpi(k), money=effMoney(k), fu=effFu(k), pc=effPipe(k);
+  const heroH=(b.hero||[]).map(l=>`<a onclick="location.href='${l[1]}'">${esc(l[0])} →</a>`).join('');
+  const kpiH=kpis.map((x,i)=>`<div class="kpi" style="border-color:${b.c}" onclick="editKpi('${k}',${i})"><div class="v">${x[0]}</div><div class="l">${esc(x[1])}</div><div class="dt ${x[3]||''}">${esc(x[2]||'')}</div></div>`).join('');
+  const pipeH=b.pipe.map((p,i)=>`<div class="step ${p[2]?'hot':''}" onclick="editPipe('${k}',${i})"><div class="n">${pc[i]??p[1]}</div><div class="s">${esc(p[0])}</div>${p[3]?`<span class="pill">${esc(p[3])}</span>`:''}</div>`).join('');
+  const moneyH=money.map((m,i)=>`<div class="m" onclick="editMoney('${k}',${i})"><div class="mv" style="color:${moneyCol(m[2])}">${m[0]}</div><div class="ml">${esc(m[1])}</div></div>`).join('');
+  const fuH=fu.length?fu.map((f,i)=>`<div class="fu"><span class="dot"></span>${esc(f[0])} <span style="color:var(--sub);font-size:11px">· ${esc(f[1])}</span><span class="when">${esc(f[2])}</span><span class="del" onclick="delFu('${k}',${i})">✕</span></div>`).join(''):'<div class="empty">없음 — 아래 + 추가</div>';
+  const logH=(b.log||[]).map(l=>`<div><span class="t">${esc(l[0])}</span><span>${esc(l[1])}</span><span class="st ${l[3]}">${esc(l[2])}</span></div>`).join('');
+  const cardsH=(b.cards||[]).map(c=>`<div class="lk" onclick="if('${c[2]}'!=='#')location.href='${c[2]}'">${esc(c[0])}<div class="d">${esc(c[1])}</div></div>`).join('');
+  return `<div class="bizhero" style="background:linear-gradient(120deg,${b.c},${b.tc})">
+      <div><h1>${b.icon||''} ${b.k}</h1><p>${esc(b.desc)}</p><span class="badge" onclick="editBadge('${k}')">${esc(effBadge(k))} ✎</span></div>
+      <div class="ql">${heroH}</div></div>
+    <div class="kpis">${kpiH}</div>
+    <div class="grid g2">
+      <div class="col">
+        <div class="card"><h2>${esc(b.pipeTitle)} <span class="cnt">단계 클릭해 수정 · 🔴 병목</span></h2><div class="pipe">${pipeH}</div></div>
+        ${tasksCard(k)}
+        <div class="card"><h2>최근 활동 <span class="cnt">자동 연동 예정</span></h2><div class="log">${logH}</div></div>
+      </div>
+      <div class="col">
+        <div class="card"><h2>${esc(b.moneyTitle)} <span class="cnt">숫자 클릭해 수정</span></h2><div class="money">${moneyH}</div></div>
+        <div class="card"><h2>📞 다시 연락할 사람 <span class="cnt">팔로업 ${fu.length}건</span></h2>${fuH}
+          <div class="addrow"><button onclick="addFu('${k}')">+ 연락 추가</button></div></div>
+        ${ddCard(k)}
+        <div class="card"><h2>📝 현황 메모</h2>
+          <textarea class="bnote" id="bnote" placeholder="${k} 상황·진행·이슈를 자유롭게..." onblur="db.ref('home/biz/${k}').set(this.value.trim())">${esc(bizNotes[k]||'')}</textarea></div>
+      </div>
+    </div>
+    <div class="links">${cardsH}</div>`;
+}
+
+/* 동작 */
+function addTask(){ const t=document.getElementById('tTxt').value.trim(); if(!t)return;
+  db.ref('home/tasks/t'+Date.now()).set({biz:document.getElementById('tBiz').value,txt:t,due:document.getElementById('tDue').value||'',done:false}); }
+function addDday(){ const t=document.getElementById('dTxt').value.trim(),d=document.getElementById('dDate').value; if(!t||!d)return;
+  db.ref('home/deadlines/d'+Date.now()).set({biz:document.getElementById('dBiz').value,txt:t,date:d}); }
+function addEv(){ const t=document.getElementById('eTxt').value.trim(); if(!t)return;
+  db.ref('home/events/e'+Date.now()).set({date:selDay,time:document.getElementById('eTime').value||'--:--',txt:t}); }
+function moveM(d){ calBase=new Date(calBase.getFullYear(),calBase.getMonth()+d,1); renderView(); }
+function pickDay(k){ selDay=k; renderView(); }
+
+/* 메모 자동저장 */
+let memoTimer;
+document.addEventListener('input',e=>{ if(e.target.id!=='memo')return;
+  clearTimeout(memoTimer); const el=document.getElementById('memoSaved'); if(el)el.textContent='입력 중...';
+  memoTimer=setTimeout(()=>{ db.ref('home/memo').set(e.target.value).then(()=>{ const t=new Date(); const s=document.getElementById('memoSaved'); if(s)s.textContent=pad(t.getHours())+':'+pad(t.getMinutes())+' 저장됨'; }); },600); });
+
+/* AI 요약 (사이드바 한 줄) */
+function renderAiMini(){ if(!summary)return;
+  document.getElementById('aiMini').innerHTML='🤖 AI 직원 <b>'+(summary['직원_총원']??'?')+'명</b><br>개입 '+(summary['개입_대기']??'–')+' · 검수 '+(summary['검수_대기']??'–')+' — 관제탑 →'; }
+async function loadSummary(){ try{ const r=await fetch('home_summary.json?v='+Date.now()); if(!r.ok)throw 0; summary=await r.json(); renderAiMini(); }catch(e){} }
+async function loadCrm(){ try{ const [rq,mo]=await Promise.all([db.ref('requests').once('value'),db.ref('dashMemo').once('value')]); crm={n:rq.numChildren(),memo:mo.val()||''}; }catch(e){} }
+
+/* 사업 상세 수정 (클릭 → 수정, Firebase 저장) */
+function cloneArr(a){ return (a||[]).map(x=>Array.isArray(x)?x.slice():x); }
+function editKpi(k,i){ const a=cloneArr(effKpi(k)); const c=a[i]||['','','','up'];
+  const v=prompt('KPI 수정 — "값 | 라벨 | 추세"\n예: 34 | 진행 딜 | ▲ 오늘 +12', c[0]+' | '+c[1]+' | '+(c[2]||'')); if(v===null)return;
+  const p=v.split('|').map(s=>s.trim()); const dir=(p[2]||'').indexOf('▼')>=0?'down':(p[2]?'up':(c[3]||'')); a[i]=[p[0]||'',p[1]||c[1],p[2]||'',dir]; db.ref('home/bizdata/'+k+'/kpi').set(a); }
+function editMoney(k,i){ const a=cloneArr(effMoney(k)); const c=a[i]||['','','']; const v=prompt('정산 항목 — "값 | 라벨"', c[0]+' | '+c[1]); if(v===null)return; const p=v.split('|').map(s=>s.trim()); a[i]=[p[0]||'',p[1]||c[1],c[2]||'']; db.ref('home/bizdata/'+k+'/money').set(a); }
+function editPipe(k,i){ const a=(effPipe(k)||[]).slice(); const label=bizOf(k).pipe[i][0]; const n=prompt(label+' 단계 건수', a[i]??bizOf(k).pipe[i][1]); if(n===null)return; a[i]=(n===''?0:(parseInt(n,10)||0)); db.ref('home/bizdata/'+k+'/pipe').set(a); }
+function editBadge(k){ const v=prompt('상태 배지 (예: 🟢 진행중 · ...)', effBadge(k)); if(v===null)return; db.ref('home/bizdata/'+k+'/badge').set(v.trim()); }
+function addFu(k){ const v=prompt('다시 연락할 사람 — "이름 | 내용 | 시점"\n예: 김대표 | 대납 확인 | 오늘', ''); if(!v)return; const p=v.split('|').map(s=>s.trim()); const a=cloneArr(effFu(k)); a.push([p[0]||'',p[1]||'',p[2]||'']); db.ref('home/bizdata/'+k+'/fu').set(a); }
+function delFu(k,i){ const a=cloneArr(effFu(k)); a.splice(i,1); db.ref('home/bizdata/'+k+'/fu').set(a); }
+
+/* ── 핫딜연합 전용 (온/오프라인) ── */
+function num(v){ return (v==null||v==='')?'–':v; }
+function editHdStat(f,label){ const v=prompt(label,(hd.stats&&hd.stats[f])||''); if(v===null)return; db.ref('shared/hotdeal/stats/'+f).set(v.trim()); }
+function editHdDaily(){ const cur=(hd.stats&&hd.stats.daily)||[]; const v=prompt('최근 7일 일매출 — 쉼표로 7개 (만원)\n예: 120,90,150,80,200,60,40', cur.join(',')); if(v===null)return; db.ref('shared/hotdeal/stats/daily').set(v.split(',').map(x=>parseInt(x.trim(),10)||0)); }
+function addVendor(){ const v=prompt('거래처 추가 — "거래처명 | 매출(만) | 미정산(만)"',''); if(!v)return; const p=v.split('|').map(s=>s.trim()); db.ref('shared/hotdeal/vendors/v'+Date.now()).set({name:p[0]||'',sales:p[1]||'0',unpaid:p[2]||'0'}); }
+function delVendor(id){ db.ref('shared/hotdeal/vendors/'+id).remove(); }
+function addPay(){ const v=prompt('결제 내역 — "내용 | 금액(만) | 날짜(MM/DD)"',''); if(!v)return; const p=v.split('|').map(s=>s.trim()); db.ref('shared/hotdeal/pays/p'+Date.now()).set({txt:p[0]||'',amt:p[1]||'',date:p[2]||''}); }
+function delPay(id){ db.ref('shared/hotdeal/pays/'+id).remove(); }
+function addBill(){ const v=prompt('계산서 발행 — "거래처/내용 | 금액(만) | 날짜(MM/DD)"',''); if(!v)return; const p=v.split('|').map(s=>s.trim()); db.ref('shared/hotdeal/bills/b'+Date.now()).set({txt:p[0]||'',amt:p[1]||'',date:p[2]||''}); }
+function delBill(id){ db.ref('shared/hotdeal/bills/'+id).remove(); }
+
+function hotdealView(){
+  const b=bizOf('핫딜연합'), st=hd.stats||{};
+  const daily=(st.daily&&st.daily.length)?st.daily:[0,0,0,0,0,0,0];
+  const mx=Math.max.apply(null,daily.concat([1]));
+  const dw=['월','화','수','목','금','토','일'];
+  const barH=daily.map((n,i)=>`<div class="dbar" onclick="editHdDaily()" title="${n}만"><div class="dbf" style="height:${Math.round(n/mx*66+4)}px;background:${b.c}"></div><div class="dbl">${dw[i]||''}</div></div>`).join('');
+  const V=Object.entries(hd.vendors||{}).map(([id,v])=>({id,...v}));
+  const vrows=V.length?V.map(v=>`<div class="row"><span class="txt">${esc(v.name)}</span><span style="font-weight:700">${esc(v.sales)}만</span><span class="due ${(+v.unpaid)>0?'over':''}" style="min-width:78px;text-align:right">미정산 ${esc(v.unpaid)}만</span><span class="del" onclick="delVendor('${v.id}')">✕</span></div>`).join(''):'<div class="empty">거래처 없음 — 아래 + 추가</div>';
+  const unpaidTot=V.reduce((s,v)=>s+(parseInt(v.unpaid,10)||0),0);
+  const P=Object.entries(hd.pays||{}).map(([id,p])=>({id,...p}));
+  const prows=P.length?P.map(p=>`<div class="row"><span class="txt">${esc(p.txt)} <span style="color:var(--sub);font-size:11px">${esc(p.date)}</span></span><span style="font-weight:700;color:var(--green)">${esc(p.amt)}만</span><span class="del" onclick="delPay('${p.id}')">✕</span></div>`).join(''):'<div class="empty">결제 내역 없음</div>';
+  const Bl=Object.entries(hd.bills||{}).map(([id,x])=>({id,...x}));
+  const brows=Bl.length?Bl.map(x=>`<div class="row"><span class="txt">${esc(x.txt)} <span style="color:var(--sub);font-size:11px">${esc(x.date)}</span></span><span style="font-weight:700">${esc(x.amt)}만</span><span class="del" onclick="delBill('${x.id}')">✕</span></div>`).join(''):'<div class="empty">계산서 발행 내역 없음</div>';
+  const ok=effKpi('핫딜연합');
+  return `<div class="bizhero" style="background:linear-gradient(120deg,${b.c},${b.tc})">
+      <div><h1>📦 핫딜연합</h1><p>온라인(테무 위탁) + 오프라인 도소매</p>
+        <span class="badge" onclick="editBadge('핫딜연합')">${esc(effBadge('핫딜연합'))} ✎</span></div>
+      <div class="ql"><a onclick="scGo('wholesale.html')">📦 위탁판매 거래처 →</a><a onclick="scGo('temu.html')">🛒 테무 통합 대시보드 →</a></div></div>
+    <div class="kpis">
+      <div class="kpi" style="border-color:${b.c}" onclick="editHdStat('inv','보유 재고 자산 (예: 1억 2,000만)')"><div class="v">${num(st.inv)}</div><div class="l">보유 재고 자산 ✎</div></div>
+      <div class="kpi" style="border-color:${b.c}" onclick="editHdStat('today','오늘 매출')"><div class="v">${num(st.today)}</div><div class="l">오늘 매출 ✎</div></div>
+      <div class="kpi" style="border-color:${b.c}" onclick="editHdStat('month','이번달 매출')"><div class="v">${num(st.month)}</div><div class="l">이번달 매출 ✎</div></div>
+      <div class="kpi" style="border-color:var(--red)"><div class="v" style="color:var(--red)">${unpaidTot?unpaidTot+'만':'0'}</div><div class="l">오프라인 미정산 합계</div></div>
+    </div>
+    <div class="card" style="margin-bottom:14px"><h2>📈 최근 7일 일매출 <span class="cnt">막대 클릭 → 수정 · 만원</span></h2><div class="dchart">${barH}</div></div>
+    <div class="grid g2">
+      <div class="col">
+        <div class="card"><h2>🏪 오프라인 · 거래처별 매출 <span class="cnt">${V.length}곳</span></h2>${vrows}
+          <div class="addrow"><button onclick="addVendor()">+ 거래처 추가</button></div></div>
+        <div class="card"><h2>💳 결제 내역 <span class="cnt">입금·결제</span></h2>${prows}
+          <div class="addrow"><button onclick="addPay()">+ 결제 추가</button></div></div>
+        <div class="card"><h2>🧾 계산서 발행 내역 <span class="cnt">세금계산서</span></h2>${brows}
+          <div class="addrow"><button onclick="addBill()">+ 계산서 추가</button></div></div>
+      </div>
+      <div class="col">
+        <div class="card"><h2>🌐 온라인 · 테무 위탁판매 <span class="cnt">현재 위탁판매중</span></h2>
+          <div class="money">
+            <div class="m"><div class="mv">${(ok[0]||[])[0]||'–'}</div><div class="ml">진행 딜</div></div>
+            <div class="m"><div class="mv" style="color:var(--green)">${(ok[2]||[])[0]||'–'}</div><div class="ml">판매 매출</div></div>
+            <div class="m"><div class="mv">${(ok[3]||[])[0]||'–'}</div><div class="ml">마진율</div></div>
+          </div>
+          <div class="addrow"><button onclick="scGo('temu.html')">🛒 테무 통합 대시보드 열기 →</button></div></div>
+        ${tasksCard('핫딜연합')}
+        ${ddCard('핫딜연합')}
+        <div class="card"><h2>📝 현황 메모</h2>
+          <textarea class="bnote" id="bnote" onblur="db.ref('home/biz/핫딜연합').set(this.value.trim())">${esc(bizNotes['핫딜연합']||'')}</textarea></div>
+      </div>
+    </div>`;
+}
+</script>
+</body>
+</html>
