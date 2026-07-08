@@ -40,6 +40,10 @@
   .cbarrow .cfill{height:100%;border-radius:6px}
   .cbarrow .cv{width:30px;text-align:right;font-size:11.5px;font-weight:800;color:var(--sub)}
   .snote{font-size:11px;color:var(--sub);line-height:1.55;margin-top:8px}
+  /* 잘림방지: 값·안내문 줄바꿈 + flex 넘침 제거 */
+  .plat,.vmeta .v,.snote,#foot,.foldnote,.st,.sn,.si{overflow-wrap:anywhere;word-break:break-word;white-space:normal;min-width:0}
+  .spanel,#spanel,.ssec,.railsec,.srow,.vcard,.vmeta,.controls{min-width:0;max-width:100%;box-sizing:border-box}
+  .vmeta .v.plat{text-align:left}
   .cbarrow{cursor:pointer;border-radius:8px;padding:4px 6px;border:1px solid transparent}
   .cbarrow:hover{background:#f7f8fa}
   .cbarrow.on{background:var(--purple-bg);border-color:#d6ccfb}
@@ -221,6 +225,7 @@
       <option value="unknown">⚪ 게시일 미확인</option>
     </select>
     <select id="mon" onchange="resetPg()"></select>
+    <select id="ccsel" onchange="curCC=this.value;resetPg()"></select>
     <input class="search" id="search" placeholder="🔍 아이템·플랫폼 검색" oninput="resetPg()">
   </div>
 
@@ -338,6 +343,9 @@ window.ITEMS = [
     months.sort().reverse();
     document.getElementById('mon').innerHTML='<option value="all">전체 월</option>'+
       months.map(function(m){return '<option value="'+m+'">'+m.slice(0,4)+'-'+m.slice(4,6)+'</option>';}).join('');
+    var ccs=[]; ITEMS.forEach(function(i){ if(i.scam)return; var c=ccOf(i)[0]; if(ccs.indexOf(c)<0)ccs.push(c); });
+    var _cs=document.getElementById('ccsel');
+    if(_cs){ _cs.innerHTML='<option value="전체">🌍 전체 국가</option>'+ccs.map(function(c){return '<option value="'+c+'">'+c+'</option>';}).join(''); _cs.value=curCC; }
   }
 
   function buildFoldbar(){
@@ -402,7 +410,7 @@ window.ITEMS = [
       (i.mentions>1?'<span class="badge b-merge">병합 '+i.mentions+'회</span>':'')+
       fb+
       '<span class="badge b-diff">'+diffTxt(i.diff)+'</span>'+
-      '<div class="vmeta"><div><div class="k">플랫폼</div><div class="v plat">'+shorten(i.platform,14)+'</div></div>'+
+      '<div class="vmeta"><div><div class="k">플랫폼</div><div class="v plat">'+i.platform+'</div></div>'+
       '<div style="text-align:right"><div class="k">TTAPP 자동화</div><div class="v">'+i.ttapp+'/5</div></div></div></div>';
   }
 
