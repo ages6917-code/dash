@@ -287,6 +287,11 @@ function _img(n){return (window.__IMG__&&window.__IMG__[n])||('images/'+n);}
       '</div>'+
       '<textarea placeholder="메모…" onchange="saveVMeta(\''+vk+'\',\'memo\',this.value)" style="'+inS+';min-height:56px;margin-top:8px;font-family:inherit;resize:vertical">'+ev(vm.memo)+'</textarea>'+
     '</div>';
+    c+='<div style="background:#f7f9fc;border:1px solid var(--line);border-radius:12px;padding:12px;margin:12px 0">'
+     +'<div style="font-weight:700;font-size:13px;margin-bottom:8px;display:flex;align-items:center;gap:6px">📁 거래처 이미지 <span style="font-weight:400;color:var(--sub);font-size:11px">· 상품·명함·상세컷</span><button onclick="zipVimg(\''+vk+'\')" style="margin-left:auto;font-size:11px;padding:5px 10px;border:none;border-radius:7px;background:#0e9aa4;color:#fff;cursor:pointer">⬇ 전체 ZIP</button></div>'
+     +'<div ondragover="event.preventDefault();this.style.background=\'#e8f6f7\'" ondragleave="this.style.background=\'\'" ondrop="event.preventDefault();this.style.background=\'\';uploadVimg(\''+vk+'\',event.dataTransfer.files)" onclick="this.querySelector(\'input\').click()" style="border:2px dashed #b8d6d9;border-radius:9px;padding:14px;text-align:center;color:#5a7a7d;font-size:12px;cursor:pointer">여기로 이미지를 <b>끌어다 놓거나</b> 클릭해서 추가<input type="file" accept="image/*" multiple style="display:none" onchange="uploadVimg(\''+vk+'\',this.files);this.value=\'\'"></div>'
+     +'<div id="vimggrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:10px"></div>'
+     +'</div>';
     // 품목 — 카테고리가 2개 이상이면 칩으로 나눠 보기
     var cats=[]; s.products.forEach(function(p){ var g=p.g||'전체'; if(cats.indexOf(g)<0)cats.push(g); });
     if(cats.length>1){
@@ -300,7 +305,7 @@ function _img(n){return (window.__IMG__&&window.__IMG__[n])||('images/'+n);}
       c+='<div class="pgrid" id="pgrid">'+gridFor(s.products)+'</div>';
     }
     document.getElementById('modal').innerHTML=c;
-    document.getElementById('overlay').classList.add('on');
+    document.getElementById('overlay').classList.add('on');if(window.loadVimg)loadVimg(vk);
   }
   function closeModal(){document.getElementById('overlay').classList.remove('on');}
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
@@ -313,7 +318,7 @@ function _img(n){return (window.__IMG__&&window.__IMG__[n])||('images/'+n);}
   try{
     var cfg={apiKey:"AIzaSyCAdQ2KkU5Nui6l2vJxnpZKBM65iJXRLn8",authDomain:"consult-crm-cfef6.firebaseapp.com",databaseURL:"https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app",projectId:"consult-crm-cfef6"};
     if(!firebase.apps.length)firebase.initializeApp(cfg);
-    var wdb=firebase.database();
+    window.wdb=firebase.database();var wdb=window.wdb;
     window.VMETA={};
     window.wholeKey=function(name){return String(name||'').replace(/[.#$\[\]\/'"\\\s]/g,'_').slice(0,80)||'_';};
     window.saveVMeta=function(key,field,val){ wdb.ref('shared/wholesale/meta/'+key+'/'+field).set(val); if(!window.VMETA[key])window.VMETA[key]={}; window.VMETA[key][field]=val; };
@@ -322,6 +327,63 @@ function _img(n){return (window.__IMG__&&window.__IMG__[n])||('images/'+n);}
     if(m){ mref.on('value',function(s){ if(document.activeElement!==m)m.value=s.val()||''; }); m.addEventListener('blur',function(){mref.set(this.value);}); }
   }catch(e){ console.log('firebase init 실패',e); }
 })();
+</script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+(function(){var st=document.createElement('style');st.textContent='.vimgcell{position:relative;border-radius:8px;overflow:hidden;border:1px solid var(--line);background:#fff}.vimgcell img{width:100%;aspect-ratio:1;object-fit:cover;cursor:pointer;display:block}.vimgbtns{position:absolute;top:3px;right:3px;display:flex;gap:3px}.vimgbtns button{border:none;border-radius:6px;width:24px;height:24px;font-size:12px;line-height:1;cursor:pointer;background:rgba(255,255,255,.92);box-shadow:0 1px 3px rgba(0,0,0,.25)}';document.head.appendChild(st);})();
+window._vimgCur={};
+window.vimgRef=function(vk){return window.wdb.ref('shared/wholesale/images/'+vk);};
+window.loadVimg=function(vk){
+  var grid=document.getElementById('vimggrid'); if(!grid)return;
+  grid.innerHTML='<div style="color:#9aa;font-size:12px;grid-column:1/-1">불러오는 중…</div>';
+  window.vimgRef(vk).once('value').then(function(s){
+    var v=s.val()||{}; window._vimgCur[vk]=v;
+    var keys=Object.keys(v).sort(function(a,b){return (v[a].ts||0)-(v[b].ts||0);});
+    if(!keys.length){grid.innerHTML='<div style="color:#9aa;font-size:12px;grid-column:1/-1">아직 이미지가 없어요. 위에 끌어다 놓으세요.</div>';return;}
+    grid.innerHTML=keys.map(function(id){var it=v[id];return '<div class="vimgcell"><img src="'+it.data+'" onclick="window.open(this.src)"><div class="vimgbtns"><button title="다운로드" onclick="dlVimg(\''+vk+'\',\''+id+'\')">⬇</button><button title="삭제" onclick="delVimg(\''+vk+'\',\''+id+'\')">🗑</button></div></div>';}).join('');
+  }).catch(function(e){grid.innerHTML='<div style="color:#c33;font-size:12px;grid-column:1/-1">불러오기 실패: '+e.message+'</div>';});
+};
+window.uploadVimg=function(vk,files){
+  files=Array.prototype.slice.call(files).filter(function(f){return /^image\//.test(f.type);});
+  if(!files.length)return;
+  var grid=document.getElementById('vimggrid'); if(grid)grid.insertAdjacentHTML('afterbegin','<div id="vimgup" style="color:#0e9aa4;font-size:12px;grid-column:1/-1">업로드 중… 0/'+files.length+'</div>');
+  var done=0;
+  files.forEach(function(f){
+    var r=new FileReader();
+    r.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var mx=1280,w=img.width,h=img.height;
+        if(w>mx||h>mx){var sc=mx/Math.max(w,h);w=Math.round(w*sc);h=Math.round(h*sc);}
+        var cv=document.createElement('canvas');cv.width=w;cv.height=h;
+        cv.getContext('2d').drawImage(img,0,0,w,h);
+        var data=cv.toDataURL('image/jpeg',0.82);
+        window.vimgRef(vk).push({name:f.name,data:data,ts:Date.now()}).then(function(){
+          done++; var up=document.getElementById('vimgup'); if(up)up.textContent='업로드 중… '+done+'/'+files.length;
+          if(done===files.length) window.loadVimg(vk);
+        }).catch(function(e){alert('업로드 실패(용량 초과일 수 있어요): '+e.message);});
+      };
+      img.src=r.result;
+    };
+    r.readAsDataURL(f);
+  });
+};
+window.delVimg=function(vk,id){
+  if(!confirm('이 이미지를 삭제할까요?'))return;
+  window.vimgRef(vk).child(id).remove().then(function(){window.loadVimg(vk);});
+};
+window.dlVimg=function(vk,id){
+  var it=(window._vimgCur[vk]||{})[id]; if(!it)return;
+  var a=document.createElement('a');a.href=it.data;a.download=it.name||(id+'.jpg');document.body.appendChild(a);a.click();a.remove();
+};
+window.zipVimg=function(vk){
+  var v=window._vimgCur[vk]||{}; var keys=Object.keys(v);
+  if(!keys.length){alert('이미지가 없어요');return;}
+  if(typeof JSZip==='undefined'){alert('압축 모듈 로딩 중이에요. 잠시 후 다시 눌러주세요.');return;}
+  var zip=new JSZip(), used={};
+  keys.forEach(function(id){var it=v[id];var b64=(it.data||'').split(',')[1];if(!b64)return;var nm=it.name||(id+'.jpg');if(used[nm])nm=id.slice(-4)+'_'+nm;used[nm]=1;zip.file(nm,b64,{base64:true});});
+  zip.generateAsync({type:'blob'}).then(function(blob){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=vk+'_이미지.zip';document.body.appendChild(a);a.click();a.remove();});
+};
 </script>
 </body>
 </html>
