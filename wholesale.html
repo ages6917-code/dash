@@ -217,7 +217,7 @@ function _img(n){return (window.__IMG__&&window.__IMG__[n])||('images/'+n);}
     var orderable=0; D.suppliers.forEach(function(s){ if(s.status==='ok') s.products.forEach(function(p){ if(p.buy!=null) orderable++; }); });
     document.getElementById('chips').innerHTML=
       '<div class="chip">거래처<b>'+D.suppliers.length+'</b></div>'+
-      '<div class="chip">발주가능 품목<b>'+orderable+'</b></div>';
+      '<div class="chip">발주가능 품목<b>'+orderable+'</b></div>'+'<div class="chip gchip" style="cursor:pointer" onclick="openGallery()">🖼️ 이미지 모음<b>보기 →</b></div>';
   }
   function render(){
     var q=(document.getElementById('search').value||"").toLowerCase();
@@ -383,6 +383,75 @@ window.zipVimg=function(vk){
   var zip=new JSZip(), used={};
   keys.forEach(function(id){var it=v[id];var b64=(it.data||'').split(',')[1];if(!b64)return;var nm=it.name||(id+'.jpg');if(used[nm])nm=id.slice(-4)+'_'+nm;used[nm]=1;zip.file(nm,b64,{base64:true});});
   zip.generateAsync({type:'blob'}).then(function(blob){var a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=vk+'_이미지.zip';document.body.appendChild(a);a.click();a.remove();});
+};
+</script>
+<script>
+/* 첫 페이지 "이미지 모음" 갤러리 — 거래처 목록 → 클릭 → 그 업체 이미지 보기 */
+(function(){var st=document.createElement('style');st.textContent=
+  '.gchip{background:linear-gradient(135deg,#0e9aa4,#13b6b0)!important;color:#fff!important;border-color:transparent!important}'+
+  '.gchip b{color:#eafcfb!important}'+
+  '.gwrap{padding:2px}'+
+  '.ghead{display:flex;align-items:center;gap:10px;margin-bottom:14px}'+
+  '.ghead h2{margin:0;font-size:18px}'+
+  '.gsub{color:var(--sub);font-size:12px}'+
+  '.gback{border:none;background:#eef3f7;border-radius:9px;padding:8px 12px;font-size:13px;cursor:pointer;font-weight:600;color:#33505a}'+
+  '.gvgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:10px}'+
+  '.gvcard{border:1px solid var(--line);border-radius:12px;padding:12px;cursor:pointer;background:#fff;transition:.15s;display:flex;align-items:center;gap:10px}'+
+  '.gvcard:hover{box-shadow:0 4px 14px rgba(0,0,0,.08);transform:translateY(-1px);border-color:#bfe3e5}'+
+  '.gvav{width:42px;height:42px;border-radius:11px;background:#f0f6f7;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0}'+
+  '.gvname{font-weight:700;font-size:14px;line-height:1.25;word-break:break-all}'+
+  '.gvcnt{font-size:11px;color:var(--sub);margin-top:2px}'+
+  '.gvbadge{margin-left:auto;flex-shrink:0;background:#0e9aa4;color:#fff;font-size:12px;font-weight:700;border-radius:20px;min-width:26px;height:26px;padding:0 8px;display:flex;align-items:center;justify-content:center}'+
+  '.gvbadge.z{background:#e9edf1;color:#9aa}'+
+  '.gigrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px;margin-top:12px}'+
+  '.gicell{position:relative;border-radius:9px;overflow:hidden;border:1px solid var(--line);background:#fff}'+
+  '.gicell img{width:100%;aspect-ratio:1;object-fit:cover;cursor:pointer;display:block}'+
+  '.gempty{color:#9aa;font-size:13px;text-align:center;padding:34px 10px;line-height:1.6}';
+  document.head.appendChild(st);})();
+window._galAll=null;
+window.openGallery=function(){
+  var modal=document.getElementById('modal'); if(!modal)return;
+  modal.innerHTML='<div class="gwrap"><div class="ghead"><div class="gvav">🖼️</div><div><h2>이미지 모음</h2><div class="gsub">거래처를 누르면 그 업체의 이미지가 보여요</div></div><button class="close" onclick="closeModal()" style="margin-left:auto">✕</button></div><div id="gbody"><div class="gempty">불러오는 중…</div></div></div>';
+  document.getElementById('overlay').classList.add('on');
+  if(!window.wdb){document.getElementById('gbody').innerHTML='<div class="gempty" style="color:#c33">연결 준비 중이에요. 잠시 후 다시 눌러주세요.</div>';return;}
+  window.wdb.ref('shared/wholesale/images').once('value').then(function(s){
+    window._galAll=s.val()||{};
+    window._renderGalleryList();
+  }).catch(function(e){var b=document.getElementById('gbody');if(b)b.innerHTML='<div class="gempty" style="color:#c33">불러오기 실패: '+e.message+'</div>';});
+};
+window._renderGalleryList=function(){
+  var body=document.getElementById('gbody'); if(!body)return;
+  var all=window._galAll||{}, D=window.DASH;
+  var rows=D.suppliers.map(function(s){
+    var vk=window.wholeKey(s.name), imgs=all[vk]||{}, n=Object.keys(imgs).length;
+    return {name:s.name,emoji:s.emoji,cat:s.cat,vk:vk,n:n};
+  });
+  rows.sort(function(a,b){return b.n-a.n || a.name.localeCompare(b.name,'ko');});
+  var total=rows.reduce(function(t,r){return t+r.n;},0);
+  var withImg=rows.filter(function(r){return r.n>0;}).length;
+  var html='<div class="gsub" style="margin-bottom:10px">📸 총 '+total+'장 · 이미지 있는 거래처 '+withImg+'곳</div><div class="gvgrid">';
+  html+=rows.map(function(r){
+    return '<div class="gvcard" onclick="openGalleryVendor(\''+r.vk+'\')">'+
+      '<div class="gvav">'+(r.emoji||'📦')+'</div>'+
+      '<div style="min-width:0"><div class="gvname">'+r.name+'</div><div class="gvcnt">'+r.cat+'</div></div>'+
+      '<div class="gvbadge'+(r.n?'':' z')+'">'+r.n+'</div></div>';
+  }).join('');
+  body.innerHTML=html+'</div>';
+};
+window.openGalleryVendor=function(vk){
+  var body=document.getElementById('gbody'); if(!body)return;
+  var D=window.DASH, s=null;
+  D.suppliers.forEach(function(x){if(window.wholeKey(x.name)===vk)s=x;});
+  var name=s?s.name:vk, emoji=s?s.emoji:'📦';
+  var imgs=(window._galAll||{})[vk]||{};
+  var keys=Object.keys(imgs).sort(function(a,b){return (imgs[a].ts||0)-(imgs[b].ts||0);});
+  window._vimgCur[vk]=imgs;
+  var head='<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px"><button class="gback" onclick="_renderGalleryList()">← 목록</button><div class="gvav">'+emoji+'</div><div style="min-width:0"><div class="gvname" style="font-size:15px">'+name+'</div><div class="gvcnt">'+keys.length+'장</div></div>';
+  if(keys.length) head+='<button class="gback" style="margin-left:auto;background:#0e9aa4;color:#fff" onclick="zipVimg(\''+vk+'\')">⬇ 전체 ZIP</button>';
+  head+='</div>';
+  if(!keys.length){body.innerHTML=head+'<div class="gempty">아직 이미지가 없어요.<br>거래처 카드를 열어 이미지를 추가할 수 있어요.</div>';return;}
+  var grid='<div class="gigrid">'+keys.map(function(id){var it=imgs[id];return '<div class="gicell"><img src="'+it.data+'" onclick="window.open(this.src)"><div class="vimgbtns"><button title="다운로드" onclick="event.stopPropagation();dlVimg(\''+vk+'\',\''+id+'\')">⬇</button></div></div>';}).join('')+'</div>';
+  body.innerHTML=head+grid;
 };
 </script>
 </body>
