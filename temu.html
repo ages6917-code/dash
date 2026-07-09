@@ -404,5 +404,28 @@ function calcRun(){
 }
 fresh(); render();
 </script>
+<!-- DASH_AUTOFRESH v1 -->
+<button id="dashRefreshBtn" title="최신화" onclick="dashForceRefresh()" style="position:fixed;left:12px;bottom:12px;z-index:99999;border:none;background:rgba(79,70,229,.92);color:#fff;border-radius:20px;padding:8px 13px;font-size:13px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.28);cursor:pointer;font-family:'Malgun Gothic',sans-serif">🔄 최신화</button>
+<script>
+function dashForceRefresh(){
+  try{
+    if('serviceWorker' in navigator){ navigator.serviceWorker.getRegistrations().then(function(rs){rs.forEach(function(r){r.unregister();});}); }
+    if(window.caches && caches.keys){ caches.keys().then(function(ks){ks.forEach(function(k){caches.delete(k);});}); }
+  }catch(e){}
+  setTimeout(function(){ location.replace(location.pathname+'?_r='+Date.now()); }, 250);
+}
+(function(){
+  try{
+    fetch(location.pathname,{method:'HEAD',cache:'no-store'}).then(function(r){
+      var tag=r.headers.get('ETag')||r.headers.get('Last-Modified'); if(!tag) return;
+      var key='dashver:'+location.pathname, prev=localStorage.getItem(key);
+      localStorage.setItem(key,tag);
+      if(prev && prev!==tag && location.search.indexOf('_r=')===-1){
+        location.replace(location.pathname+'?_r='+Date.now());
+      }
+    }).catch(function(){});
+  }catch(e){}
+})();
+</script>
 </body>
 </html>
