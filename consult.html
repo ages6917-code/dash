@@ -438,7 +438,62 @@ function startApp(){
       ready=true; offline=false; rerender();
       try{ if(!NS && !shareId && !SHARER_KEY) syncMirror(); }catch(e){}   // 사장님 화면에서만 팀장 미러 동기화
     }, e=>{ bootLocal(e&&e.message); });
+    try{ subShared(); }catch(e){}
   }catch(e){ bootLocal(e&&e.message); }
+}
+
+/* ===== 🤝 쉐어 공유 풀 (/shared/<팀장sid>/items) — 사장님↔팀장 쉐어건만 양쪽에서 보고 같이 수정 ===== */
+let SHAREDPOOL={}, _sharedSubbed=false;
+function subShared(){
+  if(_sharedSubbed) return; _sharedSubbed=true;
+  function boss(){
+    RAWREF('shared').on('value', function(s){
+      SHAREDPOOL={}; var all=s.val()||{};
+      Object.keys(all).forEach(function(sid){ var it=(all[sid]&&all[sid].items)||{}; Object.keys(it).forEach(function(cid){ SHAREDPOOL[cid]=Object.assign({_sid:sid,_cid:cid}, it[cid]); }); });
+      rerender();
+    }, function(){});
+  }
+  function sharer(){
+    RAWREF('shared/'+SHARER_KEY+'/items').on('value', function(s){
+      SHAREDPOOL={}; var it=s.val()||{}; Object.keys(it).forEach(function(cid){ SHAREDPOOL[cid]=Object.assign({_sid:SHARER_KEY,_cid:cid}, it[cid]); });
+      rerender();
+    }, function(){});
+  }
+  try{ if(IS_SHARER) sharer(); else boss(); }catch(e){}
+}
+function sharedArr(){ return Object.keys(SHAREDPOOL).map(function(cid){ return SHAREDPOOL[cid]; }); }
+function shareTargets(c){
+  if(IS_SHARER) return SHARER_KEY?[SHARER_KEY]:[];              // 팀장 → 사장님과의 공유풀(자기 sid)
+  return custSharers(c).filter(function(sid){ var s=getSharer(sid); return s && sharerEmail(s); });   // 사장님 → 담당팀장(이메일 등록된)
+}
+function shareSnapshot(id,c){ return {nm:c.nm||'', biz:c.biz||c.bizName||'', phone:c.phone||'', type:c.type||'개인', stage:c.stage||'연락전', fund:c.fund||'', memo:c.memo||'', fees:c.fees||null, owner:(IS_SHARER?((SHARER_NAME||'팀장')+' 팀장'):'사장님'), oid:id, up:Date.now()}; }
+function toggleShare(id){
+  var c=getCust(id); if(!c) return;
+  var targets=shareTargets(c);
+  if(!targets.length){ toast(IS_SHARER?'공유 대상이 없습니다':'먼저 담당 팀장을 지정하세요'); return; }
+  var on=!c.shared;
+  setCust(id,{shared:on});
+  targets.forEach(function(sid){ var r=RAWREF('shared/'+sid+'/items/'+id); if(on) r.set(shareSnapshot(id,c)); else r.remove(); });
+  toast(on?'🤝 쉐어됨 — 상대 "공유" 탭에 표시':'쉐어 해제');
+}
+function setShared(cid,patch){ var it=SHAREDPOOL[cid]; if(!it) return; try{ RAWREF('shared/'+it._sid+'/items/'+cid).update(Object.assign({up:Date.now()},patch)); }catch(e){} toast('저장됨 ✓'); }
+function shCycleStage(cid){ var order=STAGES, it=SHAREDPOOL[cid]||{}; var cur=it.stage||'연락전'; setShared(cid,{stage:order[(order.indexOf(cur)+1)%order.length]}); }
+function renderSharedPool(){
+  buildNav('shared');
+  var arr=sharedArr();
+  var rows=arr.length?arr.map(function(it){
+    var cid=it._cid;
+    return '<div class="ins" style="align-items:flex-start"><div style="flex:1"><span class="nm">'+esc(it.nm||'(이름)')+'</span> '+chip(it.stage||'연락전')
+      +'<div class="fd">'+esc(it.biz||'')+(it.phone?' · 📞 '+esc(it.phone):'')+'</div>'
+      +'<div style="font-size:11px;color:#94a3b8;margin-top:2px">공유: '+esc(it.owner||'')+'</div>'
+      +(it.memo?'<div style="font-size:12px;color:#475569;margin-top:4px;white-space:pre-wrap">'+esc(it.memo)+'</div>':'')+'</div>'
+      +'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'
+      +'<span class="st" style="cursor:pointer;background:#eef2ff;color:#4f46e5" onclick="shCycleStage(\''+cid+'\')">단계 변경 ▾</span>'
+      +'<span class="ev" style="font-size:12px" onclick="var v=prompt(\'메모(공유)\', '+JSON.stringify(it.memo||'')+');if(v!==null)setShared(\''+cid+'\',{memo:v})">📝 메모</span>'
+      +'</div></div>';
+  }).join(''):'<div class="ins" style="color:#94a3b8">아직 공유된 고객이 없습니다. 고객 상세에서 <b>🤝 쉐어</b>를 켜면 여기(와 상대 화면)에 나타납니다.</div>';
+  $('#main').innerHTML='<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button><h1>🤝 공유 고객</h1></div></div>'
+    +'<div class="panel"><div class="ph"><b>'+(IS_SHARER?'사장님과 공유한 건':'팀장과 공유한 건')+' ('+arr.length+')</b><span class="sub">양쪽에서 실시간으로 보고 같이 수정</span></div>'+rows+'</div>';
 }
 
 /* ===== 👥 팀장(쉐어) 로그인 모드 — 자기 담당 건만, /shares/<키>에서 (실고객 전체와 격리) ===== */
@@ -1170,7 +1225,7 @@ let HISTORY=[];
 function go(t,id){ if(VIEW && !(VIEW.t===t && VIEW.id===id)){ HISTORY.push(VIEW); if(HISTORY.length>50)HISTORY.shift(); } VIEW={t,id}; if(t==='customer') delete _docSync[id]; if(window.innerWidth<=860)toggleMenu(true); rerender(); }
 function goBack(){ VIEW = HISTORY.length ? HISTORY.pop() : {t:'dash'}; if(window.innerWidth<=860)toggleMenu(true); rerender(); }
 function toggleMenu(force){const s=$('#side'),c=$('#scrim');const open=force===true?false:!s.classList.contains('open');s.classList.toggle('open',open);c.classList.toggle('open',open);}
-const NAVS=[['dash','📊 대시보드'],['call','📞 연락 전(신규DB)'],['db','👥 고객 DB'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어'],['rev','💰 수익·정산'],['report','📈 리포트']];
+const NAVS=[['dash','📊 대시보드'],['call','📞 연락 전(신규DB)'],['db','👥 고객 DB'],['shared','🤝 공유'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어'],['rev','💰 수익·정산'],['report','📈 리포트']];
 function buildNav(active){ $('#nav').innerHTML=NAVS.map(([k,l])=>`<a class="${k===active?'on':''}" onclick="go('${k}')">${l}</a>`).join(''); }
 
 function rerender(){
@@ -1179,6 +1234,7 @@ function rerender(){
  if(shareId){ return renderExt(); }
  const t=VIEW.t;
  if(t==='share') renderSharers();
+ else if(t==='shared') renderSharedPool();
  else if(t==='sharer') renderSharerDetail(VIEW.id);
  else if(t==='customer') renderCustomer(VIEW.id);
  else if(t==='db') renderDB();
@@ -1500,6 +1556,7 @@ function renderCustomer(id){
  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
    <span class="back" onclick="goBack()" style="margin:0">← 뒤로</span>
    <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+     <button class="btn" style="${c.shared?'background:#4f46e5;color:#fff;border:1.5px solid #4f46e5':'background:#eef2ff;color:#4f46e5;border:1.5px solid #c7d2fe'};font-size:13px;padding:8px 15px;font-weight:700" onclick="toggleShare('${id}')" title="${IS_SHARER?'사장님과 공유(켜면 사장님 화면에 표시)':'담당 팀장과 공유(켜면 팀장 화면에 표시)'}">${c.shared?'🤝 쉐어중':'🤝 쉐어'}</button>
      <button class="btn" style="${c.meetingDone?'background:#10b981;color:#fff;border:1.5px solid #10b981':'background:#f0fdf4;color:#16a34a;border:1.5px solid #bbf7d0'};font-size:13px;padding:8px 15px;font-weight:700" onclick="toggleMeeting('${id}')" title="미팅 완료 체크 (클릭하면 토글)">${c.meetingDone?('✅ 미팅완료 · '+esc(c.meetingDone)):'🤝 미팅완료'}</button>
      <button class="btn" style="background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;font-size:13px;padding:8px 15px;font-weight:700" onclick="delCustomer('${id}')">🗑 고객 삭제</button>
    </div>
@@ -2042,7 +2099,7 @@ applyMe();
 <script>
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 /* 자동 최신화: 서버의 version.txt와 현재 빌드가 다르면 캐시 무시하고 1회 새로고침 */
-window.BUILD_VER='20260714-190321';
+window.BUILD_VER='20260714-191751';
 (function(){ try{
   fetch('version.txt',{cache:'no-store'}).then(function(r){return r.ok?r.text():null;}).then(function(v){
     if(!v) return; v=v.trim(); if(!v) return;
