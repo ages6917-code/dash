@@ -1421,6 +1421,13 @@ function renderSharerDetail(id){
 }
 
 /* ===== 고객 관리 페이지 ===== */
+/* 미팅완료 토글 — 고객 상세 우측 버튼. meetingDone=완료일(YYYY-MM-DD) 저장 */
+function toggleMeeting(id){
+  const c=getCust(id); if(!c) return;
+  const done = c.meetingDone ? '' : today();
+  setCust(id,{meetingDone:done});   // setCust이 저장+리렌더 처리
+  toast(done ? ('미팅완료 기록 ✓ · '+done) : '미팅완료 해제');
+}
 function renderCustomer(id){
  buildNav('db');
  const c=getCust(id); if(!c){ $('#main').innerHTML='<div class="panel">없는 고객입니다.</div>'; return; }
@@ -1428,7 +1435,10 @@ function renderCustomer(id){
  $('#main').innerHTML=`
  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
    <span class="back" onclick="goBack()" style="margin:0">← 뒤로</span>
-   <button class="btn" style="background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;font-size:13px;padding:8px 15px;font-weight:700" onclick="delCustomer('${id}')">🗑 고객 삭제</button>
+   <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap;justify-content:flex-end">
+     <button class="btn" style="${c.meetingDone?'background:#10b981;color:#fff;border:1.5px solid #10b981':'background:#f0fdf4;color:#16a34a;border:1.5px solid #bbf7d0'};font-size:13px;padding:8px 15px;font-weight:700" onclick="toggleMeeting('${id}')" title="미팅 완료 체크 (클릭하면 토글)">${c.meetingDone?('✅ 미팅완료 · '+esc(c.meetingDone)):'🤝 미팅완료'}</button>
+     <button class="btn" style="background:#fef2f2;color:#dc2626;border:1.5px solid #fecaca;font-size:13px;padding:8px 15px;font-weight:700" onclick="delCustomer('${id}')">🗑 고객 삭제</button>
+   </div>
  </div>
  <div class="tlhead"><div class="av" style="background:#3b82f6">${esc((c.nm||'·')[0])}</div>
    <div style="flex:1;min-width:170px"><div class="nm"><span class="hedit" onclick="iText(this,'${id}','nm')" title="이름 수정 (클릭)">${esc(c.nm)||'(이름 입력)'}</span> <span class="hedit" style="font-size:13px;color:#94a3b8;font-weight:600" onclick="iText(this,'${id}','type')" title="유형 수정">${esc(c.type)||'개인'}</span></div><div class="og"><span class="hedit" onclick="iText(this,'${id}','bizName')" title="상호 수정 (클릭)">${esc(c.bizName)||'(상호 입력)'}</span> · 📞 <span class="hedit" onclick="iText(this,'${id}','phone')" title="번호 수정 (클릭)">${esc(c.phone)||'(번호 입력)'}</span></div></div>
@@ -1968,7 +1978,7 @@ applyMe();
 <script>
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 /* 자동 최신화: 서버의 version.txt와 현재 빌드가 다르면 캐시 무시하고 1회 새로고침 */
-window.BUILD_VER='20260708-134453';
+window.BUILD_VER='20260714-175238';
 (function(){ try{
   fetch('version.txt',{cache:'no-store'}).then(function(r){return r.ok?r.text():null;}).then(function(v){
     if(!v) return; v=v.trim(); if(!v) return;
@@ -1992,5 +2002,5 @@ window.BUILD_VER='20260708-134453';
   };
 })();
 </script>
-<div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신" style="position:fixed;left:12px;bottom:54px;z-index:99998;background:rgba(17,24,39,.80);color:#c7d2fe;border-radius:13px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.2px;box-shadow:0 3px 9px rgba(0,0,0,.22);font-family:'Malgun Gothic',sans-serif;pointer-events:none">v2026-07-14 16:26</div><script>try{if(window.__SYNC__)document.getElementById("dashVerBadge").textContent="v"+window.__SYNC__;}catch(e){}</script></body>
+</body>
 </html>
