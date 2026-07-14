@@ -477,6 +477,7 @@ function toggleShare(id){
   toast(on?'🤝 쉐어됨 — 상대 "공유" 탭에 표시':'쉐어 해제');
 }
 function setShared(cid,patch){ var it=SHAREDPOOL[cid]; if(!it) return; try{ RAWREF('shared/'+it._sid+'/items/'+cid).update(Object.assign({up:Date.now()},patch)); }catch(e){} toast('저장됨 ✓'); }
+function shEditMemo(cid){ var it=SHAREDPOOL[cid]||{}; var v=prompt('메모(공유)', it.memo||''); if(v!==null) setShared(cid,{memo:v}); }
 function shCycleStage(cid){ var order=STAGES, it=SHAREDPOOL[cid]||{}; var cur=it.stage||'연락전'; setShared(cid,{stage:order[(order.indexOf(cur)+1)%order.length]}); }
 function renderSharedPool(){
   buildNav('shared');
@@ -489,7 +490,7 @@ function renderSharedPool(){
       +(it.memo?'<div style="font-size:12px;color:#475569;margin-top:4px;white-space:pre-wrap">'+esc(it.memo)+'</div>':'')+'</div>'
       +'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'
       +'<span class="st" style="cursor:pointer;background:#eef2ff;color:#4f46e5" onclick="shCycleStage(\''+cid+'\')">단계 변경 ▾</span>'
-      +'<span class="ev" style="font-size:12px" onclick="var v=prompt(\'메모(공유)\', '+JSON.stringify(it.memo||'')+');if(v!==null)setShared(\''+cid+'\',{memo:v})">📝 메모</span>'
+      +'<span class="ev" style="font-size:12px" onclick="shEditMemo(\''+cid+'\')">📝 메모</span>'
       +'</div></div>';
   }).join(''):'<div class="ins" style="color:#94a3b8">아직 공유된 고객이 없습니다. 고객 상세에서 <b>🤝 쉐어</b>를 켜면 여기(와 상대 화면)에 나타납니다.</div>';
   $('#main').innerHTML='<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button><h1>🤝 공유 고객</h1></div></div>'
@@ -2099,7 +2100,7 @@ applyMe();
 <script>
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 /* 자동 최신화: 서버의 version.txt와 현재 빌드가 다르면 캐시 무시하고 1회 새로고침 */
-window.BUILD_VER='20260714-191751';
+window.BUILD_VER='20260714-191837';
 (function(){ try{
   fetch('version.txt',{cache:'no-store'}).then(function(r){return r.ok?r.text():null;}).then(function(v){
     if(!v) return; v=v.trim(); if(!v) return;
