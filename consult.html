@@ -434,8 +434,83 @@ function startApp(){
       clearTimeout(bootTimer);
       DATA=s.val()||JSON.parse(JSON.stringify(SEED));
       ready=true; offline=false; rerender();
+      try{ if(!NS && !shareId && !SHARER_KEY) syncMirror(); }catch(e){}   // 사장님 화면에서만 팀장 미러 동기화
     }, e=>{ bootLocal(e&&e.message); });
   }catch(e){ bootLocal(e&&e.message); }
+}
+
+/* ===== 👥 팀장(쉐어) 로그인 모드 — 자기 담당 건만, /shares/<키>에서 (실고객 전체와 격리) ===== */
+const SHARER_EMAIL_BY_NAME = {'심연보':'shim7275@gmail.com'};   // 팀장 이름→구글 이메일 (여기 추가하면 자동 등록·잠금)
+function sharerEmail(s){ return ((s&&s.email)||SHARER_EMAIL_BY_NAME[s&&s.name]||'').toLowerCase(); }
+let SHARER_KEY='', SHARER_NAME='', SHARER_DEALS={};
+function startSharer(email){
+  email=(email||'').toLowerCase();
+  try{
+    RAWREF('shareAccess').once('value').then(function(s){
+      var acc=s.val()||{}, key='';
+      Object.keys(acc).forEach(function(k){ if(((acc[k]&&acc[k].email)||'').toLowerCase()===email) key=k; });
+      if(!key){ showLogin('denied', email); try{firebase.auth().signOut();}catch(e){} return; }
+      SHARER_KEY=key; SHARER_NAME=(acc[key]&&acc[key].name)||'';
+      RAWREF('shares/'+key+'/deals').on('value', function(ds){ SHARER_DEALS=ds.val()||{}; renderSharerBoard(); },
+        function(){ var m=document.getElementById('main'); if(m) m.innerHTML='<div class="panel">접근 준비중입니다(관리자 설정 대기). 잠시 후 다시 시도하세요.</div>'; });
+    }).catch(function(){ showLogin('denied', email); try{firebase.auth().signOut();}catch(e){} });
+  }catch(e){ showLogin('denied', email); }
+}
+function sStColor(st){ return ({'대기':'#94a3b8','진행':'#3b82f6','완료':'#10b981','보류':'#f59e0b'})[st]||'#94a3b8'; }
+function renderSharerBoard(){
+  document.querySelectorAll('.side').forEach(function(x){ x.classList.add('hide'); });
+  var m=$('#main'); if(!m) return; m.style.marginLeft='0'; m.style.maxWidth='760px'; m.style.margin='0 auto';
+  var deals=Object.keys(SHARER_DEALS).map(function(id){ return Object.assign({id:id}, SHARER_DEALS[id]); });
+  function feeRow(d,k){ var f=(k==='ins'?d.ins:d.tax)||{};
+    return '<div class="ins"><div><span class="nm">'+esc(d.nm)+'</span><span class="fd">'+esc(d.biz||'')+' · '+esc(d.fund||'')+'</span><div style="margin-top:3px">'+chip(d.stage||'연락전')+'</div></div>'
+    +'<div style="display:flex;align-items:center;gap:10px">'
+    +'<span class="val" title="금액 수정" onclick="sEditAmt(\''+d.id+'\',\''+k+'\')">'+(f.amt?esc(''+f.amt):'＋ 금액')+'</span>'
+    +'<span class="st" style="background:'+sStColor(f.status)+'1a;color:'+sStColor(f.status)+'" title="상태 변경(클릭)" onclick="sCycleStatus(\''+d.id+'\',\''+k+'\')">'+esc(f.status||'대기')+' ▾</span>'
+    +'</div></div>'; }
+  m.innerHTML='<div class="sharebar"><div class="badge">실시간 협업</div><div><b style="font-size:16px">'+esc(SHARER_NAME||'팀장')+'님 협업 보드</b>'
+    +'<div style="font-size:12px;color:#a5b4fc">내 담당 건만 · 수정하면 실시간 반영 · 다른 고객/수익 안 보임</div></div>'
+    +'<button class="btn" style="margin-left:auto;background:#1e293b;color:#cbd5e1;border:1px solid #334155;font-size:12px;padding:6px 12px" onclick="doSignOut()">로그아웃</button></div>'
+    +'<div class="panel"><div class="ph"><b>🛡️ 보험 계약 ('+deals.length+'건)</b><span class="sub">금액·상태 눌러 수정</span></div>'+(deals.length?deals.map(function(d){return feeRow(d,'ins');}).join(''):'<div class="ins">담당 건이 없습니다.</div>')+'</div>'
+    +'<div class="panel"><div class="ph"><b>🧾 세무 이관</b><span class="sub">금액·상태 눌러 수정</span></div>'+(deals.length?deals.map(function(d){return feeRow(d,'tax');}).join(''):'<div class="ins">담당 건이 없습니다.</div>')+'</div>';
+}
+function sCycleStatus(id,k){
+  var order=['대기','진행','보류','완료'], fk=(k==='ins'?'ins':'tax');
+  var cur=(SHARER_DEALS[id]&&SHARER_DEALS[id][fk]&&SHARER_DEALS[id][fk].status)||'대기';
+  var next=order[(order.indexOf(cur)+1)%order.length];
+  RAWREF('shares/'+SHARER_KEY+'/deals/'+id+'/'+fk+'/status').set(next);
+  try{toast('상태 → '+next);}catch(e){}
+}
+function sEditAmt(id,k){
+  var fk=(k==='ins'?'ins':'tax'), cur=(SHARER_DEALS[id]&&SHARER_DEALS[id][fk]&&SHARER_DEALS[id][fk].amt)||'';
+  var v=prompt('금액 입력 (예: 300만 / 3000000)', cur); if(v===null) return;
+  RAWREF('shares/'+SHARER_KEY+'/deals/'+id+'/'+fk+'/amt').set((''+v).trim());
+  try{toast('금액 저장됨');}catch(e){}
+}
+/* 사장님 화면: 팀장별 미러 동기화 (customers → shares). 팀장이 고친 금액·상태는 보존(덮지 않음) */
+function syncMirror(){
+  if(offline || SHARER_KEY || NS || shareId) return;
+  try{
+    sharerArr().forEach(function(s){
+      var em=sharerEmail(s); if(!em) return;
+      RAWREF('shareAccess/'+s.id).set({email:em, name:s.name||''});
+      var disp={};
+      custArr().forEach(function(c){
+        if(feeShr(c,'insurance')===s.id || feeShr(c,'tax')===s.id){
+          disp[c.id]={nm:c.nm||'', biz:c.biz||'', fund:c.fund||'', stage:c.stage||'연락전'};
+        }
+      });
+      RAWREF('shares/'+s.id+'/deals').once('value').then(function(snap){
+        var prev=snap.val()||{}, out={};
+        Object.keys(disp).forEach(function(cid){
+          out[cid]=Object.assign({}, disp[cid], {
+            ins:(prev[cid]&&prev[cid].ins)||{amt:'',status:'대기'},
+            tax:(prev[cid]&&prev[cid].tax)||{amt:'',status:'대기'}
+          });
+        });
+        RAWREF('shares/'+s.id+'/deals').set(out);
+      }).catch(function(){});
+    });
+  }catch(e){}
 }
 
 /* ===== 🔐 로그인 게이트 (실데이터 보호) ===== */
@@ -453,7 +528,7 @@ if(authNeeded()){
       if(!u){ showLogin('signin'); return; }
       const em=(u.email||'').toLowerCase();
       if(AUTH_WHITELIST.length && AUTH_WHITELIST.map(e=>e.toLowerCase()).indexOf(em)<0){
-        showLogin('denied', em); try{_auth.signOut();}catch(e){} return;
+        ME_EMAIL=em; hideLogin(); startSharer(em); return;   // 화이트리스트 아님 → 팀장(쉐어) 로그인 모드 시도
       }
       ME_EMAIL=em; hideLogin(); startApp();
     });
@@ -1978,7 +2053,7 @@ applyMe();
 <script>
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 /* 자동 최신화: 서버의 version.txt와 현재 빌드가 다르면 캐시 무시하고 1회 새로고침 */
-window.BUILD_VER='20260714-180450';
+window.BUILD_VER='20260714-182712';
 (function(){ try{
   fetch('version.txt',{cache:'no-store'}).then(function(r){return r.ok?r.text():null;}).then(function(v){
     if(!v) return; v=v.trim(); if(!v) return;
