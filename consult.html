@@ -377,12 +377,13 @@ firebase.initializeApp(firebaseConfig);
 const db = firebase.database();
 let storage=null; try{ storage=firebase.storage(); }catch(e){ console.warn('storage init',e); }
 
-const STAGE={연락전:'#94a3b8',통화완료:'#3b82f6',서류요청완료:'#14b8a6',접수대기:'#64748b',심사중:'#f59e0b',확인필요:'#f97316',자금접수완료:'#8b5cf6',재접수:'#06b6d4',승인완료:'#10b981','부재중·재연락':'#ec4899','부결':'#ef4444'};
+const STAGE={연락전:'#94a3b8',통화완료:'#3b82f6',미팅전:'#a5b4fc',미팅완료:'#4338ca',서류요청완료:'#14b8a6',접수대기:'#64748b',심사중:'#f59e0b',확인필요:'#f97316',자금접수완료:'#8b5cf6',재접수:'#06b6d4',승인완료:'#10b981','부재중·재연락':'#ec4899','부결':'#ef4444'};
 /* ★STAGES 순서 = 진행도. 뒤에 있을수록 '더 진행된 단계'로 쳐서 대표(primary) 단계를 뽑는다.
    그래서 아무 데나 넣으면 안 되고 실제 업무 흐름 순서대로 넣어야 한다.
    2026-07-15 '서류요청완료' 추가 — 통화 후 서류를 요청한 상태(아직 못 받음).
-   ※ docStatus(접수전/접수완료)와 다름: docStatus는 "서류를 받았나", 이 단계는 "요청했나". */
-const STAGES=['연락전','통화완료','서류요청완료','접수대기','심사중','확인필요','자금접수완료','재접수','승인완료','부재중·재연락','부결'];
+   ※ docStatus(접수전/접수완료)와 다름: docStatus는 "서류를 받았나", 이 단계는 "요청했나".
+   2026-07-15 '미팅전'·'미팅완료' 추가 — 통화 뒤 미팅 잡힘(미팅전) → 미팅 끝남(미팅완료). */
+const STAGES=['연락전','통화완료','미팅전','미팅완료','서류요청완료','접수대기','심사중','확인필요','자금접수완료','재접수','승인완료','부재중·재연락','부결'];
 /* 단계 다중선택: c.stages[] 가 진실. c.stage=대표(가장 진행된 단계) — 카드뱃지·필터 하위호환 */
 function custStages(c){ return (c&&Array.isArray(c.stages)&&c.stages.length)?c.stages:(c&&c.stage?[c.stage]:[]); }
 function toggleStage(id,st){
@@ -2115,7 +2116,7 @@ applyMe();
 <script>
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 /* 자동 최신화: 서버의 version.txt와 현재 빌드가 다르면 캐시 무시하고 1회 새로고침 */
-window.BUILD_VER='20260715-132219';
+window.BUILD_VER='20260715-132450';
 (function(){ try{
   fetch('version.txt',{cache:'no-store'}).then(function(r){return r.ok?r.text():null;}).then(function(v){
     if(!v) return; v=v.trim(); if(!v) return;
