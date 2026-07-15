@@ -519,7 +519,7 @@ function setShared(cid,patch){ var it=SHAREDPOOL[cid]; if(!it) return; try{ RAWR
 function shEditMemo(cid){ var it=SHAREDPOOL[cid]||{}; var v=prompt('메모(공유)', it.memo||''); if(v!==null) setShared(cid,{memo:v}); }
 function shCycleStage(cid){ var order=STAGES, it=SHAREDPOOL[cid]||{}; var cur=it.stage||'연락전'; setShared(cid,{stage:order[(order.indexOf(cur)+1)%order.length]}); }
 function renderSharedPool(){
-  buildNav('shared');
+  buildNav(IS_SHARER?'share':'shared');   /* 팀장은 이 화면이 [쉐어] 탭이다 — 사이드바 하이라이트 일치 */
   var arr=sharedArr();
   var rows=arr.length?arr.map(function(it){
     var cid=it._cid;
@@ -532,7 +532,8 @@ function renderSharedPool(){
       +'<span class="ev" style="font-size:12px" onclick="shEditMemo(\''+cid+'\')">📝 메모</span>'
       +'</div></div>';
   }).join(''):'<div class="ins" style="color:#94a3b8">아직 공유된 고객이 없습니다. 고객 상세에서 <b>🤝 쉐어</b>를 켜면 여기(와 상대 화면)에 나타납니다.</div>';
-  $('#main').innerHTML='<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button><h1>🤝 공유 고객</h1></div></div>'
+  $('#main').innerHTML='<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>'
+    +'<div><h1>🤝 쉐어</h1><div class="date">'+(IS_SHARER?'사장님과 함께 진행하는 건 — 양쪽에서 같이 수정':'')+'</div></div></div></div>'
     +'<div class="panel"><div class="ph"><b>'+(IS_SHARER?'사장님과 공유한 건':'팀장과 공유한 건')+' ('+arr.length+')</b><span class="sub">양쪽에서 실시간으로 보고 같이 수정</span></div>'+rows+'</div>';
 }
 
@@ -1344,8 +1345,13 @@ function toggleMenu(force){const s=$('#side'),c=$('#scrim');const open=force===t
    이유 — '공유'는 모든 팀장 공유건을 한 덩어리로 섞어 보여줘서 "누구와의 쉐어인지" 알 수 없었다.
    이제 [쉐어] → 팀장 카드 클릭 → 그 팀장과의 공유건만 보는 흐름으로 일원화.
    ※ 팀장(IS_SHARER)에게는 '공유'가 메인 화면이므로 그대로 남긴다(팀장은 사장님과의 1:1 풀 하나뿐). */
+/* ★2026-07-15 개정 2 — '공유' 탭은 사장님·팀장 **양쪽 모두** 제거(사장님 지시).
+   1차 수정 때 "팀장에겐 공유가 사장님과의 유일한 통로"라고 내가 임의로 예외를 뒀는데,
+   그 결과 최병진 과장님 화면에 '공유'가 살아남아 지시가 반쪽만 이행됐다. 예외 폐기.
+   대신 팀장이 [쉐어]를 누르면 = 사장님과 공유 중인 건이 바로 뜬다(팀장은 상대가 사장님 1명뿐이라
+   팀장 목록 화면이 무의미). 사장님은 [쉐어] → 팀장 카드 → 그 팀장과의 공유건. 좌우 대칭. */
 const NAVS_BOSS=[['dash','📊 대시보드'],['call','📞 연락 전(신규DB)'],['db','👥 고객 DB'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어'],['rev','💰 수익·정산'],['report','📈 리포트']];
-const NAVS_SHARER=[['dash','📊 대시보드'],['call','📞 연락 전(신규DB)'],['db','👥 고객 DB'],['shared','🤝 공유'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어'],['rev','💰 수익·정산'],['report','📈 리포트']];
+const NAVS_SHARER=NAVS_BOSS;
 function navList(){ return IS_SHARER?NAVS_SHARER:NAVS_BOSS; }
 const NAVS=NAVS_SHARER;  // 하위호환(다른 코드가 NAVS를 참조할 경우)
 function buildNav(active){ $('#nav').innerHTML=navList().map(([k,l])=>`<a class="${k===active?'on':''}" onclick="go('${k}')">${l}</a>`).join(''); }
@@ -1355,7 +1361,8 @@ function rerender(){
  if(typeof applyMe==='function') applyMe();   // Firebase 프로필 사이드바 반영
  if(shareId){ return renderExt(); }
  const t=VIEW.t;
- if(t==='share') renderSharers();
+ /* 팀장은 상대가 사장님 1명뿐 → [쉐어] = 사장님과 공유 중인 건 바로. (팀장 목록 화면은 사장님 전용) */
+ if(t==='share') { if(IS_SHARER) renderSharedPool(); else renderSharers(); }
  else if(t==='shared') renderSharedPool();
  else if(t==='sharer') renderSharerDetail(VIEW.id);
  else if(t==='customer') renderCustomer(VIEW.id);
@@ -2458,7 +2465,7 @@ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catc
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260715-142231';
+window.BUILD_VER='20260715-145759';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
