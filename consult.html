@@ -347,6 +347,16 @@ select.iedit{cursor:pointer}
 .hg p{color:#94a3b8;font-size:12.5px;line-height:1.6;margin:4px 0 0}
 .hg p b{color:#cbd5e1}
 .help-tip{margin-top:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:11px;padding:12px;font-size:12.5px;color:#bfdbfe;line-height:1.6}
+/* ===== 📁 서류 파일 행 (클라우드 v2) ===== */
+.dfile{display:flex;align-items:center;gap:8px;padding:7px 9px;border-radius:9px;background:#fff;border:1px solid #f0e6c8;margin-bottom:5px}
+.dfile .fn{flex:1;font-size:12.5px;font-weight:700;color:#1e293b;cursor:pointer;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.dfile .fn:hover{color:#4f46e5;text-decoration:underline}
+.dfile .fm{font-size:10.5px;color:#a8a29e;font-weight:600;flex:none}
+.dfile .fb{border:none;background:#f8fafc;border-radius:7px;width:26px;height:26px;font-size:12px;cursor:pointer;color:#64748b;flex:none;font-family:inherit}
+.dfile .fb:hover{background:#4f46e5;color:#fff}
+.dfile .fb.x:hover{background:#ef4444}
+@media(max-width:640px){ .dfile .fm{display:none} }
+
 /* ===== 📁 서류함 (2026-07-15) ===== */
 .dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;padding:12px 14px 14px}
 .dcard2{background:#fff;border:1px solid #e8edf3;border-radius:13px;padding:13px;cursor:pointer;transition:.15s}
@@ -1744,7 +1754,7 @@ function renderCustomer(id){
  ${aiBoxHtml(id)}
  <div class="grid2">
    <div class="panel">
-     ${docsHtml(id,c)}
+     ${docsHtmlCloud(id,c)}
      ${recHtml(id,c)}
      <div class="ph"><b>📋 진행 정보</b><span class="sub">값을 클릭하면 수정</span></div>
      <div class="fld"><label>진행 단계</label><div class="ev" onclick="iStage(this,'${id}')">${esc(c.stage)} <span style="color:#94a3b8;font-size:12px">▾</span></div></div>
@@ -1790,7 +1800,9 @@ function renderCustomer(id){
      </div>
      ${strategyHtml(id,c)}
    </div></div>`;
- syncDocs(id,c.nm);
+ /* ★2026-07-15 — syncDocs는 D드라이브 파일서버와 목록을 맞추던 것.
+    이제 서류는 클라우드(RTDB)가 원본이라 필요 없다(데탑 아니면 서버가 없어 항상 실패하기도 했다). */
+ // syncDocs(id,c.nm);
 }
 
 /* ===== 카드 ⋮ 메뉴 (수정·삭제) ===== */
@@ -2120,6 +2132,209 @@ function docsFilter(){
   });
 }
 
+/*DOCS_CLOUD*/
+/* ===================================================================
+   📁 서류 클라우드 저장 v2 (2026-07-15 사장님 지시)
+   "노트북·데탑·폰·공유된 사람 전부 이 기능을 쓰게 해줘"
+
+   [바뀐 것]
+   - 기존: 브라우저 → http://127.0.0.1:8799 (내 PC 파일서버) → D:\컨설팅_서류
+           · 데탑에서만 동작(노트북·폰엔 서버가 없음)
+           · 최신 크롬이 "인터넷 사이트 → 내 PC" 접근을 막아 조용히 실패
+   - 이제: 브라우저 → RTDB(customers/<cid>/docsData) → 모든 기기 + 팀장
+           · 파일서버 불필요 → 크롬 차단 문제 자체가 소멸
+           · 쉐어건이면 shared/<sid>/items/<cid>/docs 로 미러 → 팀장도 열람
+
+   [용량 근거 — 실측]
+   전체 35MB / 57개 / 최대 2.2MB. base64는 +33% → 약 47MB.
+   RTDB 무료: 저장 1GB, 전송 10GB/월 → 저장 4.7% 사용. 여유 충분.
+   ★단 파일당 8MB 상한을 둔다(RTDB 단일 노드 과대 방지 + 모바일 로딩 보호).
+
+   [보안 — 사장님 결정]
+   민감서류(신분증·재무제표)를 클라우드에 올린다 = 종전 "내 PC에만" 방침의 변경.
+   RTDB 규칙상 root는 ages6917 전용, shared/<sid>는 그 팀장 본인만 → 외부 노출은 없다.
+   =================================================================== */
+
+var DOCS_MAX = 8 * 1024 * 1024;          // 파일당 8MB
+var _docBusy = false;
+
+function _docRef(cid) { return dref('customers/' + cid + '/docsData'); }
+function _fid() { return 'f' + Date.now() + Math.random().toString(36).slice(2, 7); }
+function _docsOf(c) { var d = (c && c.docsData) || {}; return Object.keys(d).map(function (k) { return Object.assign({ _id: k }, d[k]); }); }
+
+/* 파일 → base64 */
+function _toB64(f) {
+  return new Promise(function (res, rej) {
+    var r = new FileReader(); r.onload = function () { res(r.result); }; r.onerror = rej; r.readAsDataURL(f);
+  });
+}
+
+/* ---------- 업로드 (알집 자동 해제 포함) ---------- */
+async function docUploadCloud(id, fileList, opts) {
+  opts = opts || {};
+  var files = [].slice.call(fileList || []);
+  if (!files.length) return;
+  if (_docBusy) { toast('업로드 진행 중입니다'); return; }
+  _docBusy = true;
+
+  var added = 0, skipped = [];
+  try {
+    for (var i = 0; i < files.length; i++) {
+      var f = files[i];
+
+      /* 알집 = 풀어서 각각 저장 (기존 파일서버가 하던 일을 브라우저에서) */
+      if (/\.zip$/i.test(f.name)) {
+        if (!window.JSZip) { skipped.push(f.name + '(zip 라이브러리 없음 — 새로고침)'); continue; }
+        toast('📦 ' + f.name + ' 푸는 중…');
+        var zip = await JSZip.loadAsync(f);
+        var entries = [];
+        zip.forEach(function (p, e) { if (!e.dir) entries.push(e); });
+        for (var j = 0; j < entries.length; j++) {
+          var e = entries[j];
+          var blob = await e.async('blob');
+          if (blob.size > DOCS_MAX) { skipped.push(e.name + '(8MB 초과)'); continue; }
+          var nm = (e.name.split('/').pop() || e.name);
+          var b64 = await _toB64(new File([blob], nm));
+          await _docPut(id, nm, blob.size, blob.type, b64);
+          added++;
+        }
+        continue;
+      }
+
+      if (f.size > DOCS_MAX) { skipped.push(f.name + '(' + Math.round(f.size / 1048576) + 'MB — 8MB 초과)'); continue; }
+      var data = await _toB64(f);
+      await _docPut(id, f.name, f.size, f.type, data);
+      added++;
+    }
+  } catch (err) {
+    toast('⚠️ 업로드 오류: ' + (err && err.message || err));
+  }
+  _docBusy = false;
+
+  if (added) {
+    var c = getCust(id) || {};
+    var patch = { docStatus: '접수완료' };
+    if (!c.docDate) patch.docDate = today();
+    setCust(id, patch);
+    _docMirror(id);                        // 쉐어건이면 팀장에게도
+    toast('✅ ' + added + '개 저장됨 — 모든 기기에서 열립니다');
+  }
+  if (skipped.length) toast('⚠️ 제외: ' + skipped.join(', '));
+}
+
+function _docPut(cid, name, size, type, data) {
+  var meta = {
+    name: String(name || 'file').slice(0, 120), size: size || 0,
+    type: type || '', data: data, at: new Date().toISOString().slice(0, 16).replace('T', ' '),
+    by: (typeof IS_SHARER !== 'undefined' && IS_SHARER) ? ((typeof SHARER_NAME !== 'undefined' && SHARER_NAME) || '팀장') : '사장님'
+  };
+  return _docRef(cid).child(_fid()).set(meta);
+}
+
+/* ---------- 열기 / 다운로드 (기기 무관) ---------- */
+function _docBlob(d) {
+  var s = d.data || '';
+  var i = s.indexOf(',');
+  var b = atob(i >= 0 ? s.slice(i + 1) : s);
+  var u = new Uint8Array(b.length);
+  for (var k = 0; k < b.length; k++) u[k] = b.charCodeAt(k);
+  return new Blob([u], { type: d.type || 'application/octet-stream' });
+}
+function docOpenCloud(cid, fid) {
+  var c = getCust(cid) || {}; var d = (c.docsData || {})[fid]; if (!d) return toast('파일을 찾을 수 없습니다');
+  var url = URL.createObjectURL(_docBlob(d));
+  window.open(url, '_blank');
+  setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+}
+function docDownCloud(cid, fid) {
+  var c = getCust(cid) || {}; var d = (c.docsData || {})[fid]; if (!d) return toast('파일을 찾을 수 없습니다');
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(_docBlob(d)); a.download = d.name; a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 60000);
+}
+function docDelCloud(cid, fid) {
+  var c = getCust(cid) || {}; var d = (c.docsData || {})[fid]; if (!d) return;
+  if (!confirm('“' + d.name + '” 삭제할까요?\n모든 기기에서 사라집니다.')) return;
+  _docRef(cid).child(fid).remove().then(function () {
+    var left = _docsOf(getCust(cid) || {}).length;
+    if (!left) setCust(cid, { docStatus: '접수전' });
+    _docMirror(cid); toast('삭제됨');
+  });
+}
+/* 전체 ZIP 내려받기 — 브라우저에서 묶는다(서버 불필요) */
+async function docZipCloud(cid) {
+  var c = getCust(cid) || {}; var arr = _docsOf(c);
+  if (!arr.length) return toast('서류가 없습니다');
+  if (!window.JSZip) return toast('zip 라이브러리 없음 — 새로고침');
+  toast('📦 묶는 중… ' + arr.length + '개');
+  var z = new JSZip();
+  arr.forEach(function (d) { z.file(d.name, _docBlob(d)); });
+  var blob = await z.generateAsync({ type: 'blob' });
+  var a = document.createElement('a');
+  a.href = URL.createObjectURL(blob); a.download = (c.nm || cid) + '_서류.zip'; a.click();
+  setTimeout(function () { URL.revokeObjectURL(a.href); }, 60000);
+}
+
+/* ---------- 쉐어건 → 팀장에게 서류 미러 ---------- */
+/* 팀장은 customers/를 못 읽는다(규칙상 사장님 전용). 그래서 shared/<sid>/items/<cid>/docs 로 복사해
+   팀장이 자기 공유풀 안에서 열 수 있게 한다. 쉐어 안 한 고객은 미러하지 않는다(격리 유지). */
+function _docMirror(cid) {
+  try {
+    if (typeof IS_SHARER !== 'undefined' && IS_SHARER) return;   // 팀장은 미러 주체가 아님
+    var c = getCust(cid); if (!c) return;
+    var targets = (typeof shareTargets === 'function') ? shareTargets(c) : [];
+    if (!targets.length) return;
+    var arr = _docsOf(c);
+    var payload = {};
+    arr.forEach(function (d) { payload[d._id] = { name: d.name, size: d.size, type: d.type, data: d.data, at: d.at, by: d.by }; });
+    targets.forEach(function (sid) {
+      RAWREF('shared/' + sid + '/items/' + cid + '/docs').set(arr.length ? payload : null);
+    });
+  } catch (e) { console.log('[docs] 미러 실패', e); }
+}
+window._docMirror = _docMirror;
+
+/* ---------- 서류함 UI (고객 상세) ---------- */
+function docsHtmlCloud(id, c) {
+  var arr = _docsOf(c).sort(function (a, b) { return (a.at || '') < (b.at || '') ? 1 : -1; });
+  var total = arr.reduce(function (t, d) { return t + (d.size || 0); }, 0);
+  var rows = arr.map(function (d) {
+    var kb = d.size >= 1048576 ? (d.size / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round((d.size || 0) / 1024)) + 'KB';
+    return '<div class="dfile">'
+      + '<span class="fn" onclick="docOpenCloud(\'' + id + '\',\'' + d._id + '\')" title="열기">' + _icoOf(d.name) + ' ' + esc(d.name) + '</span>'
+      + '<span class="fm">' + kb + ' · ' + esc(d.at || '') + (d.by ? ' · ' + esc(d.by) : '') + '</span>'
+      + '<button class="fb" onclick="docDownCloud(\'' + id + '\',\'' + d._id + '\')" title="다운로드">⬇</button>'
+      + '<button class="fb x" onclick="docDelCloud(\'' + id + '\',\'' + d._id + '\')" title="삭제">✕</button>'
+      + '</div>';
+  }).join('');
+
+  return '<div class="docbox" id="docbox">'
+    + '<div class="dh"><b>📁 서류함 <span style="font-weight:600;color:#a16207;font-size:12px">'
+    + (arr.length ? arr.length + '개 · ' + (total >= 1048576 ? (total / 1048576).toFixed(1) + 'MB' : Math.round(total / 1024) + 'KB') : '비어있음') + '</span></b>'
+    + (arr.length ? '<span class="add" onclick="docZipCloud(\'' + id + '\')">⬇ 전체 ZIP</span>' : '') + '</div>'
+    + (rows || '')
+    + '<div class="dropzone" ondragover="event.preventDefault();this.classList.add(\'drag\')" ondragleave="this.classList.remove(\'drag\')" ondrop="docDropCloud(event,\'' + id + '\')">'
+    + '📎 파일 끌어다 놓기 <b>(알집 OK · 자동 분리저장)</b><br>'
+    + '<label class="filelabel">또는 파일 선택<input type="file" multiple style="display:none" onchange="docUploadCloud(\'' + id + '\',this.files)"></label>'
+    + '<div style="font-size:11px;color:#a8a29e;margin-top:6px;font-weight:500">☁️ 데탑·노트북·폰 어디서나 · 쉐어건은 담당 팀장도 열람 · 파일당 8MB</div></div>'
+    + '</div>';
+}
+function _icoOf(n) {
+  n = (n || '').toLowerCase();
+  if (/\.(pdf)$/.test(n)) return '📕';
+  if (/\.(jpg|jpeg|png|gif|webp|bmp)$/.test(n)) return '🖼️';
+  if (/\.(xls|xlsx|csv)$/.test(n)) return '📗';
+  if (/\.(doc|docx|hwp)$/.test(n)) return '📘';
+  if (/\.(ppt|pptx)$/.test(n)) return '📙';
+  if (/\.(zip|7z|rar)$/.test(n)) return '🗜️';
+  return '📄';
+}
+function docDropCloud(e, id) {
+  e.preventDefault(); e.currentTarget.classList.remove('drag');
+  if (e.dataTransfer && e.dataTransfer.files) docUploadCloud(id, e.dataTransfer.files);
+}
+
+/*/DOCS_CLOUD*/
 function renderStub(t){
  const T={call:'📞 오늘 콜',docs:'📁 서류함',meet:'📅 미팅',rev:'💰 수익·정산',report:'📈 리포트'}[t];
  buildNav(t);
@@ -2543,7 +2758,7 @@ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catc
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260715-150507';
+window.BUILD_VER='20260715-152739';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
