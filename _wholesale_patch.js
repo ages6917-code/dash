@@ -52,6 +52,7 @@
     wdb.ref(R + 'products').on('value', function (s) { V2.products = s.val() || []; if (V2.ready) { rebuildDASH(); safeRender(); } else done(); });
     wdb.ref(R + 'forms').on('value', function (s) { V2.forms = s.val() || {}; if (V2.ready) { safeRender(); reopenIfOpen(); } });
     wdb.ref(R + 'jobs').on('value', function (s) { V2.jobs = s.val() || {}; renderJobBar(); });
+    wdb.ref(R + '_trash').on('value', function (s) { V2.trash = s.val() || {}; renderTrashChip(); });
     wdb.ref(R + 'dataUpdated').on('value', function (s) { V2.dataUpdated = s.val(); });
     // RTDB가 비어있거나 막혀도 5초 뒤엔 기존 하드코딩으로 화면을 띄운다(백지 방지)
     setTimeout(function () { if (!V2.ready) { console.log('[v2] RTDB 미응답 — 내장 데이터로 폴백'); safeRender(); } }, 5000);
@@ -62,6 +63,8 @@
   function safeRender() {
     try { if (typeof window.setHeader === 'function') window.setHeader(); } catch (e) { console.log('[v2] setHeader 실패', e); }
     try { if (typeof window.render === 'function') window.render(); } catch (e) { console.log('[v2] render 실패', e); }
+    // setHeader가 chips를 통째로 다시 그리므로 휴지통 칩은 그 뒤에 다시 붙여야 한다.
+    try { renderTrashChip(); } catch (e) { }
   }
 
   /* ---------- 2) 택배 마감시간 (요구 2) ---------- */
@@ -142,6 +145,73 @@
     }).join('');
   }
   window.renderJobBar = renderJobBar;
+
+  /* ---------- 4-2) 거래처 삭제 + 휴지통 (2026-07-15 추가) ---------- */
+  // 삭제는 되돌릴 수 없는 작업이다. 그래서 지우기 전에 통째로 휴지통에 스냅샷을 뜬다.
+  //  - 거래처 1건 + 그 거래처 제품 전부 + 주문양식까지 한 덩어리로 보관 → 복구 시 원상복구.
+  //  - vendors/products 는 '배열'이라 부분 삭제가 인덱스를 밀어버린다 → 항상 전체 재작성(PUT).
+  window.deleteVendor = function (vid) {
+    var v = V2.vendors.find(function (x) { return x.id === vid; });
+    if (!v) return;
+    var mine = V2.products.filter(function (p) { return p.vendorId === vid; });
+    if (!confirm('“' + v.name + '” 거래처를 삭제할까요?\n\n· 등록 제품 ' + mine.length + '개도 함께 사라집니다.\n· 휴지통에 보관되므로 되살릴 수 있습니다.')) return;
+
+    var snap = {
+      vendor: v, products: mine, form: V2.forms[vid] || null,
+      deletedAt: new Date().toISOString().slice(0, 16).replace('T', ' '),
+      name: v.name, count: mine.length
+    };
+    var tid = 'tr_' + Date.now();
+    wdb.ref(R + '_trash/' + tid).set(snap, function (err) {
+      if (err) { toast('❌ 휴지통 저장 실패 — 삭제 중단'); return; }   // 백업 실패 시 삭제 안 함
+      var nv = V2.vendors.filter(function (x) { return x.id !== vid; });
+      var np = V2.products.filter(function (p) { return p.vendorId !== vid; });
+      wdb.ref(R + 'vendors').set(nv);
+      wdb.ref(R + 'products').set(np);
+      if (V2.forms[vid]) wdb.ref(R + 'forms/' + vid).remove();
+      try { window.closeModal(); } catch (e) { }
+      toast('🗑 “' + v.name + '” 삭제됨 — 휴지통에서 복구 가능');
+    });
+  };
+
+  window.restoreVendor = function (tid) {
+    var t = (V2.trash || {})[tid]; if (!t) return;
+    if (V2.vendors.some(function (x) { return x.id === t.vendor.id; })) { toast('⚠️ 같은 id 거래처가 이미 있습니다'); return; }
+    var nv = V2.vendors.concat([t.vendor]);
+    var np = V2.products.concat(t.products || []);
+    wdb.ref(R + 'vendors').set(nv);
+    wdb.ref(R + 'products').set(np);
+    if (t.form) wdb.ref(R + 'forms/' + t.vendor.id).set(t.form);
+    wdb.ref(R + '_trash/' + tid).remove();
+    toast('♻️ “' + t.name + '” 복구됨');
+    setTimeout(openTrash, 400);
+  };
+
+  window.purgeTrash = function (tid) {
+    var t = (V2.trash || {})[tid]; if (!t) return;
+    if (!confirm('“' + t.name + '”을(를) 휴지통에서 완전히 지울까요?\n이건 되돌릴 수 없습니다.')) return;
+    wdb.ref(R + '_trash/' + tid).remove();
+    toast('영구 삭제됨'); setTimeout(openTrash, 400);
+  };
+
+  window.openTrash = function () {
+    var ids = Object.keys(V2.trash || {});
+    var modal = document.getElementById('modal'), ov = document.getElementById('overlay');
+    if (!modal || !ov) return;
+    _openIdx = null;
+    modal.innerHTML = '<div class="mhead"><div class="avatar">🗑</div><div><h2>휴지통</h2>' +
+      '<div class="vcat">삭제한 거래처를 되살릴 수 있습니다</div></div>' +
+      '<button class="close" onclick="closeModal()">✕</button></div>' +
+      (!ids.length ? '<div class="v2empty">비어 있습니다.</div>' :
+        '<div class="trlist">' + ids.sort().reverse().map(function (id) {
+          var t = V2.trash[id];
+          return '<div class="trrow"><div><b>' + (t.vendor.emoji || '📦') + ' ' + esc(t.name) + '</b>' +
+            '<div class="sub">제품 ' + (t.count || 0) + '개 · 삭제 ' + esc(t.deletedAt) + '</div></div>' +
+            '<button class="v2btn sm" onclick="restoreVendor(\'' + id + '\')">♻️ 복구</button>' +
+            '<button class="v2btn sm ghost" onclick="purgeTrash(\'' + id + '\')">영구삭제</button></div>';
+        }).join('') + '</div>');
+    ov.classList.add('on');
+  };
 
   /* ---------- 5) 토스트 ---------- */
   function toast(msg) {
@@ -288,6 +358,11 @@
       '<div class="v2h">📤 주문 수집</div>' +
       '<button class="v2big" onclick="requestCollect(\'' + s.id + '\',\'' + esc(s.name).replace(/'/g, "\\'") + '\')">🛒 테무 주문 수집 요청</button>' +
       '<div class="v2note">폰·데스크톱에서 눌러도 <b>실제 수집은 노트북</b>이 합니다(테무 로그인이 거기에만 있음).<br>노트북이 꺼져 있으면 <b>대기중</b>으로 남았다가 켜지면 자동 처리됩니다. 완료되면 첫 화면에 ⬇다운로드 버튼이 뜹니다.</div>' +
+      '</div>' +
+
+      '<div class="v2danger">' +
+      '<button class="v2del" onclick="deleteVendor(\'' + s.id + '\')">🗑 이 거래처 삭제</button>' +
+      '<div class="v2sub">제품 ' + (s.products || []).length + '개도 함께 삭제됩니다 · 휴지통에 보관되어 복구 가능</div>' +
       '</div>';
     modal.appendChild(box);
 
@@ -306,6 +381,16 @@
       if (file) window.uploadForm(s.id, file);
     });
   };
+
+  /* ---------- 8-2) 휴지통 칩 (헤더) — 비어있으면 아예 안 보인다 ---------- */
+  function renderTrashChip() {
+    var chips = document.getElementById('chips'); if (!chips) return;
+    var n = Object.keys(V2.trash || {}).length;
+    var old = document.getElementById('v2trchip');
+    if (!n) { if (old) old.remove(); return; }
+    var html = '<div class="chip gchip" id="v2trchip" style="cursor:pointer" onclick="openTrash()">🗑 휴지통<b>' + n + '건</b></div>';
+    if (old) old.outerHTML = html; else chips.insertAdjacentHTML('beforeend', html);
+  }
 
   /* ---------- 9) 탭바 주입 ---------- */
   function injectTabs() {

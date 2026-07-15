@@ -65,6 +65,20 @@
 .mgb.mid{background:var(--blue-bg);color:var(--blue)}
 .mgb.bad{background:var(--red-bg);color:var(--red)}
 
+/* 삭제(위험 구역) — 눈에 띄되 실수로 누르기 어렵게 아래쪽·아웃라인 */
+.v2danger{border-top:1px dashed var(--line);padding-top:14px;text-align:center}
+.v2del{width:100%;border:1.5px solid #f0c2c2;background:#fff;color:var(--red);border-radius:11px;padding:12px;font-size:14px;font-weight:700;cursor:pointer;font-family:inherit;transition:.15s}
+.v2del:hover{background:var(--red);color:#fff;border-color:var(--red)}
+.v2danger .v2sub{margin-top:7px}
+
+/* 휴지통 */
+.v2empty{padding:36px;text-align:center;color:var(--sub);font-size:14px}
+.trlist{display:flex;flex-direction:column;gap:9px;margin-top:16px}
+.trrow{display:flex;align-items:center;gap:9px;background:#f9fafb;border:1px solid var(--line);border-radius:11px;padding:12px 14px}
+.trrow>div:first-child{flex:1}
+.trrow b{font-size:14.5px;font-weight:800}
+.trrow .sub{font-size:11.5px;color:var(--sub);margin-top:3px}
+
 /* 토스트 */
 #v2toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:12px 22px;border-radius:12px;font-size:13.5px;font-weight:600;z-index:99999;opacity:0;pointer-events:none;transition:.25s;max-width:90vw;text-align:center;box-shadow:0 8px 28px rgba(0,0,0,.3)}
 #v2toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
@@ -78,6 +92,8 @@
 }
 @media(prefers-color-scheme:dark){
   .v2tab{background:#1f2937;color:#9ca3af;border-color:#374151}
+  .v2del{background:#1f2937;border-color:#7f3a3a}
+  .trrow{background:#111827;border-color:#374151}
   .jrow,.v2file,.v2drop,.mstat,.mtblwrap,.v2in{background:#1f2937;border-color:#374151;color:#e5e7eb}
   .v2sec{background:#111827;border-color:#374151}
   .mtbl th{background:#111827;border-color:#374151}
