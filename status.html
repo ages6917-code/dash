@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="T봇 현황판">
 <link rel="apple-touch-icon" href="icon180.png">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260715153017">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260715154505">
 <script>(function(){var B=(document.querySelector('meta[name=app-build]')||{}).content;function c(){fetch(location.pathname+'?_c='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/name="app-build" content="([^"]+)"/);if(m&&m[1]&&m[1]!=B){location.replace(location.pathname+'?v='+encodeURIComponent(m[1]))}}).catch(function(){})}setTimeout(c,700);document.addEventListener('visibilitychange',function(){if(!document.hidden)c()})})();</script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon512.png">
@@ -497,7 +497,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-15 15:30",
+    "asof": "07-15 15:45",
     "ago": "6일 전",
     "ok": false,
     "date": "2026-07-08 20:43",
@@ -565,7 +565,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-15 15:30",
+    "asof": "07-15 15:45",
     "ago": "10시간 전",
     "ok": true,
     "date": "2026-07-15 05:20",
@@ -639,7 +639,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-15 15:30",
+    "asof": "07-15 15:45",
     "ago": "17시간 전",
     "ok": false,
     "date": "2026-07-14 21:52",
@@ -725,8 +725,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-15 15:30",
-    "ago": "30분 전",
+    "asof": "07-15 15:45",
+    "ago": "44분 전",
     "ok": true,
     "date": "2026-07-15 15:00",
     "stale_days": 0,
@@ -773,7 +773,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-15 15:30",
+    "asof": "07-15 15:45",
     "ago": "11일 전",
     "ok": false,
     "date": "2026-07-03 23:08",
@@ -812,7 +812,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-15 15:30",
+    "asof": "07-15 15:45",
     "ago": "8일 전",
     "ok": false,
     "date": "2026-07-07 13:05",
@@ -852,7 +852,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-15 15:30",
+    "asof": "07-15 15:45",
     "ago": "3시간 전",
     "ok": true,
     "date": "2026-07-15 12:17",
@@ -890,8 +890,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-15 15:30",
-    "ago": "29분 전",
+    "asof": "07-15 15:45",
+    "ago": "44분 전",
     "ok": true,
     "date": "2026-07-15 15:00",
     "stale_days": 0,
@@ -927,7 +927,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-15 15:30",
+    "asof": "07-15 15:45",
     "ago": "1시간 전",
     "ok": true,
     "date": "2026-07-15 14:06",
@@ -1392,7 +1392,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-07-15 15:30",
+ "_autosync": "2026-07-15 15:45",
  "perf": {
   "overseas_total": 11,
   "by_country": [
@@ -1403,7 +1403,7 @@ body{background:#eef0f7;color:var(--ink)}
   ],
   "asof": "2026-07-15"
  }
-};window.__BACKEND__=false;window.__SYNC__="2026-07-15 15:30";</script>
+};window.__BACKEND__=false;window.__SYNC__="2026-07-15 15:45";</script>
 </head><body><div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
   <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
   <div style="color:#9fb3d1;font-size:13px">접속 비밀번호를 입력하세요</div>
@@ -1637,20 +1637,32 @@ function dashForceRefresh(){
   }catch(e){}
   setTimeout(function(){ location.replace(location.pathname+'?_r='+Date.now()); }, 250);
 }
+/* ★2026-07-15 자동최신화 v3 — 종전 버그 2개 수정
+   ① 폴링이 없어 앱창을 켜두면 새 배포를 영영 못 받음
+   ② ETag를 localStorage와 비교하며 '처음이면 현재 상태를 기준으로 저장'했다 →
+      이미 캐시된 옛 화면을 보고 있어도 그걸 정상으로 간주해 영원히 안 바뀜.
+      즉 "지금 내가 보는 게 최신인가"를 묻지 않았다.
+   → 이제 페이지가 자기 빌드(window.__SYNC__)를 알고 서버 dashver.txt와 직접 비교한다. */
 (function(){
+  var busy=false;
+  function typing(){ var a=document.activeElement; return !!(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable)); }
   function chk(){
-    try{
-      fetch(location.pathname,{method:'HEAD',cache:'no-store'}).then(function(r){
-        var tag=r.headers.get('ETag')||r.headers.get('Last-Modified'); if(!tag) return;
-        var key='dashver:'+location.pathname, prev=localStorage.getItem(key);
-        localStorage.setItem(key,tag);
-        if(prev && prev!==tag && location.search.indexOf('_r=')===-1){
-          location.replace(location.pathname+'?_r='+Date.now());
-        }
-      }).catch(function(){});
-    }catch(e){}
+    if(busy||document.hidden) return; busy=true;
+    /* ★status.ver.txt (현황판 전용) — 공용 dashver.txt를 쓰면 안 된다.
+       현황판은 관제탑 publish_github.py가, 나머지 7종은 _inject_verbadge.py가 각각 발행해서
+       두 시각이 늘 달라 매번 불필요한 새로고침이 일어난다. 그래서 자기 버전 파일을 따로 본다. */
+    fetch('status.ver.txt',{cache:'no-store'}).then(function(r){ return r.ok?r.text():null; }).then(function(v){
+      busy=false; if(!v) return; v=v.trim();
+      var mine=window.__SYNC__||'';
+      if(!mine || !v || v===mine) return;
+      if(typing()) return;                                   /* 입력 중이면 건너뜀 */
+      try{ if((new URL(location.href)).searchParams.get('_v')===v) return; }catch(e){}
+      try{ var u=new URL(location.href); u.searchParams.set('_v',v); location.replace(u.pathname+u.search); }
+      catch(e){ location.replace(location.pathname+'?_v='+encodeURIComponent(v)); }
+    }).catch(function(){ busy=false; });
   }
-  chk();
+  setTimeout(chk,2000);
+  setInterval(chk,60000);
   document.addEventListener('visibilitychange',function(){ if(!document.hidden) chk(); });
 })();
 </script></body></html>
