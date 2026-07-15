@@ -347,6 +347,27 @@ select.iedit{cursor:pointer}
 .hg p{color:#94a3b8;font-size:12.5px;line-height:1.6;margin:4px 0 0}
 .hg p b{color:#cbd5e1}
 .help-tip{margin-top:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:11px;padding:12px;font-size:12.5px;color:#bfdbfe;line-height:1.6}
+/* ===== 📁 서류함 (2026-07-15) ===== */
+.dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:12px;padding:12px 14px 14px}
+.dcard2{background:#fff;border:1px solid #e8edf3;border-radius:13px;padding:13px;cursor:pointer;transition:.15s}
+.dcard2:hover{border-color:#4f46e5;transform:translateY(-2px);box-shadow:0 8px 20px rgba(79,70,229,.12)}
+.dcard2.warn{border-color:#fcd34d;background:#fffbeb}
+.dc-top{display:flex;align-items:center;gap:9px}
+.dc-top .av{width:34px;height:34px;border-radius:9px;background:#eef2ff;color:#4f46e5;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:14px;flex:none}
+.dc-top b{font-size:14px;font-weight:800}
+.dc-top .sub{font-size:11px;color:#94a3b8;margin-top:1px}
+.dc-top>div:nth-child(2){flex:1;min-width:0}
+.dc-files{display:flex;flex-wrap:wrap;gap:4px;margin:9px 0 8px}
+.fchip{font-size:10.5px;background:#f1f5f9;color:#475569;border-radius:6px;padding:3px 7px;font-weight:600;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.fchip.more{background:#e0e7ff;color:#4f46e5;font-weight:800}
+.fchip.none{background:#fef3c7;color:#b45309}
+.dc-foot{display:flex;justify-content:space-between;align-items:center;font-size:11px;color:#94a3b8;border-top:1px dashed #eef2f7;padding-top:7px}
+.dc-foot .go{color:#4f46e5;font-weight:800}
+.nlist{display:flex;flex-wrap:wrap;gap:6px;padding:12px 14px 14px}
+.npill{font-size:12.5px;background:#f8fafc;border:1px solid #e2e8f0;border-radius:20px;padding:5px 12px;cursor:pointer;font-weight:600;color:#475569}
+.npill:hover{background:#4f46e5;color:#fff;border-color:#4f46e5}
+@media(max-width:640px){ .dgrid{grid-template-columns:1fr} }
+
 /* ===== 📈 리포트 (2026-07-15) ===== */
 .rptMBs{display:flex;gap:6px;flex-wrap:wrap}
 .rptMB{border:1.5px solid #e2e8f0;background:#fff;border-radius:9px;padding:7px 13px;font-size:12.5px;font-weight:700;color:#64748b;cursor:pointer;font-family:inherit}
@@ -1371,7 +1392,8 @@ function rerender(){
  else if(t==='call') renderFiltered('연락전','call');
  else if(t==='search') renderSearch();
  else if(t==='report') renderReport();
- else if(['docs','meet','rev'].includes(t)) renderStub(t);
+ else if(t==='docs') renderDocs();
+ else if(['meet','rev'].includes(t)) renderStub(t);
  else renderDash();
 }
 
@@ -2042,6 +2064,62 @@ function renderReport() {
 }
 
 /*/RPT_MODULE*/
+/* ===== 📁 서류함 (2026-07-15 신설 — 종전엔 stub(빈 화면)이었다) =====
+   사장님 요청: "서류함 눌렀을 때 서류 있는 고객 이름 다 뜨게"
+   · 서류 보유 고객을 카드로 나열 → 클릭하면 그 고객 서류함으로 바로 이동
+   · 접수완료인데 파일이 0개인 '이름만 접수' 건도 따로 보여준다(숨기면 그게 사고) */
+function renderDocs(){
+  buildNav('docs');
+  const cs=custArr();
+  const withDocs=cs.filter(c=>(c.docs||[]).length>0);
+  const claimed =cs.filter(c=>docState(c)==='접수완료' && !(c.docs||[]).length);   // 접수완료 표시인데 파일 없음
+  const none    =cs.filter(c=>docState(c)!=='접수완료' && !(c.docs||[]).length);
+  const totalFiles=withDocs.reduce((a,c)=>a+(c.docs||[]).length,0);
+
+  const card=(c,warn)=>`<div class="dcard2 ${warn?'warn':''}" onclick="go('customer','${c.id}')">
+      <div class="dc-top"><div class="av">${esc((c.nm||'·')[0])}</div>
+        <div><b>${esc(c.nm||'(이름없음)')}</b><div class="sub">${esc(c.bizName||c.biz||'')}</div></div>
+        ${chip(c.stage||'연락전')}</div>
+      <div class="dc-files">${
+        (c.docs||[]).length
+          ? (c.docs||[]).slice(0,4).map(d=>`<span class="fchip">📄 ${esc((d.name||'').slice(0,22))}</span>`).join('')
+            + ((c.docs||[]).length>4?`<span class="fchip more">+${(c.docs||[]).length-4}개</span>`:'')
+          : `<span class="fchip none">${warn?'⚠️ 접수완료인데 파일 0개':'서류 없음'}</span>`
+      }</div>
+      <div class="dc-foot">${(c.docs||[]).length?`총 ${(c.docs||[]).length}개${c.docDate?' · '+esc(c.docDate)+' 접수':''}`:''}<span class="go">열기 ›</span></div>
+    </div>`;
+
+  $('#main').innerHTML=
+    `<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
+      <div><h1>📁 서류함</h1><div class="date">서류가 있는 고객 ${withDocs.length}명 · 파일 ${totalFiles}개</div></div></div>
+      <input class="search" id="dsearch" placeholder="🔍 고객·파일명 검색" oninput="docsFilter()" style="max-width:260px"></div>
+
+     <div class="panel"><div class="ph"><b>📄 서류 있는 고객 (${withDocs.length})</b><span class="sub">카드를 누르면 그 고객 서류함으로</span></div>
+       <div class="dgrid" id="dgrid">${withDocs.length?withDocs.map(c=>card(c,false)).join(''):'<div class="ins" style="color:#94a3b8;display:block">아직 서류를 올린 고객이 없습니다.</div>'}</div>
+     </div>
+
+     ${claimed.length?`<div class="panel" style="margin-top:16px;border:1.5px solid #fde68a">
+       <div class="ph"><b>⚠️ 접수완료인데 파일이 없는 고객 (${claimed.length})</b>
+       <span class="sub">상태만 접수완료 · 실제 파일 0개 — 확인 필요</span></div>
+       <div class="dgrid">${claimed.map(c=>card(c,true)).join('')}</div></div>`:''}
+
+     <div class="panel" style="margin-top:16px"><div class="ph"><b>📭 서류 없는 고객 (${none.length})</b>
+       <span class="sub">눌러서 서류 요청·업로드</span></div>
+       <div class="nlist">${none.length?none.map(c=>`<span class="npill" onclick="go('customer','${c.id}')">${esc(c.nm||'(이름)')}</span>`).join(''):'<span style="color:#94a3b8;font-size:13px">없음</span>'}</div>
+     </div>
+
+     <div class="rptWarn" style="margin-top:16px"><b>💡 서류 파일은 사장님 PC에만 있습니다</b><ul>
+       <li>실제 파일은 <b>D:\\컨설팅_서류</b>에 저장됩니다(신분증·재무제표 등 민감서류 → 클라우드 미업로드).</li>
+       <li>따라서 <b>파일 열기·다운로드는 데스크톱에서만</b> 됩니다. 폰·노트북에서는 목록만 보입니다.</li>
+     </ul></div>`;
+}
+function docsFilter(){
+  const q=((document.getElementById('dsearch')||{}).value||'').toLowerCase();
+  document.querySelectorAll('#dgrid .dcard2').forEach(el=>{
+    el.style.display = el.innerText.toLowerCase().indexOf(q)>=0 ? '' : 'none';
+  });
+}
+
 function renderStub(t){
  const T={call:'📞 오늘 콜',docs:'📁 서류함',meet:'📅 미팅',rev:'💰 수익·정산',report:'📈 리포트'}[t];
  buildNav(t);
@@ -2465,7 +2543,7 @@ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catc
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260715-145759';
+window.BUILD_VER='20260715-150507';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
