@@ -90,6 +90,8 @@
 
 
 
+
+
 <!--V2PATCH-->
 /* 위탁 대시보드 v2 — 기존 톤(카드형·틸그린·라운드) 유지, 라이트/다크·모바일 대응 */
 .v2tabs{display:flex;gap:8px;margin-right:8px}
@@ -171,6 +173,29 @@
 .trrow>div:first-child{flex:1}
 .trrow b{font-size:14.5px;font-weight:800}
 .trrow .sub{font-size:11.5px;color:var(--sub);margin-top:3px}
+
+/* 제품 편집 */
+.pcard-edit{cursor:pointer;transition:.15s;position:relative}
+.pcard-edit:hover{border-color:#1b8f5a!important;transform:translateY(-2px);box-shadow:0 8px 20px rgba(27,143,90,.14)}
+.pcard-edit::after{content:'✏️ 수정';position:absolute;top:7px;right:7px;font-size:10px;font-weight:800;background:rgba(27,143,90,.92);color:#fff;padding:3px 7px;border-radius:6px;opacity:0;transition:.15s}
+.pcard-edit:hover::after{opacity:1}
+.pedit{margin-top:16px;display:flex;flex-direction:column;gap:11px}
+.pe-row{display:flex;flex-direction:column;gap:5px}
+.pe-row label{font-size:11.5px;font-weight:700;color:#475569}
+.pe-row label i{font-style:normal;font-weight:500;color:#94a3b8;font-size:10.5px}
+.pe-row input,.pe-row textarea{border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit;background:#fff;color:#1e293b;width:100%}
+.pe-row input:focus,.pe-row textarea:focus{border-color:#1b8f5a}
+.pe-row textarea{resize:vertical;line-height:1.6;font-size:13px}
+.pe-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pe-calc{background:#f0fdf7;border:1px solid #bbf7d0;border-radius:11px;padding:11px 13px;display:flex;flex-direction:column;gap:5px}
+.pe-line{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#475569}
+.pe-line i{font-style:normal;color:#94a3b8;font-size:10.5px}
+.pe-line b{font-weight:800;color:#1e293b}
+.pe-line.big{border-top:1px dashed #bbf7d0;padding-top:6px;margin-top:2px;font-size:13.5px}
+.pe-line.big b{display:flex;align-items:center;gap:7px;font-size:14px}
+.pe-warn{font-size:12px;color:#a16207;text-align:center;padding:4px}
+.pe-btns{display:flex;gap:8px;margin-top:4px}
+@media(max-width:640px){ .pe-2{grid-template-columns:1fr} .pe-btns{flex-wrap:wrap} }
 
 /* 토스트 */
 #v2toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:12px 22px;border-radius:12px;font-size:13.5px;font-weight:600;z-index:99999;opacity:0;pointer-events:none;transition:.25s;max-width:90vw;text-align:center;box-shadow:0 8px 28px rgba(0,0,0,.3)}
@@ -568,7 +593,7 @@ window.openGalleryVendor=function(vk){
 </script>
 <!-- DASH_AUTOFRESH v1 -->
 <button id="dashRefreshBtn" title="최신화" onclick="dashForceRefresh()" style="position:fixed;left:12px;bottom:12px;z-index:99999;border:none;background:rgba(79,70,229,.92);color:#fff;border-radius:20px;padding:8px 13px;font-size:13px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.28);cursor:pointer;font-family:'Malgun Gothic',sans-serif">🔄 최신화</button>
-<script>window.__DASHVER__="2026-07-15 16:11";</script><div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신" style="position:fixed;left:12px;bottom:54px;z-index:99998;background:rgba(17,24,39,.80);color:#c7d2fe;border-radius:13px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.2px;box-shadow:0 3px 9px rgba(0,0,0,.22);font-family:'Malgun Gothic',sans-serif;pointer-events:none">v2026-07-15 16:11</div><script>try{if(window.__SYNC__)document.getElementById("dashVerBadge").textContent="v"+window.__SYNC__;}catch(e){}</script>
+<script>window.__DASHVER__="2026-07-15 16:54";</script><div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신" style="position:fixed;left:12px;bottom:54px;z-index:99998;background:rgba(17,24,39,.80);color:#c7d2fe;border-radius:13px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.2px;box-shadow:0 3px 9px rgba(0,0,0,.22);font-family:'Malgun Gothic',sans-serif;pointer-events:none">v2026-07-15 16:54</div><script>try{if(window.__SYNC__)document.getElementById("dashVerBadge").textContent="v"+window.__SYNC__;}catch(e){}</script>
 <script>
 function dashForceRefresh(){
   try{
@@ -590,6 +615,13 @@ function dashForceRefresh(){
   }catch(e){}
 })();
 </script>
+
+
+
+
+
+
+
 
 
 
@@ -814,6 +846,115 @@ function dashForceRefresh(){
     ov.classList.add('on');
   };
 
+  /* ---------- 4-3) 제품 편집 (2026-07-15 사장님 요청) ----------
+     "각 제품 클릭했을 때 마진률·금액 기타 등 기존처럼 수정 가능하게"
+     · 제품 카드 클릭 → 편집창. 매입가·배송비·판매가·시장가·메모·스펙 수정.
+     · 마진은 입력값이 아니라 **계산 결과**다(판매가×0.9 − 매입가 − 배송비) → 입력하는 동안 실시간 미리보기.
+     · 저장 = RTDB → 데탑·노트북·폰 즉시 반영.
+     ※ products 는 배열이라 pid 로 인덱스를 찾아 그 자리만 갱신한다(전체 덮어쓰기 금지 = 동시수정 충돌 방지). */
+  function _pidx(pid) { return V2.products.findIndex(function (p) { return p.pid === pid; }); }
+
+  window.editProduct = function (pid) {
+    var i = _pidx(pid); if (i < 0) return toast('제품을 찾을 수 없습니다');
+    var p = V2.products[i];
+    var v = V2.vendors.find(function (x) { return x.id === p.vendorId; }) || {};
+    var modal = document.getElementById('modal'), ov = document.getElementById('overlay');
+    if (!modal || !ov) return;
+    _openIdx = null;
+    modal.innerHTML =
+      '<div class="mhead"><div class="avatar">' + (p.emoji || '📦') + '</div>'
+      + '<div><h2 style="font-size:19px">' + esc(p.name) + '</h2>'
+      + '<div class="vcat">' + esc(v.name || '') + (p.g ? ' · ' + esc(p.g) : '') + '</div></div>'
+      + '<button class="close" onclick="closeModal()">✕</button></div>'
+      + '<div class="pedit">'
+      + '  <div class="pe-row"><label>제품명</label><input id="pe_name" value="' + esc(p.name || '') + '"></div>'
+      + '  <div class="pe-row"><label>규격</label><input id="pe_spec" value="' + esc(p.spec || '') + '" placeholder="예) 1kg / 20개입 박스"></div>'
+      + '  <div class="pe-2">'
+      + '    <div class="pe-row"><label>매입가 <i>원</i></label><input id="pe_buy" type="number" inputmode="numeric" value="' + (p.buy != null ? p.buy : '') + '" oninput="peCalc()" placeholder="미입력"></div>'
+      + '    <div class="pe-row"><label>배송비 <i>원</i></label><input id="pe_ship" type="number" inputmode="numeric" value="' + (p.ship || 0) + '" oninput="peCalc()"></div>'
+      + '  </div>'
+      + '  <div class="pe-row"><label>판매가 <i>원 · 비우면 매입가÷0.65로 자동산출</i></label>'
+      + '    <input id="pe_sell" type="number" inputmode="numeric" value="' + (p.sell != null ? p.sell : '') + '" oninput="peCalc()" placeholder="자동"></div>'
+      + '  <div class="pe-calc" id="pe_calc"></div>'
+      + '  <div class="pe-row"><label>시장 시세 <i>참고용 메모</i></label><input id="pe_mkt" value="' + esc(p.mkt || '') + '" placeholder="예) 네이버/쿠팡 20개입 23,900~30,900"></div>'
+      + '  <div class="pe-row"><label>메모</label><textarea id="pe_note" rows="2" placeholder="특이사항·검증 필요 등">' + esc(p.note || '') + '</textarea></div>'
+      + '  <div class="pe-btns">'
+      + '    <button class="v2btn" style="flex:1" onclick="saveProduct(\'' + pid + '\')">💾 저장</button>'
+      + '    <button class="v2btn ghost" onclick="closeModal()">취소</button>'
+      + '    <button class="v2btn ghost" style="color:#dc2626" onclick="delProduct(\'' + pid + '\')">🗑 제품 삭제</button>'
+      + '  </div>'
+      + '  <div class="v2sub" style="text-align:center;margin-top:8px">☁️ 저장하면 데탑·노트북·폰에 즉시 반영됩니다</div>'
+      + '</div>';
+    ov.classList.add('on');
+    peCalc();
+  };
+
+  /* 입력하는 동안 마진 실시간 미리보기 — 마진은 직접 입력하는 값이 아니라 계산 결과 */
+  window.peCalc = function () {
+    var box = document.getElementById('pe_calc'); if (!box) return;
+    var buy = parseInt(document.getElementById('pe_buy').value, 10);
+    var ship = parseInt(document.getElementById('pe_ship').value, 10) || 0;
+    var sell = parseInt(document.getElementById('pe_sell').value, 10);
+    if (isNaN(buy)) { box.innerHTML = '<div class="pe-warn">매입가를 넣으면 손익분기·마진이 계산됩니다</div>'; return; }
+    var cost = buy + ship;
+    var bep = Math.ceil(cost / 0.9 / 100) * 100;             // 수수료 10% 감안 손익분기
+    var auto = Math.ceil(cost / 0.65 / 100) * 100;           // 판매가 미입력 시 자동산출
+    var rec = !isNaN(sell) ? sell : auto;
+    var net = Math.round(rec * 0.9 - cost);
+    var mg = Math.round(net / rec * 100);
+    var cls = mg >= 40 ? 'good' : (mg < 20 ? 'bad' : 'mid');
+    box.innerHTML =
+      '<div class="pe-line"><span>원가(매입+배송)</span><b>' + won(cost) + '</b></div>'
+      + '<div class="pe-line"><span>손익분기 <i>이 아래로 팔면 손해</i></span><b>' + won(bep) + '</b></div>'
+      + '<div class="pe-line"><span>판매가' + (isNaN(sell) ? ' <i>(자동산출)</i>' : '') + '</span><b>' + won(rec) + '</b></div>'
+      + '<div class="pe-line big"><span>마진 <i>판매가×0.9 − 원가</i></span>'
+      + '<b><span class="mgb ' + cls + '">' + mg + '%</span> ' + won(net) + '</b></div>';
+  };
+
+  window.saveProduct = function (pid) {
+    var i = _pidx(pid); if (i < 0) return;
+    var g = function (id) { return (document.getElementById(id) || {}).value; };
+    var num = function (id) { var n = parseInt(g(id), 10); return isNaN(n) ? null : n; };
+    var patch = {
+      name: (g('pe_name') || '').trim() || V2.products[i].name,
+      spec: (g('pe_spec') || '').trim(),
+      buy: num('pe_buy'),
+      ship: num('pe_ship') || 0,
+      sell: num('pe_sell'),
+      mkt: (g('pe_mkt') || '').trim(),
+      note: (g('pe_note') || '').trim()
+    };
+    var ref = wdb.ref(R + 'products/' + i);
+    ref.update(patch, function (err) {
+      if (err) { toast('❌ 저장 실패'); return; }
+      toast('✅ ' + patch.name + ' 저장됨 — 모든 기기 반영');
+      closeModal();
+    });
+  };
+
+  window.delProduct = function (pid) {
+    var i = _pidx(pid); if (i < 0) return;
+    var p = V2.products[i];
+    if (!confirm('“' + p.name + '” 제품을 삭제할까요?\n(거래처는 그대로 남습니다)')) return;
+    /* 배열에서 빼고 전체 재작성 — 부분 삭제는 인덱스가 밀려 다른 제품이 섞인다 */
+    var np = V2.products.filter(function (x) { return x.pid !== pid; });
+    wdb.ref(R + 'products').set(np, function (err) {
+      if (err) { toast('❌ 삭제 실패'); return; }
+      toast('🗑 ' + p.name + ' 삭제됨'); closeModal();
+    });
+  };
+
+  /* 제품 카드에 클릭 붙이기 — 기존 pcardHtml 을 감싸서 확장(원본 유지) */
+  var _origPcard = window.pcardHtml;
+  if (typeof _origPcard === 'function') {
+    window.pcardHtml = function (p) {
+      var html = _origPcard(p);
+      if (!p || !p.pid) return html;
+      return html.replace('<div class="pcard">',
+        '<div class="pcard pcard-edit" onclick="event.stopPropagation();editProduct(\'' + p.pid + '\')" title="눌러서 수정">');
+    };
+  }
+
   /* ---------- 5) 토스트 ---------- */
   function toast(msg) {
     var t = document.getElementById('v2toast');
@@ -1011,10 +1152,6 @@ function dashForceRefresh(){
 
 </script>
 <!--/V2PATCH-->
-
-
-
-
 <!--V2POLL-->
 <script>
 /* 자동최신화 폴링 v3 (2026-07-15) — v2의 치명적 버그 수정

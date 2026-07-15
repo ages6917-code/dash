@@ -79,6 +79,29 @@
 .trrow b{font-size:14.5px;font-weight:800}
 .trrow .sub{font-size:11.5px;color:var(--sub);margin-top:3px}
 
+/* 제품 편집 */
+.pcard-edit{cursor:pointer;transition:.15s;position:relative}
+.pcard-edit:hover{border-color:#1b8f5a!important;transform:translateY(-2px);box-shadow:0 8px 20px rgba(27,143,90,.14)}
+.pcard-edit::after{content:'✏️ 수정';position:absolute;top:7px;right:7px;font-size:10px;font-weight:800;background:rgba(27,143,90,.92);color:#fff;padding:3px 7px;border-radius:6px;opacity:0;transition:.15s}
+.pcard-edit:hover::after{opacity:1}
+.pedit{margin-top:16px;display:flex;flex-direction:column;gap:11px}
+.pe-row{display:flex;flex-direction:column;gap:5px}
+.pe-row label{font-size:11.5px;font-weight:700;color:#475569}
+.pe-row label i{font-style:normal;font-weight:500;color:#94a3b8;font-size:10.5px}
+.pe-row input,.pe-row textarea{border:1.5px solid #e2e8f0;border-radius:9px;padding:9px 12px;font-size:14px;outline:none;font-family:inherit;background:#fff;color:#1e293b;width:100%}
+.pe-row input:focus,.pe-row textarea:focus{border-color:#1b8f5a}
+.pe-row textarea{resize:vertical;line-height:1.6;font-size:13px}
+.pe-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pe-calc{background:#f0fdf7;border:1px solid #bbf7d0;border-radius:11px;padding:11px 13px;display:flex;flex-direction:column;gap:5px}
+.pe-line{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:#475569}
+.pe-line i{font-style:normal;color:#94a3b8;font-size:10.5px}
+.pe-line b{font-weight:800;color:#1e293b}
+.pe-line.big{border-top:1px dashed #bbf7d0;padding-top:6px;margin-top:2px;font-size:13.5px}
+.pe-line.big b{display:flex;align-items:center;gap:7px;font-size:14px}
+.pe-warn{font-size:12px;color:#a16207;text-align:center;padding:4px}
+.pe-btns{display:flex;gap:8px;margin-top:4px}
+@media(max-width:640px){ .pe-2{grid-template-columns:1fr} .pe-btns{flex-wrap:wrap} }
+
 /* 토스트 */
 #v2toast{position:fixed;left:50%;bottom:28px;transform:translateX(-50%) translateY(20px);background:#111827;color:#fff;padding:12px 22px;border-radius:12px;font-size:13.5px;font-weight:600;z-index:99999;opacity:0;pointer-events:none;transition:.25s;max-width:90vw;text-align:center;box-shadow:0 8px 28px rgba(0,0,0,.3)}
 #v2toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
