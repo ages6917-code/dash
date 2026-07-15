@@ -32,7 +32,17 @@ JS = r"""
              첫 방문·캐시 무관하게 "지금 이 화면이 최신인가"를 즉시 판정. */
 (function(){
   var busy=false, banner=null;
-  function typing(){ var a=document.activeElement; return !!(a&&(a.tagName==='INPUT'||a.tagName==='TEXTAREA'||a.isContentEditable)); }
+  /* ★2026-07-15 실험으로 잡은 버그 —
+     비번 게이트(#pwgate)의 입력칸이 페이지 로드 시 '자동 포커스'된다.
+     그래서 폴링이 매번 "사장님이 타이핑 중"으로 오판 → 리로드 대신 배너만 띄웠고,
+     그 배너마저 게이트(z-index 99999)에 가려 보이지도 않았다 → 옛 화면 영구 고착.
+     비번칸은 '작업 중'이 아니다(아직 들어오지도 않은 상태) → 타이핑 보호 대상에서 제외. */
+  function typing(){
+    var a=document.activeElement;
+    if(!a) return false;
+    try{ if(a.closest && a.closest('#pwgate')) return false; }catch(e){}
+    return a.tagName==='INPUT'||a.tagName==='TEXTAREA'||!!a.isContentEditable;
+  }
   function reload(v){
     try{ var u=new URL(location.href); u.searchParams.set('_v', v||Date.now()); location.replace(u.pathname+u.search); }
     catch(e){ location.replace(location.pathname+'?_v='+(v||Date.now())); }
