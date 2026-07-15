@@ -9,7 +9,10 @@
 import os, glob, datetime, re
 
 STAMP = datetime.datetime.now().strftime("%Y-%m-%d %H:%M")  # 로컬(KST) 배포시각
-BADGE = ('<div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신"'
+# ★2026-07-15 — 페이지가 '자기 빌드'를 알아야 자동최신화(v3)가 "지금 보는 게 최신인가"를 판정할 수 있다.
+#   종전엔 배지에 글자로만 있어서 코드가 못 읽었다 → window.__DASHVER__ 로 심는다.
+VERVAR = '<script>window.__DASHVER__="' + STAMP + '";</script>'
+BADGE = (VERVAR + '<div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신"'
          ' style="position:fixed;left:12px;bottom:54px;z-index:99998;'
          'background:rgba(17,24,39,.80);color:#c7d2fe;border-radius:13px;padding:4px 10px;'
          'font-size:11px;font-weight:700;letter-spacing:.2px;box-shadow:0 3px 9px rgba(0,0,0,.22);'
@@ -30,6 +33,14 @@ for f in sorted(glob.glob(os.path.join(d, "*.html"))):
     if 'dashVerBadge' in html:
         new, n = RE_STAMP.subn(r"\g<1>v" + STAMP + r"\g<2>", html, count=1)
         if n:
+            # __DASHVER__ 도 같이 갱신(없으면 배지 앞에 새로 삽입) — 자동최신화 v3가 이 값을 본다
+            # ★'window.__DASHVER__' 로만 찾으면 폴링코드의 '참조'(window.__DASHVER__||'')까지 걸려서
+            #   '이미 있다'고 오판하고 삽입을 건너뛴다 → 반드시 '할당문'으로 판정할 것.
+            if re.search(r'window\.__DASHVER__\s*=', new):
+                new = re.sub(r'window\.__DASHVER__\s*=\s*"[^"]*"',
+                             'window.__DASHVER__="' + STAMP + '"', new, count=1)
+            else:
+                new = new.replace('<div id="dashVerBadge"', VERVAR + '<div id="dashVerBadge"', 1)
             open(f, "w", encoding="utf-8").write(new)
             updated.append(name)
         else:
@@ -46,7 +57,12 @@ for f in sorted(glob.glob(os.path.join(d, "*.html"))):
     open(f, "w", encoding="utf-8").write(html)
     done.append(name)
 
+# ★서버 기준 버전 파일 — 각 페이지가 이걸 60초마다 읽어 자기 __DASHVER__와 비교한다.
+#   (ETag 방식은 "첫 방문이면 현 상태를 정상으로 기준삼는" 함정이 있어 폐기)
+open(os.path.join(d, "dashver.txt"), "w", encoding="utf-8").write(STAMP)
+
 print("STAMP:", STAMP)
 print("신규주입:", done)
 print("날짜갱신:", updated)
 print("확인필요:", nobtn)
+print("dashver.txt:", STAMP)
