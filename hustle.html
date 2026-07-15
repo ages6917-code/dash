@@ -611,7 +611,7 @@ window.ITEMS = [
 </script>
 <!-- DASH_AUTOFRESH v1 -->
 <button id="dashRefreshBtn" title="최신화" onclick="dashForceRefresh()" style="position:fixed;left:12px;bottom:12px;z-index:99999;border:none;background:rgba(79,70,229,.92);color:#fff;border-radius:20px;padding:8px 13px;font-size:13px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.28);cursor:pointer;font-family:'Malgun Gothic',sans-serif">🔄 최신화</button>
-<script>window.__DASHVER__="2026-07-15 15:52";</script><div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신" style="position:fixed;left:12px;bottom:54px;z-index:99998;background:rgba(17,24,39,.80);color:#c7d2fe;border-radius:13px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.2px;box-shadow:0 3px 9px rgba(0,0,0,.22);font-family:'Malgun Gothic',sans-serif;pointer-events:none">v2026-07-15 15:52</div><script>try{if(window.__SYNC__)document.getElementById("dashVerBadge").textContent="v"+window.__SYNC__;}catch(e){}</script>
+<script>window.__DASHVER__="2026-07-15 16:11";</script><div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신" style="position:fixed;left:12px;bottom:54px;z-index:99998;background:rgba(17,24,39,.80);color:#c7d2fe;border-radius:13px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.2px;box-shadow:0 3px 9px rgba(0,0,0,.22);font-family:'Malgun Gothic',sans-serif;pointer-events:none">v2026-07-15 16:11</div><script>try{if(window.__SYNC__)document.getElementById("dashVerBadge").textContent="v"+window.__SYNC__;}catch(e){}</script>
 <script>
 function dashForceRefresh(){
   try{
@@ -636,6 +636,7 @@ function dashForceRefresh(){
 
 
 
+
 <!--V2POLL-->
 <script>
 /* 자동최신화 폴링 v3 (2026-07-15) — v2의 치명적 버그 수정
@@ -645,6 +646,22 @@ function dashForceRefresh(){
              즉 "내가 지금 보는 게 최신인가"를 한 번도 묻지 않았다. 사장님 화면이 계속 옛날이던 이유.
    [v3 해결] 페이지가 자기 빌드(window.__DASHVER__)를 알고 있고, 서버의 dashver.txt와 직접 비교한다.
              첫 방문·캐시 무관하게 "지금 이 화면이 최신인가"를 즉시 판정. */
+/* ★2026-07-15 — 옛 서비스워커·캐시 강제 청소.
+   과거 SW(스코프 /dash/)가 만든 CacheStorage가 사장님 노트북에 45.9MB 남아
+   네트워크 대신 옛 페이지를 서빙하고 있었다("껐다 켜도 그대로"의 정체).
+   어느 대시보드로 들어오든 이 코드가 옛 SW를 걷어낸다. */
+(function(){
+  if(!('serviceWorker' in navigator)) return;
+  try{
+    navigator.serviceWorker.getRegistrations().then(function(rs){
+      rs.forEach(function(r){ r.unregister(); });
+    }).catch(function(){});
+    if(window.caches && caches.keys){
+      caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); }).catch(function(){});
+    }
+  }catch(e){}
+})();
+
 (function(){
   var busy=false, banner=null;
   /* ★2026-07-15 실험으로 잡은 버그 —
