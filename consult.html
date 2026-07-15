@@ -2750,7 +2750,21 @@ applyMe();
 <!--PWAINSTALL-->
 <button id="pwaInstall" style="position:fixed;right:14px;bottom:16px;z-index:9998;border:none;background:#4f46e5;color:#fff;border-radius:24px;padding:12px 18px;font-size:14px;font-weight:800;box-shadow:0 6px 18px rgba(79,70,229,.45);cursor:pointer;font-family:'Malgun Gothic',sans-serif">📲 앱으로 설치</button>
 <script>
-if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
+/* ★2026-07-15 — 서비스워커 등록 중단 + 기존 등록 청소.
+   여기서 register('sw.js')를 한 게 스코프 /dash/ 전체에 걸려, 옛 SW 캐시가 위탁·현황판까지
+   가로챘다(사장님 노트북에서 CacheStorage 45.9MB 잔존 확인 → "껐다 켜도 옛 화면"의 원인).
+   PWA 설치보다 "화면이 최신인가"가 훨씬 중요하므로 SW는 쓰지 않는다.
+   아래 코드가 이 페이지를 여는 모든 기기에서 옛 SW와 캐시를 즉시 제거한다. */
+if('serviceWorker' in navigator){
+  try{
+    navigator.serviceWorker.getRegistrations().then(function(rs){
+      rs.forEach(function(r){ r.unregister(); });
+    }).catch(function(){});
+    if(window.caches && caches.keys){
+      caches.keys().then(function(ks){ ks.forEach(function(k){ caches.delete(k); }); }).catch(function(){});
+    }
+  }catch(e){}
+}
 /* 자동 최신화 v2 (2026-07-15 전면 수정)
    ★종전 버그: 이 체크가 '페이지 로드 시 1회'뿐이라, 앱 창을 켜둔 채로 있으면
      새 배포를 영원히 모른다. 사장님이 Chrome 앱창을 상시 띄워두시는데 그래서
@@ -2758,7 +2772,7 @@ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catc
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260715-152739';
+window.BUILD_VER='20260715-161137';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
