@@ -347,6 +347,22 @@ select.iedit{cursor:pointer}
 .hg p{color:#94a3b8;font-size:12.5px;line-height:1.6;margin:4px 0 0}
 .hg p b{color:#cbd5e1}
 .help-tip{margin-top:12px;background:rgba(59,130,246,.1);border:1px solid rgba(59,130,246,.3);border-radius:11px;padding:12px;font-size:12.5px;color:#bfdbfe;line-height:1.6}
+/* ===== 📈 리포트 (2026-07-15) ===== */
+.rptMBs{display:flex;gap:6px;flex-wrap:wrap}
+.rptMB{border:1.5px solid #e2e8f0;background:#fff;border-radius:9px;padding:7px 13px;font-size:12.5px;font-weight:700;color:#64748b;cursor:pointer;font-family:inherit}
+.rptMB.on{background:#4f46e5;color:#fff;border-color:#4f46e5}
+.rptTiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(155px,1fr));gap:12px;margin-bottom:18px}
+.rptTile{background:#fff;border:1px solid #e8edf3;border-radius:14px;padding:14px 16px;box-shadow:0 1px 4px rgba(0,0,0,.03)}
+.rptTL{font-size:11.5px;color:#64748b;font-weight:700}
+.rptTV{font-size:26px;font-weight:800;color:#1e293b;margin:4px 0 2px;line-height:1.1}
+.rptTV small{font-size:12px;color:#94a3b8;font-weight:700;margin-left:2px}
+.rptTD{font-size:12px;font-weight:800}
+.rptTS{font-size:10.5px;color:#94a3b8;margin-top:3px}
+.rptWarn{margin-top:16px;background:#fffbeb;border:1px solid #fde68a;border-radius:12px;padding:13px 16px;font-size:12.5px;color:#92400e}
+.rptWarn b{display:block;margin-bottom:6px}
+.rptWarn ul{margin:0;padding-left:17px;line-height:1.75}
+.rptWarn li{color:#a16207}
+@media(max-width:640px){ .rptTiles{grid-template-columns:repeat(2,1fr)} .rptTV{font-size:22px} }
 </style>
 </head>
 <body>
@@ -677,7 +693,13 @@ function fee(c,k){ const f=((c&&c.fees)||{})[k];
   if(k==='insurance'&&c){ const st=c.insStatus==='완료'?'완료':(c.ins?'예정':'없음'); return {status:st, amt:c.ins||''}; }
   return {status:'없음', amt:''}; }
 function setFee(id,k,patch){ const c=getCust(id)||{}; const fees=Object.assign({},c.fees);
-  const cur=Object.assign({status:'없음',amt:''}, fees[k]||{}); fees[k]=Object.assign(cur,patch); setCust(id,{fees}); }
+  const cur=Object.assign({status:'없음',amt:''}, fees[k]||{}); fees[k]=Object.assign(cur,patch);
+  /* ★2026-07-15 — '완료'로 바뀌는 순간 완료일(doneAt)을 찍는다.
+     이게 없어서 "이번 달 수익이 얼마인가"를 계산할 수 없었다(수익에 월 귀속 정보가 없음).
+     기존 완료건은 doneAt이 없으므로 리포트에서 '월 미상'으로 따로 표시한다(지어내지 않는다). */
+  if(patch && patch.status==='완료' && !fees[k].doneAt) fees[k].doneAt=today();
+  if(patch && patch.status && patch.status!=='완료') delete fees[k].doneAt;
+  setCust(id,{fees}); }
 /* ===== 세무 이관: 사업자 여러 건(개인/법인별 금액 직접입력·합산) ===== */
 function taxItems(c){ return (((c&&c.fees)||{}).tax||{}).items || []; }
 function taxMult(c){ const m=(((c&&c.fees)||{}).tax||{}).mult; return (m&&+m>0)?+m:6; }   // 세무이관 수수료 = 월 기장료 × 배수(기본 6배)
@@ -731,11 +753,23 @@ function promptCustomType(box,id){
 function custTotal(c,status){ return ['insurance','consulting','tax'].reduce((a,k)=>{const f=fee(c,k);return f.status===status?a+feeWon(c,k):a;},0); }
 /* 스트림별 쉐어 몫(만원) — 세무는 taxShareWon, 나머지는 금액×shrPct% */
 function feeShareWon(c,k){ if(k==='tax'){ const it=taxItems(c); if(it.length) return taxShareWon(c); } const pct=(((c&&c.fees)||{})[k]||{}).shrPct; return pct?Math.round(feeWon(c,k)*(+pct)/100):0; }
+/* ★2026-07-15 버그수정 — 종전엔 고객 '단계'를 전혀 보지 않고 fees.status만 봤다.
+   그래서 고객을 '부결'로 바꿔도 보험·세무 '예정' 금액이 수익 현황에 그대로 남아
+   실제로는 날아간 돈이 계속 잡혀 있었다(엄태훈 건으로 실측 확인).
+   → 부결 고객의 '예정'은 집계에서 제외한다.
+   ※ '완료'는 제외하지 않는다: 이미 성사·입금된 건이라 나중에 자금이 부결돼도 수수료는 남는다.
+     (부결 = 정책자금 심사 결과일 뿐, 이미 체결된 보험계약이 취소되는 건 아님) */
+const DEAD_STAGES=['부결'];
+function isDeadCust(c){ return DEAD_STAGES.indexOf((c&&c.stage)||'')>=0; }
 function aggFees(){ const cs=custArr(); const out={};
-  ['insurance','consulting','tax'].forEach(k=>{ let dA=0,dN=0,pA=0,pN=0,dSh=0,pSh=0;
+  ['insurance','consulting','tax'].forEach(k=>{ let dA=0,dN=0,pA=0,pN=0,dSh=0,pSh=0,xA=0,xN=0;
     cs.forEach(c=>{ const f=fee(c,k); const a=feeWon(c,k); const sh=feeShareWon(c,k);
-      if(f.status==='완료'){dA+=a;dN++;dSh+=sh;} else if(f.status==='예정'){pA+=a;pN++;pSh+=sh;} });
-    out[k]={dA,dN,pA,pN,dSh,pSh}; });
+      if(f.status==='완료'){dA+=a;dN++;dSh+=sh;}
+      else if(f.status==='예정'){
+        if(isDeadCust(c)){ xA+=a; xN++; }        // 부결 → 예정에서 제외(따로 집계해 보여줌)
+        else { pA+=a;pN++;pSh+=sh; }
+      } });
+    out[k]={dA,dN,pA,pN,dSh,pSh,xA,xN}; });   // xA/xN = 부결로 제외된 금액·건수
   return out; }
 function docState(c){ return c.docStatus || ((c&&c.docs&&c.docs.length)?'접수완료':'접수전'); }
 function toggleDocStatus(id){ const c=getCust(id)||{}; const next=docState(c)==='접수완료'?'접수전':'접수완료'; const patch={docStatus:next}; if(next==='접수완료'&&!c.docDate) patch.docDate=today(); setCust(id,patch); }
@@ -1285,7 +1319,8 @@ function rerender(){
  else if(t==='flt') renderFiltered(VIEW.id);
  else if(t==='call') renderFiltered('연락전','call');
  else if(t==='search') renderSearch();
- else if(['docs','meet','rev','report'].includes(t)) renderStub(t);
+ else if(t==='report') renderReport();
+ else if(['docs','meet','rev'].includes(t)) renderStub(t);
  else renderDash();
 }
 
@@ -1512,7 +1547,7 @@ function renderDash(){
  const waitRow=c=>`<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
    <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz)}</span></b><div class="memo">${esc(c.memo)}</div></div>
    <div class="amt">${esc(c.fund)}</div><div class="call">📞 연락</div></div>`;
- const revBox=(k,done)=>{const amt=done?ag[k].dA:ag[k].pA, n=done?ag[k].dN:ag[k].pN, sh=done?ag[k].dSh:ag[k].pSh; return `<div style="flex:1;border-radius:12px;padding:12px 13px;cursor:pointer;background:${done?'#ecfdf5':'#fffbeb'}" title="${done?'완료(확정)':'예정(예상)'} 고객 보기" onclick="go('flt','fee_${done?'done':'plan'}_${k}')"><div style="font-size:11.5px;color:#64748b;font-weight:600">${done?'✅ 완료(확정)':'⏳ 예정(예상)'}</div><div style="font-size:20px;font-weight:800;margin:2px 0">${fmtMan(amt)}<small style="font-size:12px;color:#94a3b8">원</small></div><div style="font-size:11.5px;font-weight:700;color:${done?'#10b981':'#d97706'}">${n}건 ›</div><div style="font-size:11px;font-weight:800;color:#7c3aed;margin-top:4px;border-top:1px dashed #e2d9f7;padding-top:4px">🤝 쉐어 ${done?'확정':'예정'} ${fmtMan(sh)}<small style="color:#a78bfa;font-weight:600">원</small></div><div style="font-size:10.5px;color:#94a3b8;margin-top:1px">내 몫 ${fmtMan(amt-sh)}원</div></div>`;};
+ const revBox=(k,done)=>{const amt=done?ag[k].dA:ag[k].pA, n=done?ag[k].dN:ag[k].pN, sh=done?ag[k].dSh:ag[k].pSh; return `<div style="flex:1;border-radius:12px;padding:12px 13px;cursor:pointer;background:${done?'#ecfdf5':'#fffbeb'}" title="${done?'완료(확정)':'예정(예상)'} 고객 보기" onclick="go('flt','fee_${done?'done':'plan'}_${k}')"><div style="font-size:11.5px;color:#64748b;font-weight:600">${done?'✅ 완료(확정)':'⏳ 예정(예상)'}</div><div style="font-size:20px;font-weight:800;margin:2px 0">${fmtMan(amt)}<small style="font-size:12px;color:#94a3b8">원</small></div><div style="font-size:11.5px;font-weight:700;color:${done?'#10b981':'#d97706'}">${n}건 ›</div><div style="font-size:11px;font-weight:800;color:#7c3aed;margin-top:4px;border-top:1px dashed #e2d9f7;padding-top:4px">🤝 쉐어 ${done?'확정':'예정'} ${fmtMan(sh)}<small style="color:#a78bfa;font-weight:600">원</small></div><div style="font-size:10.5px;color:#94a3b8;margin-top:1px">내 몫 ${fmtMan(amt-sh)}원</div>${(!done&&ag[k].xN)?`<div style="font-size:10px;color:#ef4444;margin-top:4px;border-top:1px dashed #fecaca;padding-top:3px" title="부결 고객의 예정 금액은 집계에서 뺐습니다">🚫 부결 제외 ${fmtMan(ag[k].xA)}원 (${ag[k].xN}건)</div>`:''}</div>`;};
  const revCard=(k,ic,lb,icbg)=>`<div class="c"><div class="h"><div class="ic" style="background:${icbg}">${ic}</div><div class="lb">${lb}</div></div><div style="display:flex;gap:10px">${revBox(k,true)}${revBox(k,false)}</div></div>`;
  $('#main').innerHTML=`
  <div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
@@ -1749,6 +1784,212 @@ function renderDB(){
    <div id="dbGridWrap">${dbGridHtml()}</div>`;
  if(DBQ) setTimeout(()=>{ const el=document.getElementById('dbSearchInput'); if(el){ el.focus(); el.setSelectionRange(el.value.length,el.value.length); } },10);
 }
+/*RPT_MODULE*/
+/* ===================================================================
+   📈 리포트 — 월별 실적 (2026-07-15 신설)
+   사장님 요구: 월별 분리 / 이번달 DB·미팅·쉐어·수익 시각화 / 전월 대비
+
+   설계 원칙(dataviz):
+   - 단위가 다른 measure를 한 축에 섞지 않는다 → 건수 차트와 수익 차트를 분리(이중축 금지)
+   - 색은 눈이 아니라 검증기로 고름: #4f46e5·#0d9488·#d97706
+     (기존 인디고+보라 조합은 ΔE 11.4로 정상시력에서도 구분이 어려워 탈락)
+   - 시리즈 2개 이상 → 범례 상시 + 직접 라벨(색만으로 구분하게 두지 않음)
+   - 데이터가 없으면 0으로 그리지 않고 "없음"이라고 쓴다(지어내기 금지)
+   =================================================================== */
+
+var RPT_PAL = { db: '#4f46e5', meet: '#0d9488', share: '#d97706' };
+var RPT_MON = null;   // 보고 있는 달(YYYY-MM). null이면 이번 달
+
+/* ---------- 날짜 유틸 ---------- */
+function rptNow() { var d = new Date(); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); }
+function rptPrev(ym) { var p = ym.split('-'), y = +p[0], m = +p[1] - 1; if (m < 1) { m = 12; y--; } return y + '-' + String(m).padStart(2, '0'); }
+function rptLabel(ym) { var p = ym.split('-'); return +p[1] + '월'; }
+/* 고객이 어느 달에 들어왔나 — created(ms) 우선, 없으면 received(YYYY-MM-DD 또는 YYYY/MM/DD).
+   ★둘 다 없으면 null = '월 미상'. 임의로 이번 달에 넣지 않는다(그게 통계 조작이다). */
+function rptCustMonth(c) {
+  if (c && c.created) { try { var d = new Date(c.created); return d.getFullYear() + '-' + String(d.getMonth() + 1).padStart(2, '0'); } catch (e) { } }
+  var r = c && c.received;
+  if (r) { var s = String(r).replace(/\//g, '-'); var m = s.match(/^(\d{4})-(\d{1,2})/); if (m) return m[1] + '-' + String(+m[2]).padStart(2, '0'); }
+  return null;
+}
+function rptFeeMonth(f) {   // 수수료 완료월 — doneAt 없으면 null(월 미상)
+  if (!f || !f.doneAt) return null;
+  var m = String(f.doneAt).replace(/\//g, '-').match(/^(\d{4})-(\d{1,2})/);
+  return m ? m[1] + '-' + String(+m[2]).padStart(2, '0') : null;
+}
+
+/* ---------- 집계 ---------- */
+function rptMonths(n) {  // 최근 n개월 [오래된→최신]
+  var out = [], ym = rptNow();
+  for (var i = 0; i < n; i++) { out.unshift(ym); ym = rptPrev(ym); }
+  return out;
+}
+function rptStats(ym) {
+  var cs = custArr();
+  var db = cs.filter(function (c) { return rptCustMonth(c) === ym; }).length;
+
+  var M = (typeof DATA !== 'undefined' && DATA.meetings) || {};
+  var meet = Object.keys(M).filter(function (k) { return String((M[k] || {}).date || '').slice(0, 7) === ym; }).length;
+
+  /* 쉐어: 공유풀 항목엔 '언제 쉐어했는지'가 없다(up=최종수정시각뿐).
+     → 월별로 못 가른다. 현재 총량만 쓰고 화면에 그 사실을 명시한다. */
+  var share = (typeof sharedArr === 'function') ? sharedArr().length : 0;
+
+  var revDone = 0, revNoDate = 0;
+  cs.forEach(function (c) {
+    ['insurance', 'consulting', 'tax'].forEach(function (k) {
+      var f = ((c.fees || {})[k]) || {};
+      if (f.status !== '완료') return;
+      var fm = rptFeeMonth(f);
+      var amt = feeWon(c, k);
+      if (fm === ym) revDone += amt; else if (!fm) revNoDate += amt;
+    });
+  });
+  return { db: db, meet: meet, share: share, rev: revDone, revNoDate: revNoDate };
+}
+function rptUnknownCount() { return custArr().filter(function (c) { return !rptCustMonth(c); }).length; }
+
+/* ---------- 델타(전월 대비) ---------- */
+function rptDelta(cur, prev) {
+  if (prev === 0 && cur === 0) return { t: '–', c: '#94a3b8', s: '전월도 0' };
+  if (prev === 0) return { t: '신규 +' + cur, c: '#059669', s: '전월 0건' };
+  var d = cur - prev, p = Math.round(d / prev * 100);
+  if (d === 0) return { t: '± 0', c: '#94a3b8', s: '전월과 동일' };
+  return { t: (d > 0 ? '▲ +' : '▼ ') + d + ' (' + (d > 0 ? '+' : '') + p + '%)', c: d > 0 ? '#059669' : '#dc2626', s: '전월 ' + prev };
+}
+
+/* ---------- SVG 차트 (외부 라이브러리 0) ---------- */
+/* 그룹 막대 — 같은 단위(건수)끼리만. 단위가 다른 수익은 별도 차트로 분리. */
+function rptBarChart(months, series, opt) {
+  opt = opt || {};
+  var W = 680, H = 240, PL = 42, PR = 14, PT = 16, PB = 34;
+  var iw = W - PL - PR, ih = H - PT - PB;
+  var max = 0;
+  series.forEach(function (s) { s.data.forEach(function (v) { if (v > max) max = v; }); });
+  var top = max <= 0 ? 4 : Math.ceil(max * 1.25);
+  var y = function (v) { return PT + ih - (v / top) * ih; };
+  var gw = iw / months.length, bw = Math.min(18, (gw - 14) / series.length);
+
+  var grid = '', ticks = 4;
+  for (var i = 0; i <= ticks; i++) {
+    var v = Math.round(top / ticks * i), yy = y(v);
+    grid += '<line x1="' + PL + '" y1="' + yy + '" x2="' + (W - PR) + '" y2="' + yy + '" stroke="var(--rptGrid,#eef2f7)" stroke-width="1"/>'
+      + '<text x="' + (PL - 8) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="10" fill="var(--rptMuted,#94a3b8)">' + v + '</text>';
+  }
+  var bars = '', labels = '';
+  months.forEach(function (m, mi) {
+    var cx = PL + gw * mi + gw / 2;
+    var totalW = bw * series.length + 2 * (series.length - 1);   // 2px 간격(마크 사이 여백)
+    series.forEach(function (s, si) {
+      var v = s.data[mi] || 0;
+      var x = cx - totalW / 2 + si * (bw + 2);
+      var h = v <= 0 ? 0 : Math.max(2, PT + ih - y(v));
+      if (h > 0) bars += '<rect x="' + x + '" y="' + (PT + ih - h) + '" width="' + bw + '" height="' + h + '" rx="3" fill="' + s.color + '">'
+        + '<title>' + m + ' · ' + s.name + ' ' + v + (opt.unit || '건') + '</title></rect>';
+      // 직접 라벨(값>0) — 색만으로 읽게 두지 않음
+      if (v > 0) bars += '<text x="' + (x + bw / 2) + '" y="' + (PT + ih - h - 4) + '" text-anchor="middle" font-size="9.5" font-weight="700" fill="' + s.color + '">' + v + '</text>';
+    });
+    labels += '<text x="' + cx + '" y="' + (H - 12) + '" text-anchor="middle" font-size="11" font-weight="' + (mi === months.length - 1 ? '800' : '600') + '" fill="' + (mi === months.length - 1 ? 'var(--rptInk,#1e293b)' : 'var(--rptMuted,#94a3b8)') + '">' + rptLabel(m) + '</text>';
+  });
+  var legend = series.map(function (s) {
+    return '<span style="display:inline-flex;align-items:center;gap:5px;font-size:11.5px;font-weight:700;color:var(--rptInk,#475569)">'
+      + '<i style="width:9px;height:9px;border-radius:2px;background:' + s.color + ';display:inline-block"></i>' + s.name + '</span>';
+  }).join('<span style="width:12px;display:inline-block"></span>');
+
+  return '<div style="display:flex;gap:14px;margin-bottom:6px">' + legend + '</div>'
+    + '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;overflow:visible" role="img" aria-label="월별 추이">'
+    + '<line x1="' + PL + '" y1="' + (PT + ih) + '" x2="' + (W - PR) + '" y2="' + (PT + ih) + '" stroke="var(--rptAxis,#cbd5e1)" stroke-width="1"/>'
+    + grid + bars + labels + '</svg>';
+}
+
+/* 수익 단독 차트(단위: 만원) — 건수와 축을 절대 공유하지 않는다 */
+function rptRevChart(months, data) {
+  var W = 680, H = 200, PL = 52, PR = 14, PT = 16, PB = 34;
+  var iw = W - PL - PR, ih = H - PT - PB;
+  var max = Math.max.apply(null, data.concat([0]));
+  if (max <= 0) return '<div style="padding:26px;text-align:center;color:var(--rptMuted,#94a3b8);font-size:13px;background:var(--rptEmpty,#f8fafc);border-radius:10px">'
+    + '완료(확정)된 수수료가 아직 없어 그릴 수익이 없습니다.<br><span style="font-size:11.5px">고객 상세에서 수수료를 <b>완료</b>로 바꾸면 그 달 수익으로 잡힙니다.</span></div>';
+  var top = Math.ceil(max * 1.25);
+  var y = function (v) { return PT + ih - (v / top) * ih; };
+  var gw = iw / months.length, bw = Math.min(30, gw - 18);
+  var grid = '', bars = '', labels = '';
+  for (var i = 0; i <= 4; i++) {
+    var v = Math.round(top / 4 * i), yy = y(v);
+    grid += '<line x1="' + PL + '" y1="' + yy + '" x2="' + (W - PR) + '" y2="' + yy + '" stroke="var(--rptGrid,#eef2f7)" stroke-width="1"/>'
+      + '<text x="' + (PL - 8) + '" y="' + (yy + 4) + '" text-anchor="end" font-size="10" fill="var(--rptMuted,#94a3b8)">' + fmtMan(v) + '</text>';
+  }
+  months.forEach(function (m, i) {
+    var cx = PL + gw * i + gw / 2, v = data[i] || 0;
+    var h = v <= 0 ? 0 : Math.max(2, PT + ih - y(v));
+    if (h > 0) {
+      bars += '<rect x="' + (cx - bw / 2) + '" y="' + (PT + ih - h) + '" width="' + bw + '" height="' + h + '" rx="4" fill="' + RPT_PAL.db + '"><title>' + m + ' · ' + fmtMan(v) + '원</title></rect>'
+        + '<text x="' + cx + '" y="' + (PT + ih - h - 5) + '" text-anchor="middle" font-size="10" font-weight="800" fill="' + RPT_PAL.db + '">' + fmtMan(v) + '</text>';
+    }
+    labels += '<text x="' + cx + '" y="' + (H - 12) + '" text-anchor="middle" font-size="11" font-weight="' + (i === months.length - 1 ? '800' : '600') + '" fill="' + (i === months.length - 1 ? 'var(--rptInk,#1e293b)' : 'var(--rptMuted,#94a3b8)') + '">' + rptLabel(m) + '</text>';
+  });
+  return '<svg viewBox="0 0 ' + W + ' ' + H + '" style="width:100%;height:auto;overflow:visible" role="img" aria-label="월별 수익">'
+    + '<line x1="' + PL + '" y1="' + (PT + ih) + '" x2="' + (W - PR) + '" y2="' + (PT + ih) + '" stroke="var(--rptAxis,#cbd5e1)" stroke-width="1"/>'
+    + grid + bars + labels + '</svg>';
+}
+
+/* ---------- 화면 ---------- */
+function rptGo(ym) { RPT_MON = ym; renderReport(); }
+
+function renderReport() {
+  buildNav('report');
+  var ym = RPT_MON || rptNow();
+  var prev = rptPrev(ym);
+  var cur = rptStats(ym), pv = rptStats(prev);
+  var months = rptMonths(6);
+  var unknown = rptUnknownCount();
+
+  var tile = function (icon, label, val, unit, d, note) {
+    return '<div class="rptTile">'
+      + '<div class="rptTL">' + icon + ' ' + label + '</div>'
+      + '<div class="rptTV">' + val + '<small>' + unit + '</small></div>'
+      + '<div class="rptTD" style="color:' + d.c + '">' + d.t + '</div>'
+      + '<div class="rptTS">' + (note || d.s) + '</div></div>';
+  };
+
+  var monthBtns = rptMonths(6).map(function (m) {
+    return '<button class="rptMB' + (m === ym ? ' on' : '') + '" onclick="rptGo(\'' + m + '\')">' + rptLabel(m) + '</button>';
+  }).join('');
+
+  var series = [
+    { name: '신규 DB', color: RPT_PAL.db, data: months.map(function (m) { return rptStats(m).db; }) },
+    { name: '미팅', color: RPT_PAL.meet, data: months.map(function (m) { return rptStats(m).meet; }) }
+  ];
+  var revData = months.map(function (m) { return rptStats(m).rev; });
+
+  /* 데이터 실태 경고 — 숨기지 않고 그대로 보여준다 */
+  var warn = [];
+  if (unknown) warn.push('고객 <b>' + unknown + '명</b>은 등록일이 없어 어느 달인지 알 수 없습니다(집계 제외). 신규 등록분부터는 자동 기록됩니다.');
+  if (cur.revNoDate) warn.push('완료 수수료 <b>' + fmtMan(cur.revNoDate) + '원</b>은 완료일이 없어 월에 넣지 못했습니다(오늘부터 완료 처리분은 날짜가 남습니다).');
+  warn.push('🤝 쉐어는 <b>쉐어를 켠 날짜</b>가 기록되지 않아 월별로 못 가릅니다 — 아래 숫자는 <b>현재 총량</b>입니다.');
+
+  $('#main').innerHTML =
+    '<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>'
+    + '<div><h1>📈 리포트</h1><div class="date">' + ym.replace('-', '년 ') + '월 실적 · 전월(' + rptLabel(prev) + ') 대비</div></div></div>'
+    + '<div class="rptMBs">' + monthBtns + '</div></div>'
+
+    + '<div class="rptTiles">'
+    + tile('👥', '신규 DB', cur.db, '건', rptDelta(cur.db, pv.db))
+    + tile('📅', '미팅', cur.meet, '건', rptDelta(cur.meet, pv.meet))
+    + tile('🤝', '쉐어(총량)', cur.share, '건', { t: '월별 구분 불가', c: '#94a3b8', s: '' }, '쉐어 시작일 미기록')
+    + tile('💰', '수익(확정)', fmtMan(cur.rev), '원', rptDelta(cur.rev, pv.rev), cur.rev === 0 ? '완료 처리된 수수료 없음' : null)
+    + '</div>'
+
+    + '<div class="panel"><div class="ph"><b>📊 월별 추이 — 신규 DB · 미팅</b><span class="sub">최근 6개월 · 같은 단위(건수)만 한 그래프에</span></div>'
+    + '<div style="padding:14px 16px 6px">' + rptBarChart(months, series, { unit: '건' }) + '</div></div>'
+
+    + '<div class="panel" style="margin-top:16px"><div class="ph"><b>💰 월별 확정 수익</b><span class="sub">완료(확정) 수수료만 · 단위가 달라 별도 그래프</span></div>'
+    + '<div style="padding:14px 16px 6px">' + rptRevChart(months, revData) + '</div></div>'
+
+    + '<div class="rptWarn"><b>⚠️ 이 숫자가 비어 보이는 이유 (지어내지 않았습니다)</b><ul>'
+    + warn.map(function (w) { return '<li>' + w + '</li>'; }).join('') + '</ul></div>';
+}
+
+/*/RPT_MODULE*/
 function renderStub(t){
  const T={call:'📞 오늘 콜',docs:'📁 서류함',meet:'📅 미팅',rev:'💰 수익·정산',report:'📈 리포트'}[t];
  buildNav(t);
@@ -2166,7 +2407,7 @@ applyMe();
 <script>
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 /* 자동 최신화: 서버의 version.txt와 현재 빌드가 다르면 캐시 무시하고 1회 새로고침 */
-window.BUILD_VER='20260715-134733';
+window.BUILD_VER='20260715-135616';
 (function(){ try{
   fetch('version.txt',{cache:'no-store'}).then(function(r){return r.ok?r.text():null;}).then(function(v){
     if(!v) return; v=v.trim(); if(!v) return;
