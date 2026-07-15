@@ -467,6 +467,21 @@ function subShared(){
   try{ if(IS_SHARER) sharer(); else boss(); }catch(e){}
 }
 function sharedArr(){ return Object.keys(SHAREDPOOL).map(function(cid){ return SHAREDPOOL[cid]; }); }
+/* ★2026-07-15 특정 팀장과의 공유건만 — [쉐어]→팀장카드 화면에서 씀 */
+function sharedArrOf(sid){ return sharedArr().filter(function(it){ return it._sid===sid; }); }
+/* 팀장 1명과의 공유 카드 HTML (사장님·팀장 양쪽에서 같은 모양으로 보이고, 양쪽 다 수정 가능) */
+function sharedRowHtml(it){
+  var cid=it._cid;
+  return '<div class="ins" style="align-items:flex-start">'
+    +'<div style="flex:1"><span class="nm">'+esc(it.nm||'(이름)')+'</span> '+chip(it.stage||'연락전')
+    +'<div class="fd">'+esc(it.biz||'')+(it.phone?' · 📞 '+esc(it.phone):'')+(it.fund?' · '+esc(it.fund):'')+'</div>'
+    +'<div style="font-size:11px;color:#94a3b8;margin-top:2px">공유: '+esc(it.owner||'')+(it.up?' · '+new Date(it.up).toLocaleString('ko-KR',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}):'')+'</div>'
+    +(it.memo?'<div style="font-size:12px;color:#475569;margin-top:4px;white-space:pre-wrap">'+esc(it.memo)+'</div>':'')+'</div>'
+    +'<div style="display:flex;flex-direction:column;gap:6px;align-items:flex-end">'
+    +'<span class="st" style="cursor:pointer;background:#eef2ff;color:#4f46e5" onclick="event.stopPropagation();shCycleStage(\''+cid+'\')">단계 변경 ▾</span>'
+    +'<span class="ev" style="font-size:12px;cursor:pointer" onclick="event.stopPropagation();shEditMemo(\''+cid+'\')">📝 메모</span>'
+    +'</div></div>';
+}
 function shareTargets(c){
   if(IS_SHARER) return SHARER_KEY?[SHARER_KEY]:[];              // 팀장 → 사장님과의 공유풀(자기 sid)
   return custSharers(c).filter(function(sid){ var s=getSharer(sid); return s && sharerEmail(s); });   // 사장님 → 담당팀장(이메일 등록된)
@@ -1244,8 +1259,15 @@ let HISTORY=[];
 function go(t,id){ if(VIEW && !(VIEW.t===t && VIEW.id===id)){ HISTORY.push(VIEW); if(HISTORY.length>50)HISTORY.shift(); } VIEW={t,id}; if(t==='customer') delete _docSync[id]; if(window.innerWidth<=860)toggleMenu(true); rerender(); }
 function goBack(){ VIEW = HISTORY.length ? HISTORY.pop() : {t:'dash'}; if(window.innerWidth<=860)toggleMenu(true); rerender(); }
 function toggleMenu(force){const s=$('#side'),c=$('#scrim');const open=force===true?false:!s.classList.contains('open');s.classList.toggle('open',open);c.classList.toggle('open',open);}
-const NAVS=[['dash','📊 대시보드'],['call','📞 연락 전(신규DB)'],['db','👥 고객 DB'],['shared','🤝 공유'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어'],['rev','💰 수익·정산'],['report','📈 리포트']];
-function buildNav(active){ $('#nav').innerHTML=NAVS.map(([k,l])=>`<a class="${k===active?'on':''}" onclick="go('${k}')">${l}</a>`).join(''); }
+/* ★2026-07-15 사장님 지시: 사장님 화면에서 '공유' 탭 제거.
+   이유 — '공유'는 모든 팀장 공유건을 한 덩어리로 섞어 보여줘서 "누구와의 쉐어인지" 알 수 없었다.
+   이제 [쉐어] → 팀장 카드 클릭 → 그 팀장과의 공유건만 보는 흐름으로 일원화.
+   ※ 팀장(IS_SHARER)에게는 '공유'가 메인 화면이므로 그대로 남긴다(팀장은 사장님과의 1:1 풀 하나뿐). */
+const NAVS_BOSS=[['dash','📊 대시보드'],['call','📞 연락 전(신규DB)'],['db','👥 고객 DB'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어'],['rev','💰 수익·정산'],['report','📈 리포트']];
+const NAVS_SHARER=[['dash','📊 대시보드'],['call','📞 연락 전(신규DB)'],['db','👥 고객 DB'],['shared','🤝 공유'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어'],['rev','💰 수익·정산'],['report','📈 리포트']];
+function navList(){ return IS_SHARER?NAVS_SHARER:NAVS_BOSS; }
+const NAVS=NAVS_SHARER;  // 하위호환(다른 코드가 NAVS를 참조할 경우)
+function buildNav(active){ $('#nav').innerHTML=navList().map(([k,l])=>`<a class="${k===active?'on':''}" onclick="go('${k}')">${l}</a>`).join(''); }
 
 function rerender(){
  if(!ready){ return; }
@@ -1516,13 +1538,35 @@ function renderSharers(){
    return `<div class="shc" style="border-top-color:${s.color}" onclick="go('sharer','${s.id}')">
      <div class="hh"><div class="av" style="background:${s.color}">${esc(s.name[0])}</div><div><b>${esc(s.name)}</b><br><span>${esc(s.org)}</span></div></div>
      <div class="stat"><div><b style="color:${s.color}">${deals.length}</b><span>관련 진행 건</span></div>
-       <div><b>${deals.filter(d=>d.insStatus==='완료').length}</b><span>보험 완료</span></div>
+       <div><b style="color:#4f46e5">${sharedArrOf(s.id).length}</b><span>🤝 공유 중</span></div>
        <div><b>${deals.filter(d=>d.stage==='승인완료').length}</b><span>실행 완료</span></div></div>
-     <div style="font-size:11.5px;color:#94a3b8;margin-top:12px">👆 클릭하면 ${esc(s.name)} 협업 관리 화면</div></div>`;
+     <div style="font-size:11.5px;color:#94a3b8;margin-top:12px">${sharerEmail(s)?'👆 클릭 → '+esc(s.name)+'과 공유 중인 건 보기':'⚠️ 구글 계정 미등록 — 로그인 불가'}</div></div>`;
  }).join('');
  $('#main').innerHTML=`<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
    <div><h1>쉐어 협업 관리</h1><div class="date">팀장님 카드를 누르면 함께 진행 중인 건·보험 계약을 관리해요</div></div></div>
    <button class="btn b" onclick="addSharerPrompt()">+ 쉐어 추가</button></div><div class="shx">${cards}</div>`;
+}
+
+/* ★2026-07-15 [쉐어]→팀장카드 화면의 핵심 패널 — "나와 이 팀장이 실제로 공유 중인 건"
+   여기 보이는 것 = RTDB shared/<sid>/items = 팀장 화면과 '같은 데이터'.
+   양쪽 어디서 고쳐도 즉시 상대에게 반영된다(단계·메모). 아래 '함께 진행 중인 고객'은
+   내 고객DB를 필터링한 것일 뿐이라 팀장은 못 본다 — 그래서 이 패널이 따로 필요하다. */
+function sharedPanelOf(sid,s){
+  var arr=sharedArrOf(sid);
+  var em=sharerEmail(s);
+  var nm=esc(s.name);
+  if(!em){
+    return '<div class="panel" style="margin-bottom:18px;border:1.5px solid #fde68a;background:#fffbeb">'
+      +'<div class="ph"><b>🤝 '+nm+'과(와) 공유 중인 건</b></div>'
+      +'<div class="ins" style="color:#92400e;display:block">이 팀장은 <b>구글 계정이 등록되지 않아</b> 로그인할 수 없습니다.<br>'
+      +'<span style="font-size:12px;color:#b45309">T봇에게 “'+nm+' 계정 <b>이메일주소</b> 등록해줘”라고 말씀하시면 바로 열립니다.</span></div></div>';
+  }
+  var rows=arr.length?arr.map(sharedRowHtml).join('')
+    :'<div class="ins" style="color:#94a3b8;display:block">아직 공유된 건이 없습니다. 아래 “함께 진행 중인 고객”에서 고객을 열어 <b>🤝 쉐어</b>를 켜면 여기와 '+nm+' 화면에 동시에 나타납니다.</div>';
+  return '<div class="panel" style="margin-bottom:18px;border:1.5px solid #c7d2fe">'
+    +'<div class="ph"><b>🤝 '+nm+'과(와) 공유 중인 건 ('+arr.length+')</b>'
+    +'<span class="sub">양쪽에서 실시간으로 보고 같이 수정 · '+esc(em)+'</span></div>'
+    +rows+'</div>';
 }
 
 /* ===== 팀장 상세 (시안1) ===== */
@@ -1548,6 +1592,7 @@ function renderSharerDetail(id){
    <div class="sum"><div><b style="color:${s.color}">${deals.length}</b><span>함께 진행</span></div>
      <div><b style="color:#f59e0b">${insDone}</b><span>보험완료</span></div>
      <div><b style="color:#8b5cf6">${taxDone}</b><span>세무완료</span></div></div></div>
+ ${sharedPanelOf(id,s)}
  <div class="grid2">
    <div class="panel"><div class="ph"><b>📋 함께 진행 중인 고객</b><span class="sub">클릭 → 고객 관리</span></div>${deals.length?deals.map(dealRow).join(''):'<div class="row">진행 건 없음</div>'}</div>
    <div style="display:flex;flex-direction:column;gap:18px">
@@ -2118,7 +2163,7 @@ applyMe();
 <script>
 if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catch(function(){}); }
 /* 자동 최신화: 서버의 version.txt와 현재 빌드가 다르면 캐시 무시하고 1회 새로고침 */
-window.BUILD_VER='20260715-133458';
+window.BUILD_VER='20260715-134520';
 (function(){ try{
   fetch('version.txt',{cache:'no-store'}).then(function(r){return r.ok?r.text():null;}).then(function(v){
     if(!v) return; v=v.trim(); if(!v) return;
