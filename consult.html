@@ -1088,6 +1088,50 @@ function autoSummaryText(c){
   if(c.memo&&c.memo.trim())L.push('• 메모: '+c.memo.trim());
   return L.join('\n');
 }
+/* ===== 🎯 접수 전략 메모 (2026-07-15 사장님 요청) =====
+   고객별 자유 메모장. 재무 요약(자동 생성) 아래 배치.
+   · 재무 요약은 '입력값에서 자동 생성'이라 사람이 쓴 전략을 적을 데가 없었다 → 이 칸이 그 자리.
+   · 타이핑 멈추면 자동 저장(디바운스 800ms) + blur 즉시 저장. 저장 버튼 없음.
+   · RTDB 저장이라 데탑·노트북·폰 + (쉐어건이면) 팀장 화면까지 실시간 공유. */
+function strategyHtml(id,c){
+  const v=(c && c.strategy) || '';
+  return `<div class="panel" id="stgPanel" style="margin-top:16px"><div class="ph"><b>🎯 접수 전략</b>
+      <span class="sub" id="stgState">자동 저장 · 팀 공유</span></div>
+    <div style="padding:12px 14px 14px">
+      <textarea id="stgBox" placeholder="이 건을 어떻게 접수할지 적어두세요.
+
+예)
+· 중진공 먼저 → 부결 시 신보 재도전
+· 건물담보 감정가 28.3억 → 내년 실행 예정, 그전까지 운전자금으로
+· 특허·이노비즈·ISO 있음 → 기술평가 가점 노려볼 것
+· 대표 신용 확인 후 한도 재산정"
+        oninput="stgTouch('${id}')" onblur="stgSave('${id}',true)"
+        style="width:100%;min-height:150px;border:1.5px solid #e2e8f0;border-radius:10px;padding:11px 13px;font-size:13px;line-height:1.7;
+               font-family:inherit;outline:none;resize:vertical;color:#1e293b;background:#fffdf7"
+        onfocus="this.style.borderColor='#4f46e5'">${esc(v)}</textarea>
+    </div></div>`;
+}
+var _stgT=null;
+function stgTouch(id){
+  const st=document.getElementById('stgState'); if(st){ st.textContent='입력 중…'; st.style.color='#94a3b8'; }
+  clearTimeout(_stgT); _stgT=setTimeout(function(){ stgSave(id); }, 800);   /* 타이핑 멈추면 저장 */
+}
+function stgSave(id,imm){
+  clearTimeout(_stgT);
+  const box=document.getElementById('stgBox'); if(!box) return;
+  const cur=(getCust(id)||{}).strategy||'';
+  if(box.value===cur){ const st=document.getElementById('stgState'); if(st){ st.textContent='자동 저장 · 팀 공유'; st.style.color=''; } return; }
+  /* ★setCust는 rerender()로 화면을 통째로 다시 그린다 → 타이핑 중이면 textarea가 새로 생겨
+     쓰던 글·커서가 날아간다. 그래서 커서 위치를 기억했다가 렌더 뒤 복원한다.
+     (기존 대시보드 메모는 'activeElement면 안 덮기'로 피했지만, 여기는 패널 자체가 재생성된다) */
+  const box2=box, s=box.selectionStart, e=box.selectionEnd, focused=(document.activeElement===box);
+  setCust(id,{strategy:box.value});
+  const nb=document.getElementById('stgBox');
+  if(nb && focused){ try{ nb.focus(); nb.setSelectionRange(s,e); }catch(_){} }
+  const st=document.getElementById('stgState');
+  if(st){ st.textContent='✓ 저장됨 '+new Date().toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}); st.style.color='#059669'; }
+}
+
 function summaryHtml(id,c){
   const sm=c.summary;
   if(GENNING.has(id)){
@@ -1715,6 +1759,7 @@ function renderCustomer(id){
      <div class="panel" id="sumPanel"><div class="ph"><b>📊 재무 요약</b><span class="sub">서류 기반 한눈 요약</span></div>
        ${summaryHtml(id,c)}
      </div>
+     ${strategyHtml(id,c)}
    </div></div>`;
  syncDocs(id,c.nm);
 }
@@ -2413,7 +2458,7 @@ if('serviceWorker' in navigator){ navigator.serviceWorker.register('sw.js').catc
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260715-140950';
+window.BUILD_VER='20260715-142231';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
