@@ -92,6 +92,8 @@
 
 
 
+
+
 <!--V2PATCH-->
 /* 위탁 대시보드 v2 — 기존 톤(카드형·틸그린·라운드) 유지, 라이트/다크·모바일 대응 */
 .v2tabs{display:flex;gap:8px;margin-right:8px}
@@ -593,7 +595,7 @@ window.openGalleryVendor=function(vk){
 </script>
 <!-- DASH_AUTOFRESH v1 -->
 <button id="dashRefreshBtn" title="최신화" onclick="dashForceRefresh()" style="position:fixed;left:12px;bottom:12px;z-index:99999;border:none;background:rgba(79,70,229,.92);color:#fff;border-radius:20px;padding:8px 13px;font-size:13px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.28);cursor:pointer;font-family:'Malgun Gothic',sans-serif">🔄 최신화</button>
-<script>window.__DASHVER__="2026-07-15 16:54";</script><div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신" style="position:fixed;left:12px;bottom:54px;z-index:99998;background:rgba(17,24,39,.80);color:#c7d2fe;border-radius:13px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.2px;box-shadow:0 3px 9px rgba(0,0,0,.22);font-family:'Malgun Gothic',sans-serif;pointer-events:none">v2026-07-15 16:54</div><script>try{if(window.__SYNC__)document.getElementById("dashVerBadge").textContent="v"+window.__SYNC__;}catch(e){}</script>
+<script>window.__DASHVER__="2026-07-15 17:02";</script><div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신" style="position:fixed;left:12px;bottom:54px;z-index:99998;background:rgba(17,24,39,.80);color:#c7d2fe;border-radius:13px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.2px;box-shadow:0 3px 9px rgba(0,0,0,.22);font-family:'Malgun Gothic',sans-serif;pointer-events:none">v2026-07-15 17:02</div><script>try{if(window.__SYNC__)document.getElementById("dashVerBadge").textContent="v"+window.__SYNC__;}catch(e){}</script>
 <script>
 function dashForceRefresh(){
   try{
@@ -615,6 +617,9 @@ function dashForceRefresh(){
   }catch(e){}
 })();
 </script>
+
+
+
 
 
 
@@ -873,8 +878,12 @@ function dashForceRefresh(){
       + '    <div class="pe-row"><label>매입가 <i>원</i></label><input id="pe_buy" type="number" inputmode="numeric" value="' + (p.buy != null ? p.buy : '') + '" oninput="peCalc()" placeholder="미입력"></div>'
       + '    <div class="pe-row"><label>배송비 <i>원</i></label><input id="pe_ship" type="number" inputmode="numeric" value="' + (p.ship || 0) + '" oninput="peCalc()"></div>'
       + '  </div>'
-      + '  <div class="pe-row"><label>판매가 <i>원 · 비우면 매입가÷0.65로 자동산출</i></label>'
-      + '    <input id="pe_sell" type="number" inputmode="numeric" value="' + (p.sell != null ? p.sell : '') + '" oninput="peCalc()" placeholder="자동"></div>'
+      + '  <div class="pe-2">'
+      + '    <div class="pe-row"><label>판매가 <i>원 · 비우면 자동산출</i></label>'
+      + '      <input id="pe_sell" type="number" inputmode="numeric" value="' + (p.sell != null ? p.sell : '') + '" oninput="peCalc(\'sell\')" placeholder="자동"></div>'
+      + '    <div class="pe-row"><label>마진률 <i>% · 여기 넣으면 판매가 역산</i></label>'
+      + '      <input id="pe_mg" type="number" inputmode="numeric" oninput="peCalc(\'mg\')" placeholder="예) 40"></div>'
+      + '  </div>'
       + '  <div class="pe-calc" id="pe_calc"></div>'
       + '  <div class="pe-row"><label>시장 시세 <i>참고용 메모</i></label><input id="pe_mkt" value="' + esc(p.mkt || '') + '" placeholder="예) 네이버/쿠팡 20개입 23,900~30,900"></div>'
       + '  <div class="pe-row"><label>메모</label><textarea id="pe_note" rows="2" placeholder="특이사항·검증 필요 등">' + esc(p.note || '') + '</textarea></div>'
@@ -886,29 +895,65 @@ function dashForceRefresh(){
       + '  <div class="v2sub" style="text-align:center;margin-top:8px">☁️ 저장하면 데탑·노트북·폰에 즉시 반영됩니다</div>'
       + '</div>';
     ov.classList.add('on');
-    peCalc();
+    peCalc('init');   /* 열자마자 현재 마진률을 마진칸에 채워 보여준다 */
   };
 
-  /* 입력하는 동안 마진 실시간 미리보기 — 마진은 직접 입력하는 값이 아니라 계산 결과 */
-  window.peCalc = function () {
+  /* 판매가 ↔ 마진률 양방향 (2026-07-15 사장님 요청)
+       판매가 입력 → 마진률 자동 표시
+       마진률 입력 → 판매가 역산      ← "40% 남기려면 얼마 받아야 하나"를 바로 답해준다
+     수식: 마진 = (판매가×0.9 − 원가) / 판매가        (0.9 = 플랫폼 수수료 10% 차감)
+           역산  판매가 = 원가 / (0.9 − 마진)
+     ※ 역산 판매가는 100원 단위로 올림 → 그 값으로 마진을 '다시 계산'해 표시한다.
+        (올림 때문에 입력한 40%와 실제 40.3%가 다를 수 있는데, 화면엔 진짜 값을 보여줘야 한다)
+     ※ src = 방금 사람이 만진 칸. 그 칸은 건드리지 않는다(타이핑 중 커서 튐 방지). */
+  window.peCalc = function (src) {
     var box = document.getElementById('pe_calc'); if (!box) return;
+    var elSell = document.getElementById('pe_sell'), elMg = document.getElementById('pe_mg');
     var buy = parseInt(document.getElementById('pe_buy').value, 10);
     var ship = parseInt(document.getElementById('pe_ship').value, 10) || 0;
-    var sell = parseInt(document.getElementById('pe_sell').value, 10);
-    if (isNaN(buy)) { box.innerHTML = '<div class="pe-warn">매입가를 넣으면 손익분기·마진이 계산됩니다</div>'; return; }
+
+    if (isNaN(buy)) {
+      box.innerHTML = '<div class="pe-warn">매입가를 넣으면 손익분기·마진이 계산됩니다</div>';
+      return;
+    }
     var cost = buy + ship;
-    var bep = Math.ceil(cost / 0.9 / 100) * 100;             // 수수료 10% 감안 손익분기
-    var auto = Math.ceil(cost / 0.65 / 100) * 100;           // 판매가 미입력 시 자동산출
-    var rec = !isNaN(sell) ? sell : auto;
-    var net = Math.round(rec * 0.9 - cost);
-    var mg = Math.round(net / rec * 100);
+    var bep = Math.ceil(cost / 0.9 / 100) * 100;      // 손익분기(수수료 10% 감안)
+    var auto = Math.ceil(cost / 0.65 / 100) * 100;    // 판매가 미입력 시 자동산출
+    var sell = parseInt(elSell.value, 10);
+    var mgIn = parseInt(elMg.value, 10);
+    var backCalc = false;
+
+    if (src === 'mg' && !isNaN(mgIn)) {
+      /* 마진률 → 판매가 역산 */
+      if (mgIn >= 90) {                                // 수수료 10% 때문에 90% 이상은 수학적으로 불가
+        box.innerHTML = '<div class="pe-warn">⚠️ 마진률은 90% 미만만 가능합니다(플랫폼 수수료 10% 때문)</div>';
+        return;
+      }
+      var denom = 0.9 - (mgIn / 100);
+      if (denom <= 0) { box.innerHTML = '<div class="pe-warn">⚠️ 불가능한 마진률입니다</div>'; return; }
+      sell = Math.ceil(cost / denom / 100) * 100;      // 100원 단위 올림
+      elSell.value = sell;                             // 판매가 칸을 채워준다
+      backCalc = true;
+    } else if (isNaN(sell)) {
+      sell = auto;                                     // 판매가 비었으면 자동산출값으로 계산
+    }
+
+    var net = Math.round(sell * 0.9 - cost);
+    var mg = Math.round(net / sell * 100);
+    if (src !== 'mg') elMg.value = mg;                 // 판매가를 만졌으면 마진칸을 갱신(반대는 안 함)
+
     var cls = mg >= 40 ? 'good' : (mg < 20 ? 'bad' : 'mid');
+    var warn = '';
+    if (sell < bep) warn = '<div class="pe-warn" style="color:#dc2626">🚨 손익분기 아래 — 팔수록 손해입니다</div>';
+    else if (backCalc && mg !== mgIn) warn = '<div class="pe-warn">ℹ️ 100원 단위로 맞추느라 실제 마진은 ' + mg + '%가 됩니다</div>';
+
     box.innerHTML =
       '<div class="pe-line"><span>원가(매입+배송)</span><b>' + won(cost) + '</b></div>'
       + '<div class="pe-line"><span>손익분기 <i>이 아래로 팔면 손해</i></span><b>' + won(bep) + '</b></div>'
-      + '<div class="pe-line"><span>판매가' + (isNaN(sell) ? ' <i>(자동산출)</i>' : '') + '</span><b>' + won(rec) + '</b></div>'
+      + '<div class="pe-line"><span>판매가' + (backCalc ? ' <i>(마진률로 역산)</i>' : (parseInt(elSell.value, 10) === auto && !elSell.value ? ' <i>(자동산출)</i>' : '')) + '</span><b>' + won(sell) + '</b></div>'
       + '<div class="pe-line big"><span>마진 <i>판매가×0.9 − 원가</i></span>'
-      + '<b><span class="mgb ' + cls + '">' + mg + '%</span> ' + won(net) + '</b></div>';
+      + '<b><span class="mgb ' + cls + '">' + mg + '%</span> ' + won(net) + '</b></div>'
+      + warn;
   };
 
   window.saveProduct = function (pid) {
