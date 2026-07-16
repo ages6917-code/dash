@@ -158,6 +158,50 @@ select.iedit{cursor:pointer}
 .fsum .loan .lt{display:inline-block;background:#eff6ff;color:#3b82f6;font-size:11px;font-weight:700;padding:3px 8px;border-radius:7px}
 .fsum .credit{background:#ecfdf5;color:#15803d;border-radius:10px;padding:11px 13px;font-size:13px;font-weight:800;text-align:center;margin-top:10px}
 .fsum .empty{text-align:center;color:#94a3b8;padding:24px 8px;font-size:13px;line-height:1.7}
+/* ===== 재무 진단서 v2 (2026-07-16 사장님 양식) =====
+   목표 = 스크롤 없이 한 장으로 읽히는 진단서. 색은 의미로만 씀(빨강=위험/초록=양호). */
+.dg .dg-hd{background:linear-gradient(135deg,#1e3a5f,#2c4a72);border-radius:14px;padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;color:#fff}
+.dg .dg-nm{font-size:21px;font-weight:900;letter-spacing:-.4px}
+.dg .dg-sub{font-size:11.5px;color:#c3d3e8;margin-top:3px;line-height:1.5}
+.dg .dg-bdgs{display:flex;flex-wrap:wrap;gap:5px;margin-top:9px}
+.dg .dg-bdg{background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.22);color:#e8f0fb;font-size:10.5px;font-weight:700;padding:3px 9px;border-radius:99px}
+.dg .dg-hd-r{text-align:right;flex-shrink:0}
+.dg .dg-vt{font-size:10.5px;color:#a9bdd6;font-weight:600}
+.dg .dg-vl{font-size:20px;font-weight:900;margin:1px 0 2px;white-space:nowrap}
+.dg .dg-vs{font-size:10.5px;color:#a9bdd6}
+.dg .dg-line{border-left:4px solid #dc2626;background:#fff;border-radius:0 10px 10px 0;padding:11px 14px;margin:12px 0;font-size:13px;font-weight:800;color:#991b1b;line-height:1.6;box-shadow:0 1px 6px rgba(0,0,0,.05)}
+.dg .dg-kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin:12px 0}
+.dg .dg-kpi{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 8px;text-align:center}
+.dg .dg-kv{font-size:19px;font-weight:900;letter-spacing:-.5px}
+.dg .dg-kl{font-size:10.5px;color:var(--sub);margin-top:3px;font-weight:600}
+.dg .dg-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.dg .dg-box{background:#fff;border:1px solid var(--line);border-radius:12px;padding:13px 15px}
+.dg .dg-bt{font-size:12.5px;font-weight:800;color:#1e3a5f;padding-bottom:7px;border-bottom:1px solid #eef1f6;margin-bottom:9px}
+.dg .bars{height:118px}
+.dg .bars .bb{background:linear-gradient(180deg,#3b6ea5,#26456b)}
+.dg .dg-trend{font-size:11px;color:#dc2626;font-weight:700;text-align:center;margin-top:5px}
+.dg .dg-fr{display:flex;justify-content:space-between;align-items:center;padding:6px 0;font-size:12.5px;border-bottom:1px dashed #f1f5f9}
+.dg .dg-fr:last-child{border-bottom:none}
+.dg .dg-fl{color:#475569}
+.dg .dg-fv{font-weight:800;color:#1e293b}
+.dg .dg-tb{width:100%;border-collapse:collapse;font-size:12.5px}
+.dg .dg-tb th{background:#1e3a5f;color:#fff;font-size:11.5px;font-weight:700;padding:8px 10px;text-align:left;white-space:nowrap}
+.dg .dg-tb th:first-child{border-radius:8px 0 0 0}.dg .dg-tb th:last-child{border-radius:0 8px 0 0}
+.dg .dg-tb td{padding:9px 10px;border-bottom:1px solid #eef1f6;color:#334155}
+.dg .dg-tb .dg-sum td{font-weight:900;color:#0f172a;background:#f8fafc;border-top:2px solid #1e3a5f;border-bottom:2px solid #1e3a5f}
+.dg .dg-tag{font-size:10.5px;font-weight:700;padding:2.5px 8px;border-radius:6px;white-space:nowrap}
+.dg .t-b{background:#eff6ff;color:#1d4ed8}   /* 보증부 */
+.dg .t-p{background:#ecfdf5;color:#047857}   /* 정책자금 */
+.dg .t-s{background:#fef3c7;color:#b45309}   /* 단기차입 */
+.dg .t-o{background:#fff1e7;color:#c2410c}   /* 상거래 */
+.dg .dg-note{font-size:11px;color:#c2410c;font-weight:700;margin-top:8px;line-height:1.5}
+.dg .dg-ul{margin:0;padding-left:17px;font-size:12.5px;line-height:1.75;color:#334155}
+.dg .dg-ul li{margin-bottom:7px}
+@media(max-width:900px){
+  .dg .dg-2,.dg .dg-kpis{grid-template-columns:1fr 1fr}
+  .dg .dg-hd{flex-direction:column;gap:10px}
+  .dg .dg-hd-r{text-align:left}
+}
 .spin{width:30px;height:30px;border:3px solid #e2e8f0;border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .jsonarea{width:100%;min-height:230px;font-family:ui-monospace,Consolas,monospace;font-size:12px;padding:12px;border:1.6px solid var(--brand);border-radius:12px;outline:none;background:#0f172a;color:#cbd5e1;resize:vertical}
@@ -1181,20 +1225,89 @@ function summaryHtml(id,c){
   if(sm.note && !(sm.sales&&sm.sales.length)){
     return `<div class="fsum"><div style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:#334155">${esc(sm.note)}</div><div style="text-align:right;margin-top:10px"><span class="add" onclick="editSummary('${id}')">✏️ 요약 수정</span></div></div>`;
   }
-  const sales=sm.sales||[]; const mx=Math.max(1,...sales.map(s=>+s.v||0));
-  const cols=['#9aa6b8','#7db3ec','#3b82f6','#1d4ed8'];
-  const bars=sales.map((s,i)=>{const h=Math.round((+s.v||0)/mx*100);return `<div class="bar"><div class="bb" style="height:${h}%;background:${cols[i%4]}">${esc(s.v)}억</div><div class="yl">${esc(s.y)}</div></div>`;}).join('');
-  const sc=(t,n,red)=>`<div class="sc"><div class="t">${t}</div><div class="n" style="${red?'color:#b91c1c':''}">${esc(n||'-')}</div></div>`;
-  const loans=(sm.loans||[]).map(l=>`<div class="loan"><div class="lr"><span>${esc(l.bank)}</span><span>${esc(l.amt)}</span></div>${l.desc?`<div class="ld">${esc(l.desc)}</div>`:''}${l.tag?`<span class="lt">${esc(l.tag)}</span>`:''}</div>`).join('');
+  /* ===== 재무 진단서 v2 — 사장님 양식(㈜나아나나) 그대로 =====
+     구버전 요약(fin 없이 asset/liab만 있는 건)도 그대로 렌더되게 폴백을 둔다. */
+  const fin=sm.fin||{};
+  const A=(k,alt)=>fin[k]||alt||'';
   const rv = sm._meta && sm._meta.reviewed===false;
-  return `<div class="fsum">
-    ${rv?`<div class="warn" style="background:#fffbeb;color:#b45309;display:flex;justify-content:space-between;align-items:center;gap:8px">🤖 AI 자동분석 · <b>미검수</b> <button class="btn b" style="padding:4px 11px;font-size:11.5px;flex-shrink:0" onclick="markReviewed('${id}')">✅ 검수완료</button></div>`:''}
-    ${sales.length?`<div class="sechead" style="margin-bottom:4px">매출 추이 ${sm.salesNote?`<span style="font-weight:500;color:#94a3b8">· ${esc(sm.salesNote)}</span>`:''}</div><div class="bars">${bars}</div>`:''}
-    <div class="scards">${sc('자산총계',sm.asset)}${sc('부채총계',sm.liab)}${sc('자본총계',sm.cap)}${sc('부채비율',sm.debtRatio,true)}</div>
-    ${sm.warn?`<div class="warn">⚠ ${esc(sm.warn)}</div>`:''}
-    ${(sm.loans&&sm.loans.length)?`<div class="ltot">대출 현황${sm.loanTotal?` · 총 잔액 ${esc(sm.loanTotal)}`:''}</div>${loans}`:''}
+  const TONE={good:'#059669',bad:'#dc2626',warn:'#ea580c','':'#1e293b'};
+
+  /* ① 헤더 — 상호·업종·대표·지역 / 사업자번호·결산일 / 자격배지 / 종합진단 */
+  const p=sm.profile||{};
+  const hdName=p.bizName||custBizNames(c)[0]||c.nm||'';
+  const hdSub=[p.industry,p.owner?('대표 '+p.owner):'',p.region?(p.region+(p.tenure?'('+p.tenure+')':'')):''].filter(Boolean).join(' · ');
+  const hdSub2=[p.bizNo?('사업자 '+p.bizNo):'',p.settleDate?('결산 '+p.settleDate):''].filter(Boolean).join(' · ');
+  const badges=(sm.badges||[]).map(b=>`<span class="dg-bdg">${esc(b)}</span>`).join('');
+  const vd=sm.verdict||{};
+  const header=(hdName||vd.label)?`<div class="dg-hd">
+      <div class="dg-hd-l">
+        ${hdName?`<div class="dg-nm">${esc(hdName)}</div>`:''}
+        ${hdSub?`<div class="dg-sub">${esc(hdSub)}</div>`:''}
+        ${hdSub2?`<div class="dg-sub">${esc(hdSub2)}</div>`:''}
+        ${badges?`<div class="dg-bdgs">${badges}</div>`:''}
+      </div>
+      ${vd.label?`<div class="dg-hd-r"><div class="dg-vt">종합 진단</div>
+        <div class="dg-vl" style="color:${vd.tone==='good'?'#6ee7b7':vd.tone==='bad'?'#fca5a5':'#fcd34d'}">${esc(vd.label)} ${vd.tone==='good'?'':'⚠'}</div>
+        ${vd.sub?`<div class="dg-vs">${esc(vd.sub)}</div>`:''}</div>`:''}
+    </div>`:'';
+
+  /* ② 한 줄 총평 */
+  const headline=sm.headline?`<div class="dg-line">${esc(sm.headline)}</div>`:'';
+
+  /* ③ KPI 4칸 (없으면 구버전 자산/부채/자본/부채비율로 폴백) */
+  let kpis=sm.kpis||[];
+  if(!kpis.length){
+    kpis=[{label:'자산총계',value:A('asset',sm.asset)},{label:'부채총계',value:A('liab',sm.liab)},
+          {label:'자본총계',value:A('cap',sm.cap)},{label:'부채비율',value:sm.debtRatio,tone:'bad'}].filter(k=>k.value);
+  }
+  const kpiHtml=kpis.length?`<div class="dg-kpis">${kpis.slice(0,4).map(k=>
+    `<div class="dg-kpi"><div class="dg-kv" style="color:${TONE[k.tone||'']||TONE['']}">${esc(k.value)}</div><div class="dg-kl">${esc(k.label)}</div></div>`).join('')}</div>`:'';
+
+  /* ④ 매출 추이 + ⑤ 재무상태 (2단) */
+  const sales=sm.sales||[]; const mx=Math.max(1,...sales.map(s=>+s.v||0));
+  const bars=sales.map(s=>{const h=Math.max(8,Math.round((+s.v||0)/mx*100));
+    return `<div class="bar"><div class="bb" style="height:${h}%">${esc(s.v)}억</div><div class="yl">${esc(s.y)}</div></div>`;}).join('');
+  const salesBox=sales.length?`<div class="dg-box"><div class="dg-bt">매출 추이</div>
+      <div class="bars">${bars}</div>
+      ${sm.salesTrend?`<div class="dg-trend">${esc(sm.salesTrend)}</div>`:(sm.salesNote?`<div class="dg-trend" style="color:#94a3b8">${esc(sm.salesNote)}</div>`:'')}</div>`:'';
+  const fr=(l,v,style)=>v?`<div class="dg-fr"><span class="dg-fl">${l}</span><span class="dg-fv" style="${style||''}">${esc(v)}</span></div>`:'';
+  const finRows=[fr('자산총계',A('asset',sm.asset)),
+    fr('&nbsp;&nbsp;ㄴ 재고자산',A('inventory')+(fin.inventoryPct?' ('+fin.inventoryPct+')':''),'color:#dc2626'),
+    fr('&nbsp;&nbsp;ㄴ 현금성자산',A('cash')),
+    fr('부채총계',A('liab',sm.liab)),fr('자본총계',A('cap',sm.cap)),
+    fr('이익잉여금',A('retained'),(''+A('retained')).indexOf('-')===0?'color:#dc2626':'color:#059669')].join('');
+  const finBox=finRows.replace(/\s/g,'')?`<div class="dg-box"><div class="dg-bt">재무상태${p.settleDate?` <span style="font-weight:500;color:#94a3b8">(${esc(p.settleDate)})</span>`:''}</div>${finRows}</div>`:'';
+  const grid2=(salesBox||finBox)?`<div class="dg-2">${salesBox}${finBox}</div>`:'';
+
+  /* ⑥ 기관별 대출·부채 표 */
+  const lns=sm.loans||[];
+  const loanRows=lns.map(l=>`<tr><td>${esc(l.bank||'')}</td>
+      <td style="text-align:center">${l.type?`<span class="dg-tag t-${/보증/.test(l.type)?'b':/정책/.test(l.type)?'p':/상거래/.test(l.type)?'o':'s'}">${esc(l.type)}</span>`:esc(l.desc||'')}</td>
+      <td style="text-align:right;font-weight:800">${esc(l.amt||'')}${l.note?` <span style="font-weight:500;color:#94a3b8;font-size:11px">${esc(l.note)}</span>`:''}</td></tr>`).join('');
+  const loanBox=lns.length?`<div class="dg-box" style="margin-top:12px"><div class="dg-bt">대출 · 부채 현황 — 기관별</div>
+      <div style="overflow-x:auto"><table class="dg-tb"><thead><tr><th>구분 / 기관</th><th style="text-align:center">유형</th><th style="text-align:right">금액</th></tr></thead>
+      <tbody>${loanRows}
+        ${sm.loanTotal?`<tr class="dg-sum"><td>차입금 합계${sm.loanInterest?` (이자 연 ${esc(sm.loanInterest)})`:''}</td><td></td><td style="text-align:right">${esc(sm.loanTotal)}</td></tr>`:''}
+        ${sm.payables?`<tr><td>매입채무 (외상매입금)</td><td style="text-align:center"><span class="dg-tag t-o">상거래</span></td><td style="text-align:right;font-weight:800">${esc(sm.payables)}</td></tr>`:''}
+        ${(sm.liabTotal||A('liab',sm.liab))?`<tr class="dg-sum"><td>부채총계</td><td></td><td style="text-align:right">${esc(sm.liabTotal||A('liab',sm.liab))}</td></tr>`:''}
+      </tbody></table></div>
+      ${sm.loanNote?`<div class="dg-note">※ ${esc(sm.loanNote)}</div>`:''}</div>`:'';
+
+  /* ⑦ 핵심 리스크 + ⑧ 컨설팅 방향 (2단) */
+  const risks=(sm.risks||[]).slice(0,3).map(r=>`<li><b style="color:#b91c1c">🔴 ${esc(r.title)}</b>${r.desc?` — ${esc(r.desc)}`:''}</li>`).join('');
+  const dirs=(sm.directions||[]).slice(0,4).map((d,i)=>`<li><b style="color:#1d4ed8">${'①②③④'[i]||'·'} ${esc(d.title)}:</b>${d.desc?` ${esc(d.desc)}`:''}</li>`).join('');
+  const riskBox=risks?`<div class="dg-box"><div class="dg-bt" style="color:#b91c1c">핵심 리스크 ${(sm.risks||[]).length}</div><ul class="dg-ul">${risks}</ul></div>`:'';
+  const dirBox=dirs?`<div class="dg-box"><div class="dg-bt" style="color:#047857">컨설팅 방향</div><ul class="dg-ul">${dirs}</ul></div>`:'';
+  const grid3=(riskBox||dirBox)?`<div class="dg-2" style="margin-top:12px">${riskBox}${dirBox}</div>`:'';
+
+  return `<div class="fsum dg">
+    ${rv?`<div class="warn" style="background:#fffbeb;color:#b45309;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">🤖 AI 자동분석 · <b>미검수</b> <button class="btn b" style="padding:4px 11px;font-size:11.5px;flex-shrink:0" onclick="markReviewed('${id}')">✅ 검수완료</button></div>`:''}
+    ${header}${headline}${kpiHtml}${grid2}${loanBox}${grid3}
+    ${sm.warn?`<div class="warn" style="margin-top:12px">⚠ ${esc(sm.warn)}</div>`:''}
     ${sm.credit?`<div class="credit">✓ ${esc(sm.credit)}</div>`:''}
-    <div style="text-align:right;margin-top:10px"><span class="add" onclick="editSummary('${id}')">✏️ 요약 수정</span></div></div>`;
+    <div style="text-align:right;margin-top:12px">
+      <span class="add" onclick="autoSummarizeStored('${id}')" style="margin-right:8px">🔄 서류로 다시 분석</span>
+      <span class="add" onclick="editSummary('${id}')">✏️ 요약 수정</span></div></div>`;
 }
 function editSummary(id){
   const c=getCust(id)||{};
@@ -1337,7 +1450,9 @@ async function craftRequest(){
     stage:'연락전', insStatus:'대기', contacted:false, memo:files.length?'🤖 제미나이 자동요약 진행중':'', biz:'-', fund:'-', type:'개인', sharer:'', created:Date.now()});
   closeNew(); go('customer',id);
   // 브라우저에서 제미나이 멀티모달 직접 호출 → 재무요약(양식)+상호·대표·번호 자동입력, 그 다음 서류함 저장
-  if(files.length){ autoSummarize(id, files, note).then(()=>docUpload(id, files, {silent:true})); }
+  /* ★noSum:true — 이 경로는 위 autoSummarize가 이미 요약을 돌렸다.
+     안 붙이면 저장 직후 docUploadCloud가 또 분석해 제미나이를 2번 태운다(중복 과금·덮어쓰기). */
+  if(files.length){ autoSummarize(id, files, note).then(()=>docUpload(id, files, {silent:true, noSum:true})); }
   else { toast('고객 등록됨'); }
 }
 function addSharerPrompt(){
@@ -2487,14 +2602,55 @@ async function aiCall(p,key,ctx,q){
 
 /* ===== 🤖 서류 → 재무요약(양식) 자동 생성 · 제미나이 멀티모달 (브라우저 직접호출) ===== */
 const GENNING=new Set();  // 요약 생성중 고객 id (로컬 표시용 · 저장 안 함 → 무한로딩 불가)
-const SUM_SYS='당신은 한국의 정책자금·대출 컨설팅 재무분석가입니다. 첨부된 사업체 서류(재무제표·부가세 과표·대출내역·사업자등록증·신분증 등)를 읽고 아래 JSON 스키마로 "서류에 실제로 있는 값만" 정확히 추출하세요. 금액 단위는 억원(억). sales.v 는 억 단위 숫자(예 8.34). asset/liab/cap 은 "0.00억" 문자열. debtRatio 는 "~0,000%" 형식. loans 각 항목: bank(은행/기관)/amt("0.00억" 또는 "0,000만")/desc(대출종류·건수)/tag(특이사항). loanTotal 은 대출 총잔액. credit 은 연체·당좌부도·신용 상태 한 줄. warn 은 자본잠식 등 위험 한 줄. salesNote 는 "부가세 과표 기준" 등 근거. 그리고 profile 에 업체 기본정보를 채우세요: bizName(상호명), owner(대표자 성함), phone(연락처·전화번호, 서류에 있을 때만), bizNo(사업자등록번호), industry(업종), region(지역·주소). 사업자등록증·신분증·서류 상단/직인에서 찾으세요. 서류에 없는 값은 빈 문자열/빈 배열로 두고 절대 추측하지 마세요.';
+/* ===== 재무 진단서 v2 (2026-07-16 사장님 양식 반영) =====
+   사장님이 주신 "㈜나아나나" 한 장짜리 진단서를 그대로 만들어내는 게 목표.
+   종전 스키마는 자산/부채/매출만 뽑아서 '숫자 나열'에 그쳤다 → 사장님이 원한 건
+   ①종합진단 한 단어 ②한 줄 총평 ③KPI 4칸 ④매출추이 ⑤재무상태 ⑥기관별 대출표
+   ⑦핵심 리스크 3 ⑧컨설팅 방향. 그래서 스키마를 진단서 구조에 맞춰 확장한다.
+   ★계산이 필요한 항목(부채비율·당좌비율·재고비중·전년비)은 서류 값으로 산출하되,
+     근거가 없으면 빈칸으로 두게 한다(지어내기 금지 — 우리 최우선 룰). */
+const SUM_SYS=[
+'당신은 한국의 정책자금·대출 컨설팅 재무분석가입니다. 첨부 서류(재무제표·부가세 과표·대출내역·사업자등록증·신분증·특허증 등)를 읽고 아래 JSON 스키마로 "서류에 실제로 있는 값만" 채우세요.',
+'',
+'[절대 원칙]',
+'· 서류에 없으면 빈 문자열/빈 배열. 절대 추측·창작 금지. 모르면 비워두는 것이 정답입니다.',
+'· 금액 단위는 억원("16.7억") 또는 만원("4,648만"). 비율은 "211%" 형식.',
+'',
+'[진단 항목]',
+'· verdict.label: 종합진단 한 단어. 예 "적자전환","흑자유지","자본잠식","결손누적". verdict.sub: 보조 한 줄(예 "결손·자본잠식 아님").',
+'· verdict.tone: bad(위험)/warn(주의)/good(양호) 중 하나.',
+'· headline: 이 회사의 상태를 한 문장으로. 예 "매출·마진은 양호하나, 재고에 자금이 묶이고 이자·환손실로 이익이 깎여 당기순손실 전환 — 흑자도산 경로 주의".',
+'· kpis: 가장 중요한 지표 4개. 각 {label,value,tone}. 예 {label:"영업이익 (흑자)",value:"+4,648만",tone:"good"} {label:"부채비율",value:"211%",tone:"warn"} {label:"당좌비율 (급락)",value:"43%",tone:"bad"}.',
+'· badges: 서류에서 확인되는 자격만. 예 ["벤처기업","특허 보유","여성기업","기업부설연구소","상표권"]. 증빙 없으면 넣지 마세요.',
+'',
+'[재무]',
+'· sales: 연도별 매출 [{y:"2024",v:19.9}] (v=억 단위 숫자). salesNote: 근거(예 "부가세 과표 기준"). salesTrend: 전년비·이익률 한 줄(예 "전년比 −12% · 매출총이익률 33.7%(유지)").',
+'· fin: {asset:자산총계, inventory:재고자산, inventoryPct:"83%", cash:현금성자산, liab:부채총계, cap:자본총계, retained:이익잉여금}.',
+'· loans: 기관별 [{bank:"기술보증기금 (기보)", type:"보증부"|"정책자금"|"단기차입"|"상거래", amt:"4.0억", note:"(1억×2)"}].',
+'· loanTotal: 차입금 합계. loanInterest: 연 이자(예 "4,149만"). payables: 매입채무(외상매입금). liabTotal: 부채총계.',
+'· loanNote: 각주 한 줄(예 "중진공: 2025.3 마지막 수령 → 추가 불가 / 은행 신용대출: 적자전환으로 곤란 → 보증부가 정답").',
+'',
+'[진단·전략]',
+'· risks: 핵심 리스크 최대 3개. [{title:"재고 13.8억 적체", desc:"자산 83%, 회전 ~1회/년(정상 4~6회). 생산>판매로 누적 가속"}].',
+'· directions: 컨설팅 방향 최대 4개. [{title:"추가자금(보증부)", desc:"지역신보(재단) 1순위 → 기보 증액(특허·연구소·벤처 기술평가)"}].',
+'· credit: 신용 상태 한 줄. warn: 자본잠식 등 위험 한 줄.',
+'',
+'[기본정보] profile: bizName(상호), owner(대표자), phone(연락처, 서류에 있을 때만), bizNo(사업자등록번호), industry(업종), region(지역·주소), tenure(임차/자가), settleDate(결산일 예 "2025.12.31"). 사업자등록증·서류 상단·직인에서 찾으세요.'
+].join('\n');
 const SUM_SCHEMA={type:'OBJECT',properties:{
-  profile:{type:'OBJECT',properties:{bizName:{type:'STRING'},owner:{type:'STRING'},phone:{type:'STRING'},bizNo:{type:'STRING'},industry:{type:'STRING'},region:{type:'STRING'}}},
-  salesNote:{type:'STRING'},
+  profile:{type:'OBJECT',properties:{bizName:{type:'STRING'},owner:{type:'STRING'},phone:{type:'STRING'},bizNo:{type:'STRING'},industry:{type:'STRING'},region:{type:'STRING'},tenure:{type:'STRING'},settleDate:{type:'STRING'}}},
+  verdict:{type:'OBJECT',properties:{label:{type:'STRING'},sub:{type:'STRING'},tone:{type:'STRING'}}},
+  headline:{type:'STRING'},
+  badges:{type:'ARRAY',items:{type:'STRING'}},
+  kpis:{type:'ARRAY',items:{type:'OBJECT',properties:{label:{type:'STRING'},value:{type:'STRING'},tone:{type:'STRING'}}}},
+  salesNote:{type:'STRING'},salesTrend:{type:'STRING'},
   sales:{type:'ARRAY',items:{type:'OBJECT',properties:{y:{type:'STRING'},v:{type:'NUMBER'}}}},
+  fin:{type:'OBJECT',properties:{asset:{type:'STRING'},inventory:{type:'STRING'},inventoryPct:{type:'STRING'},cash:{type:'STRING'},liab:{type:'STRING'},cap:{type:'STRING'},retained:{type:'STRING'}}},
   asset:{type:'STRING'},liab:{type:'STRING'},cap:{type:'STRING'},debtRatio:{type:'STRING'},
-  warn:{type:'STRING'},loanTotal:{type:'STRING'},
-  loans:{type:'ARRAY',items:{type:'OBJECT',properties:{bank:{type:'STRING'},amt:{type:'STRING'},desc:{type:'STRING'},tag:{type:'STRING'}}}},
+  warn:{type:'STRING'},loanTotal:{type:'STRING'},loanInterest:{type:'STRING'},payables:{type:'STRING'},liabTotal:{type:'STRING'},loanNote:{type:'STRING'},
+  loans:{type:'ARRAY',items:{type:'OBJECT',properties:{bank:{type:'STRING'},type:{type:'STRING'},amt:{type:'STRING'},note:{type:'STRING'},desc:{type:'STRING'},tag:{type:'STRING'}}}},
+  risks:{type:'ARRAY',items:{type:'OBJECT',properties:{title:{type:'STRING'},desc:{type:'STRING'}}}},
+  directions:{type:'ARRAY',items:{type:'OBJECT',properties:{title:{type:'STRING'},desc:{type:'STRING'}}}},
   credit:{type:'STRING'}
 }};
 const SUM_MIMES={pdf:'application/pdf',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',webp:'image/webp',gif:'image/gif',heic:'image/heic'};
@@ -2540,18 +2696,57 @@ async function autoSummarize(id, files, hintNote){
     toast('제미나이가 '+used.length+'개 서류 분석 중…');
     const sm=await geminiSummarizeDocs(parts, hintNote, 'PDF/이미지 '+used.length+'건 첨부');
     GENNING.delete(id);
-    const prof=sm.profile||{}; delete sm.profile;
-    const cur=getCust(id)||{};
-    const patch={summary:sm, memo:'🤖 제미나이 자동요약 완료 — 검수 필요'};
-    if(prof.owner && (!cur.nm||cur.nm==='(이름 미정)')) patch.nm=prof.owner;
-    if(prof.bizName && !cur.bizName) patch.bizName=prof.bizName;
-    if(prof.phone && !cur.phone) patch.phone=prof.phone;
-    const bz=[prof.industry,prof.region].filter(Boolean).join('·'); if(bz && (!cur.biz||cur.biz==='-')) patch.biz=bz;
-    if(prof.bizNo && !cur.bizNo) patch.bizNo=prof.bizNo;
-    setCust(id,patch);
-    const filled=[patch.nm&&'성함',patch.bizName&&'상호',patch.phone&&'번호'].filter(Boolean);
-    toast('재무요약 생성 완료 ✓'+(filled.length?' · '+filled.join('·')+' 자동입력':'')+(skipped.length?' (건너뜀 '+skipped.length+')':''));
+    applySummary(id,sm,skipped);   /* ★2026-07-16: 반영 로직을 applySummary로 일원화
+                                      (종전엔 이 자리에만 있어서 서류함 경로가 못 썼다.
+                                       profile은 진단서 헤더가 쓰므로 delete 하지 않는다) */
   }catch(e){ GENNING.delete(id); rerender(); toast('요약 실패: '+(e&&e.message||'')); }
+}
+/* ===== 서류함에 이미 저장된 서류로 요약 생성 (2026-07-16 신설) =====
+   사고: 사장님이 서류함에 10개를 끌어다 넣었는데 재무요약은 "입력된 정보 기반"인 채였다.
+        원인 = 끌어놓기(docUploadCloud)는 '저장'만 하고 요약을 안 돌렸다. 요약은
+        서류요청 모달(1340행) 경로에서만 돌았다 → 사장님 눈엔 "요약이 안 만들어짐".
+   처방: ①업로드 끝나면 자동으로 요약 ②이미 쌓인 서류로도 언제든 재분석(버튼).
+   RTDB에 base64로 이미 있으므로 원본 File 객체 없이도 분석 가능하다. */
+function _b64Bytes(b64){ return Math.floor((''+b64).length*0.75); }
+function docPartsFromStored(c){
+  const parts=[],used=[],skipped=[]; let total=0; const CAP=15*1024*1024;
+  const docs=(typeof _docsOf==='function')?_docsOf(c):[];
+  for(const d of docs){
+    if(!d||!d.data){ skipped.push((d&&d.name)||'?'); continue; }
+    const mime=SUM_MIMES[extOf(d.name)];
+    if(!mime){ skipped.push(d.name+'(미지원)'); continue; }       // 한글/엑셀 등은 제미나이가 못 읽음
+    const sz=d.size||_b64Bytes(d.data);
+    if(total+sz>CAP){ skipped.push(d.name+'(용량초과)'); continue; }
+    parts.push({inline_data:{mime_type:mime,data:d.data}}); used.push(d.name); total+=sz;
+  }
+  return {parts,used,skipped};
+}
+async function autoSummarizeStored(id,silent){
+  const c=getCust(id); if(!c) return;
+  const {parts,used,skipped}=docPartsFromStored(c);
+  if(!parts.length){ if(!silent) toast('분석할 서류가 없습니다 (PDF·이미지만 가능)'); return; }
+  GENNING.add(id); rerender();
+  try{
+    toast('제미나이가 서류 '+used.length+'건 분석 중…');
+    const sm=await geminiSummarizeDocs(parts,'', '서류함 보관분 '+used.length+'건');
+    GENNING.delete(id);
+    applySummary(id,sm,skipped);
+  }catch(e){ GENNING.delete(id); rerender(); toast('요약 실패: '+(e&&e.message||'')); }
+}
+window.autoSummarizeStored=autoSummarizeStored;
+/* 요약 결과 반영 — autoSummarize / autoSummarizeStored 공통 (중복 코드 제거) */
+function applySummary(id,sm,skipped){
+  const prof=sm.profile||{};
+  const cur=getCust(id)||{};
+  const patch={summary:sm, memo:(cur.memo&&cur.memo.indexOf('제미나이')<0?cur.memo+'\n':'')+'🤖 제미나이 자동요약 완료 — 검수 필요'};
+  if(prof.owner && (!cur.nm||cur.nm==='(이름 미정)')) patch.nm=prof.owner;
+  if(prof.bizName && !cur.bizName) patch.bizName=prof.bizName;
+  if(prof.phone && !cur.phone) patch.phone=prof.phone;
+  const bz=[prof.industry,prof.region].filter(Boolean).join('·'); if(bz && (!cur.biz||cur.biz==='-')) patch.biz=bz;
+  if(prof.bizNo && !cur.bizNo) patch.bizNo=prof.bizNo;
+  setCust(id,patch);
+  const filled=[patch.nm&&'성함',patch.bizName&&'상호',patch.phone&&'번호'].filter(Boolean);
+  toast('재무 진단서 생성 ✓'+(filled.length?' · '+filled.join('·')+' 자동입력':'')+((skipped&&skipped.length)?' (건너뜀 '+skipped.length+')':''));
 }
 function pickAndSummarize(id){
   const inp=document.createElement('input'); inp.type='file'; inp.multiple=true; inp.accept='.pdf,image/*,.zip';
@@ -2748,7 +2943,11 @@ function copyShare(){
 applyMe();
 </script>
 <!--PWAINSTALL-->
-<button id="pwaInstall" style="position:fixed;right:14px;bottom:16px;z-index:9998;border:none;background:#4f46e5;color:#fff;border-radius:24px;padding:12px 18px;font-size:14px;font-weight:800;box-shadow:0 6px 18px rgba(79,70,229,.45);cursor:pointer;font-family:'Malgun Gothic',sans-serif">📲 앱으로 설치</button>
+<!-- ★2026-07-16 겹침 수정 — 이 버튼(bottom:16)이 🔄최신화(bottom:12)·버전배지(bottom:54)와
+     같은 자리에 깔려 서로 가렸다(사장님 스크린샷). 셋을 세로로 쌓는다:
+       최신화 bottom:12  →  배지 bottom:54  →  설치 bottom:88.
+     PC에서는 '홈 화면에 추가'가 무의미하고 화면만 가리므로 아예 숨긴다(폰에서만 노출). -->
+<button id="pwaInstall" style="position:fixed;right:12px;bottom:88px;z-index:9997;border:none;background:rgba(79,70,229,.92);color:#fff;border-radius:20px;padding:8px 13px;font-size:12.5px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.28);cursor:pointer;font-family:'Malgun Gothic',sans-serif;display:none">📲 앱 설치</button>
 <script>
 /* ★2026-07-15 — 서비스워커 등록 중단 + 기존 등록 청소.
    여기서 register('sw.js')를 한 게 스코프 /dash/ 전체에 걸려, 옛 SW 캐시가 위탁·현황판까지
@@ -2772,7 +2971,7 @@ if('serviceWorker' in navigator){
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260715-161137';
+window.BUILD_VER='20260716-145211';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
@@ -2839,6 +3038,10 @@ window.BUILD_VER='20260715-161137';
 (function(){
   var dp=null, btn=document.getElementById('pwaInstall');
   var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  /* ★2026-07-16 — 기본 display:none 으로 두고 '진짜 폰에서, 아직 설치 안 했을 때'만 켠다.
+     PC에서는 홈화면 추가가 의미 없는데도 항상 떠서 최신화 버튼을 가리고 있었다. */
+  var isPhone = /android|iphone|ipad|ipod/i.test(navigator.userAgent);
+  if(btn && isPhone && !standalone) btn.style.display='';
   if(standalone && btn){ btn.style.display='none'; }  // 이미 앱으로 열림
   window.addEventListener('beforeinstallprompt',function(e){ e.preventDefault(); dp=e; });
   window.addEventListener('appinstalled',function(){ if(btn) btn.style.display='none'; });
