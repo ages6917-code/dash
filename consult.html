@@ -158,6 +158,9 @@ select.iedit{cursor:pointer}
 .fsum .loan .lt{display:inline-block;background:#eff6ff;color:#3b82f6;font-size:11px;font-weight:700;padding:3px 8px;border-radius:7px}
 .fsum .credit{background:#ecfdf5;color:#15803d;border-radius:10px;padding:11px 13px;font-size:13px;font-weight:800;text-align:center;margin-top:10px}
 .fsum .empty{text-align:center;color:#94a3b8;padding:24px 8px;font-size:13px;line-height:1.7}
+/* 팀장 카드 삭제 버튼 — 평소 흐리게, 올리면 빨강 (실수 클릭 방지: confirm 2중) */
+.shc-del{position:absolute;top:9px;right:9px;border:none;background:transparent;color:#cbd5e1;font-size:14px;font-weight:800;cursor:pointer;padding:4px 8px;border-radius:8px;line-height:1;z-index:2}
+.shc-del:hover{background:#fef2f2;color:#dc2626}
 /* ===== 재무 진단서 v2 (2026-07-16 사장님 양식) =====
    목표 = 스크롤 없이 한 장으로 읽히는 진단서. 색은 의미로만 씀(빨강=위험/초록=양호). */
 .dg .dg-hd{background:linear-gradient(135deg,#1e3a5f,#2c4a72);border-radius:14px;padding:16px 18px;display:flex;justify-content:space-between;align-items:flex-start;gap:14px;color:#fff}
@@ -1503,6 +1506,51 @@ async function craftRequest(){
   if(files.length){ autoSummarize(id, files, note).then(()=>docUpload(id, files, {silent:true, noSum:true})); }
   else { toast('고객 등록됨'); }
 }
+/* ===== 팀장(쉐어) 삭제 (2026-07-16 사장님 요청) =====
+   삭제 = ①팀장 카드 ②공유 풀(shared/<sid>) ③로그인 권한(shareAccess) 제거.
+   ★고객 기록은 절대 안 지운다 — 고객에 걸린 '이 팀장 연결'만 해제한다.
+     (팀장을 지웠다고 고객DB가 날아가는 사고 방지. 지우는 건 사람이 아니라 연결.)
+   사장님 전용 — 팀장 로그인 화면에는 이 버튼 자체가 안 나온다. */
+function deleteSharer(sid, ev){
+  try{ if(ev) ev.stopPropagation(); }catch(e){}
+  if(typeof IS_SHARER!=='undefined' && IS_SHARER){ toast('팀장 삭제는 사장님만 가능합니다'); return; }
+  const s=getSharer(sid); if(!s){ toast('이미 삭제된 팀장입니다'); return; }
+  const all=custArr();
+  const linked=all.filter(c=>custShareParty(c).includes(sid)||c.sharer===sid||
+    ['insurance','consulting','tax'].some(k=>((((c.fees||{})[k])||{}).shr)===sid));
+  let pool=[]; try{ pool=sharedArrOf(sid); }catch(e){}
+  if(!confirm('팀장 「'+s.name+'」 을(를) 삭제할까요?\n\n'
+    +'· 연결 고객 '+linked.length+'건 → 고객 기록은 그대로 남고, 이 팀장 연결만 해제\n'
+    +'· 공유 중인 건 '+pool.length+'건 → 팀장 화면에서 사라짐\n'
+    +'· 이 팀장 로그인 권한 회수\n\n※ 되돌릴 수 없습니다.')) return;
+
+  /* ① 고객들에서 연결 해제 (고객 데이터 본체는 불변) */
+  linked.forEach(function(c){
+    const patch={};
+    if(Array.isArray(c.sharers)&&c.sharers.indexOf(sid)>=0) patch.sharers=c.sharers.filter(x=>x!==sid);
+    if(Array.isArray(c.referrers)&&c.referrers.indexOf(sid)>=0) patch.referrers=c.referrers.filter(x=>x!==sid);
+    if(c.sharer===sid) patch.sharer='';
+    const fees=Object.assign({},c.fees); let fch=false;
+    ['insurance','consulting','tax'].forEach(function(k){
+      if(fees[k]&&fees[k].shr===sid){ fees[k]=Object.assign({},fees[k],{shr:''}); fch=true; }
+    });
+    if(fch) patch.fees=fees;
+    if(Object.keys(patch).length){
+      DATA.customers[c.id]=Object.assign({},DATA.customers[c.id],patch);
+      if(!offline) dref('customers/'+c.id).update(patch).catch(function(){});
+    }
+  });
+
+  /* ② 팀장 레코드·공유풀·로그인 권한 제거 */
+  delete (DATA.sharers||{})[sid];
+  if(!offline){
+    dref('sharers/'+sid).remove().catch(function(){});
+    try{ RAWREF('shared/'+sid).remove(); }catch(e){}
+    try{ RAWREF('shareAccess/'+sid).remove(); }catch(e){}
+  }
+  _lsave(); toast('팀장 「'+s.name+'」 삭제됨 · 고객 '+linked.length+'건 연결 해제');
+  rerender();
+}
 function addSharerPrompt(){
   const m=document.createElement('div'); m.className='modal'; m.id='shrModal';
   m.innerHTML=`<div class="mc"><h3>+ 쉐어(팀장) 추가</h3><div class="msub">함께 진행하는 팀장님/쉐어처 등록</div>
@@ -1841,7 +1889,8 @@ function renderSharers(){
    const shared=sharedArrOf(s.id).filter(it=>_inShMonth(getCust(it._cid)||{}));
    const empty=SHMONTH && !deals.length && !shared.length;
    shown+=deals.length;
-   return `<div class="shc" style="border-top-color:${s.color}${empty?';opacity:.42':''}" onclick="go('sharer','${s.id}')">
+   return `<div class="shc" style="border-top-color:${s.color}${empty?';opacity:.42':''};position:relative" onclick="go('sharer','${s.id}')">
+     <button class="shc-del" onclick="deleteSharer('${s.id}',event)" title="팀장 삭제">✕</button>
      <div class="hh"><div class="av" style="background:${s.color}">${esc(s.name[0])}</div><div><b>${esc(s.name)}</b><br><span>${esc(s.org)}</span></div></div>
      <div class="stat"><div><b style="color:${s.color}">${deals.length}</b><span>관련 진행 건</span></div>
        <div><b style="color:#4f46e5">${shared.length}</b><span>🤝 공유 중</span></div>
@@ -3061,7 +3110,7 @@ if('serviceWorker' in navigator){
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260716-161004';
+window.BUILD_VER='20260716-171359';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
