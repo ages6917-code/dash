@@ -1815,20 +1815,52 @@ function renderDash(){
 }
 
 /* ===== 쉐어 목록 ===== */
+/* ===== 🤝 쉐어 월별 보기 (2026-07-16 사장님 지시 — "고객 DB처럼 월별로") =====
+   ★기준 날짜에 대한 솔직한 고지 (지어내지 않는다):
+     쉐어에는 '쉐어를 켠 날짜'가 기록되지 않는다(리포트 화면에도 같은 한계를 명시해 뒀다).
+     그래서 월 구분은 고객 DB와 똑같이 **고객의 최초 접수월(c.received)** 로 가른다.
+     = "그 달에 쉐어한 건"이 아니라 "그 달에 접수된 고객 중 쉐어 건". 화면에 이 사실을 적는다.
+   ★팀장 카드는 월 필터로 숨기지 않는다 — 팀장이 목록에서 사라지면 '삭제된 줄 알았다' 사고가 난다.
+     대신 해당 월에 건이 0인 팀장은 흐리게 처리한다. */
+let SHMONTH=0;
+function setShMonth(m){ SHMONTH=m; rerender(); }
+function _inShMonth(c){
+  if(!SHMONTH) return true;
+  const r=(c&&c.received)||'';
+  return r.length>=7 && parseInt(r.slice(5,7),10)===SHMONTH;
+}
 function renderSharers(){
  buildNav('share');
+ const months=['전체'].concat(Array.from({length:12},(_,i)=>(i+1)+'월'));
+ const monthBar=`<div class="monthbar"><span class="myear">2026년</span>${months.map((mn,i)=>`<span class="mtab ${SHMONTH===i?'on':''}" onclick="setShMonth(${i})">${mn}</span>`).join('')}</div>`;
+ const all=custArr();
+ let shown=0;
  const cards=sharerArr().map(s=>{
-   const deals=custArr().filter(c=>custShareParty(c).includes(s.id)||feeShr(c,'insurance')===s.id||feeShr(c,'consulting')===s.id||feeShr(c,'tax')===s.id);
-   return `<div class="shc" style="border-top-color:${s.color}" onclick="go('sharer','${s.id}')">
+   const deals=all.filter(c=>(custShareParty(c).includes(s.id)||feeShr(c,'insurance')===s.id||feeShr(c,'consulting')===s.id||feeShr(c,'tax')===s.id) && _inShMonth(c));
+   /* 공유풀 항목엔 날짜가 없다 → _cid로 원 고객을 찾아 그 접수월로 가른다(사장님 화면이라 customers 접근 가능) */
+   const shared=sharedArrOf(s.id).filter(it=>_inShMonth(getCust(it._cid)||{}));
+   const empty=SHMONTH && !deals.length && !shared.length;
+   shown+=deals.length;
+   return `<div class="shc" style="border-top-color:${s.color}${empty?';opacity:.42':''}" onclick="go('sharer','${s.id}')">
      <div class="hh"><div class="av" style="background:${s.color}">${esc(s.name[0])}</div><div><b>${esc(s.name)}</b><br><span>${esc(s.org)}</span></div></div>
      <div class="stat"><div><b style="color:${s.color}">${deals.length}</b><span>관련 진행 건</span></div>
-       <div><b style="color:#4f46e5">${sharedArrOf(s.id).length}</b><span>🤝 공유 중</span></div>
+       <div><b style="color:#4f46e5">${shared.length}</b><span>🤝 공유 중</span></div>
        <div><b>${deals.filter(d=>d.stage==='승인완료').length}</b><span>실행 완료</span></div></div>
-     <div style="font-size:11.5px;color:#94a3b8;margin-top:12px">${sharerEmail(s)?'👆 클릭 → '+esc(s.name)+'과 공유 중인 건 보기':'⚠️ 구글 계정 미등록 — 로그인 불가'}</div></div>`;
+     <div style="font-size:11.5px;color:#94a3b8;margin-top:12px">${empty?'해당 월 건 없음':(sharerEmail(s)?'👆 클릭 → '+esc(s.name)+'과 공유 중인 건 보기':'⚠️ 구글 계정 미등록 — 로그인 불가')}</div></div>`;
  }).join('');
+ const sub = SHMONTH
+   ? `${SHMONTH}월 접수 고객 기준 ${shown}건 · 팀장 카드를 누르면 상세로`
+   : '팀장님 카드를 누르면 함께 진행 중인 건·보험 계약을 관리해요';
  $('#main').innerHTML=`<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
-   <div><h1>쉐어 협업 관리</h1><div class="date">팀장님 카드를 누르면 함께 진행 중인 건·보험 계약을 관리해요</div></div></div>
-   <button class="btn b" onclick="addSharerPrompt()">+ 쉐어 추가</button></div><div class="shx">${cards}</div>`;
+   <div><h1>쉐어 협업 관리</h1><div class="date">${esc(sub)}</div></div></div>
+   <button class="btn b" onclick="addSharerPrompt()">+ 쉐어 추가</button></div>
+   ${monthBar}
+   <div class="shx">${cards}</div>
+   ${SHMONTH?`<div class="rptWarn" style="margin-top:16px"><b>ℹ️ 이 월 구분의 기준 (지어내지 않았습니다)</b><ul>
+     <li>쉐어에는 <b>쉐어를 켠 날짜가 기록되지 않습니다</b> → 고객 DB와 동일하게 <b>고객 최초 접수월</b>로 갈랐습니다.</li>
+     <li>즉 “<b>${SHMONTH}월에 쉐어한 건</b>”이 아니라 “<b>${SHMONTH}월에 접수된 고객 중 쉐어 건</b>”입니다.</li>
+     <li>접수일(received)이 비어 있는 고객은 <b>전체</b>에서만 보입니다.</li>
+   </ul></div>`:''}`;
 }
 
 /* ★2026-07-15 [쉐어]→팀장카드 화면의 핵심 패널 — "나와 이 팀장이 실제로 공유 중인 건"
@@ -3029,7 +3061,7 @@ if('serviceWorker' in navigator){
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260716-160648';
+window.BUILD_VER='20260716-161004';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
