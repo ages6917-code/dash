@@ -850,7 +850,24 @@ function aggFees(){ const cs=custArr(); const out={};
       } });
     out[k]={dA,dN,pA,pN,dSh,pSh,xA,xN}; });   // xA/xN = 부결로 제외된 금액·건수
   return out; }
-function docState(c){ return c.docStatus || ((c&&c.docs&&c.docs.length)?'접수완료':'접수전'); }
+/* ★2026-07-16 서류 목록 단일 창구 — "서류함이 실시간 반영 안 된다"의 진짜 원인
+   클라우드 v2(2026-07-15) 이후 업로드는 전부 customers/<id>/docsData 에 들어간다.
+   그런데 서류함 목록 페이지(renderDocs)·docState·aiContext 는 여전히 옛 필드 c.docs
+   (파일서버 시절의 이름-only 메타)를 읽고 있었다.
+   → 파일을 올려도 docsData만 커지고 c.docs는 그대로 → 목록 숫자가 안 변함.
+     RTDB 구독·rerender는 정상 작동 중이었다(=실시간 자체는 멀쩡했고, 읽는 곳이 틀렸다).
+   → 앞으로 서류 개수·목록은 반드시 이 함수 하나로만 읽는다. c.docs 직접 참조 금지.
+   docsData(실물 보유) 우선, 없으면 legacy docs(이름만)로 폴백해 과거 데이터도 안 잃는다. */
+function docList(c){
+  if(!c) return [];
+  var d=c.docsData;
+  if(d && typeof d==='object'){
+    var k=Object.keys(d);
+    if(k.length) return k.map(function(id){ return Object.assign({_id:id,_cloud:true}, d[id]); });
+  }
+  return (c.docs||[]).map(function(x){ return {name:(x&&x.name)||x||'서류', _legacy:true}; });
+}
+function docState(c){ return c.docStatus || (docList(c).length?'접수완료':'접수전'); }
 function toggleDocStatus(id){ const c=getCust(id)||{}; const next=docState(c)==='접수완료'?'접수전':'접수완료'; const patch={docStatus:next}; if(next==='접수완료'&&!c.docDate) patch.docDate=today(); setCust(id,patch); }
 function today(){ try{ return new Date().toISOString().slice(0,10); }catch(e){ return ''; } }
 function iFeeStatus(box,id,k){ if(box.querySelector('select'))return;
@@ -2228,28 +2245,33 @@ function renderReport() {
    · 접수완료인데 파일이 0개인 '이름만 접수' 건도 따로 보여준다(숨기면 그게 사고) */
 function renderDocs(){
   buildNav('docs');
-  const cs=custArr();
-  const withDocs=cs.filter(c=>(c.docs||[]).length>0);
-  const claimed =cs.filter(c=>docState(c)==='접수완료' && !(c.docs||[]).length);   // 접수완료 표시인데 파일 없음
-  const none    =cs.filter(c=>docState(c)!=='접수완료' && !(c.docs||[]).length);
-  const totalFiles=withDocs.reduce((a,c)=>a+(c.docs||[]).length,0);
+  const cs=custArr().map(c=>Object.assign({},c,{_dl:docList(c)}));   // ★docList 단일창구 (c.docs 직접참조 금지)
+  const withDocs=cs.filter(c=>c._dl.length>0);
+  const claimed =cs.filter(c=>docState(c)==='접수완료' && !c._dl.length);   // 접수완료 표시인데 파일 없음
+  const none    =cs.filter(c=>docState(c)!=='접수완료' && !c._dl.length);
+  const totalFiles=withDocs.reduce((a,c)=>a+c._dl.length,0);
+  const totalSize=withDocs.reduce((a,c)=>a+c._dl.reduce((t,d)=>t+(d.size||0),0),0);
+  const legacyN=withDocs.filter(c=>c._dl.some(d=>d._legacy)).length;   // 옛 파일서버 흔적(이름만·실물 없음)
 
-  const card=(c,warn)=>`<div class="dcard2 ${warn?'warn':''}" onclick="go('customer','${c.id}')">
+  const card=(c,warn)=>{
+    const dl=c._dl||[];
+    return `<div class="dcard2 ${warn?'warn':''}" onclick="go('customer','${c.id}')">
       <div class="dc-top"><div class="av">${esc((c.nm||'·')[0])}</div>
         <div><b>${esc(c.nm||'(이름없음)')}</b><div class="sub">${esc(c.bizName||c.biz||'')}</div></div>
         ${chip(c.stage||'연락전')}</div>
       <div class="dc-files">${
-        (c.docs||[]).length
-          ? (c.docs||[]).slice(0,4).map(d=>`<span class="fchip">📄 ${esc((d.name||'').slice(0,22))}</span>`).join('')
-            + ((c.docs||[]).length>4?`<span class="fchip more">+${(c.docs||[]).length-4}개</span>`:'')
+        dl.length
+          ? dl.slice(0,4).map(d=>`<span class="fchip${d._legacy?' none':''}" title="${esc(d.name||'')}${d._legacy?' — 이름만 남은 옛 기록(실물 없음)':''}">${d._legacy?'⚠️':'📄'} ${esc((d.name||'').slice(0,22))}</span>`).join('')
+            + (dl.length>4?`<span class="fchip more">+${dl.length-4}개</span>`:'')
           : `<span class="fchip none">${warn?'⚠️ 접수완료인데 파일 0개':'서류 없음'}</span>`
       }</div>
-      <div class="dc-foot">${(c.docs||[]).length?`총 ${(c.docs||[]).length}개${c.docDate?' · '+esc(c.docDate)+' 접수':''}`:''}<span class="go">열기 ›</span></div>
+      <div class="dc-foot">${dl.length?`총 ${dl.length}개${c.docDate?' · '+esc(c.docDate)+' 접수':''}`:''}<span class="go">열기 ›</span></div>
     </div>`;
+  };
 
   $('#main').innerHTML=
     `<div class="top"><div style="display:flex;align-items:center;gap:10px"><button class="btn g menubtn" onclick="toggleMenu()">☰</button>
-      <div><h1>📁 서류함</h1><div class="date">서류가 있는 고객 ${withDocs.length}명 · 파일 ${totalFiles}개</div></div></div>
+      <div><h1>📁 서류함</h1><div class="date">서류가 있는 고객 ${withDocs.length}명 · 파일 ${totalFiles}개${totalSize?' · '+(totalSize>=1048576?(totalSize/1048576).toFixed(1)+'MB':Math.round(totalSize/1024)+'KB'):''}</div></div></div>
       <input class="search" id="dsearch" placeholder="🔍 고객·파일명 검색" oninput="docsFilter()" style="max-width:260px"></div>
 
      <div class="panel"><div class="ph"><b>📄 서류 있는 고객 (${withDocs.length})</b><span class="sub">카드를 누르면 그 고객 서류함으로</span></div>
@@ -2266,16 +2288,18 @@ function renderDocs(){
        <div class="nlist">${none.length?none.map(c=>`<span class="npill" onclick="go('customer','${c.id}')">${esc(c.nm||'(이름)')}</span>`).join(''):'<span style="color:#94a3b8;font-size:13px">없음</span>'}</div>
      </div>
 
-     <div class="rptWarn" style="margin-top:16px"><b>💡 서류 파일은 사장님 PC에만 있습니다</b><ul>
-       <li>실제 파일은 <b>D:\\컨설팅_서류</b>에 저장됩니다(신분증·재무제표 등 민감서류 → 클라우드 미업로드).</li>
-       <li>따라서 <b>파일 열기·다운로드는 데스크톱에서만</b> 됩니다. 폰·노트북에서는 목록만 보입니다.</li>
+     <div class="rptWarn" style="margin-top:16px"><b>☁️ 서류는 클라우드에 있습니다 (2026-07-15 이후)</b><ul>
+       <li><b>데탑·노트북·폰 어디서나</b> 열기·다운로드 됩니다. 쉐어건은 담당 팀장도 열람합니다.</li>
+       <li>업로드하면 <b>이 목록도 즉시 갱신</b>됩니다(새로고침 불필요).</li>
+       ${legacyN?`<li>⚠️ <b>${legacyN}명</b>은 옛 파일서버(D:\\컨설팅_서류) 시절의 <b>이름만 남은 기록</b>입니다 — 실물이 클라우드에 없어 열리지 않습니다. 해당 고객 서류함에 <b>다시 올려주세요</b>.</li>`:''}
      </ul></div>`;
 }
+/* ★2026-07-16 — 종전엔 #dgrid(서류 있는 고객)만 필터링해서, 검색어를 쳐도
+   '접수완료인데 파일 없음'·'서류 없는 고객' 패널은 그대로 남아 검색이 안 먹는 것처럼 보였다. */
 function docsFilter(){
   const q=((document.getElementById('dsearch')||{}).value||'').toLowerCase();
-  document.querySelectorAll('#dgrid .dcard2').forEach(el=>{
-    el.style.display = el.innerText.toLowerCase().indexOf(q)>=0 ? '' : 'none';
-  });
+  const hit=el=>el.innerText.toLowerCase().indexOf(q)>=0;
+  document.querySelectorAll('.dcard2, .npill').forEach(el=>{ el.style.display = hit(el) ? '' : 'none'; });
 }
 
 /*DOCS_CLOUD*/
@@ -2559,7 +2583,10 @@ function aiContext(c){
   let t='[고객 정보]\n';
   t+='이름: '+(c.nm||'-')+'\n유형: '+(c.type||'-')+'\n업종/사업: '+(c.biz||'-')+'\n상호: '+(c.bizName||'-')+'\n진행단계: '+(c.stage||'-')+'\n신청금액: '+(c.fund||'-')+'\n최초접수: '+(c.received||'-')+'\n';
   if(c.memo) t+='담당메모: '+c.memo+'\n';
-  if(c.docs&&c.docs.length) t+='제출서류: '+c.docs.map(d=>(d&&d.name)||d).join(', ')+'\n';
+  /* ★2026-07-16 — 여기도 c.docs를 읽고 있어서, 클라우드에 서류를 10개 올려도
+     AI에겐 "제출서류 없음"으로 전달됐다(=요약이 서류를 못 보던 원인 중 하나). */
+  const _dl=docList(c);
+  if(_dl.length) t+='제출서류: '+_dl.map(d=>d.name).join(', ')+'\n';
   const sm=c.summary;
   if(sm&&Object.keys(sm).length){
     t+='\n[재무 요약]\n';
@@ -3002,7 +3029,7 @@ if('serviceWorker' in navigator){
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260716-155329';
+window.BUILD_VER='20260716-160648';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
