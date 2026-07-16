@@ -580,7 +580,10 @@ function shareTargets(c){
   if(IS_SHARER) return SHARER_KEY?[SHARER_KEY]:[];              // 팀장 → 사장님과의 공유풀(자기 sid)
   return custSharers(c).filter(function(sid){ var s=getSharer(sid); return s && sharerEmail(s); });   // 사장님 → 담당팀장(이메일 등록된)
 }
-function shareSnapshot(id,c){ return {nm:c.nm||'', biz:c.biz||c.bizName||'', phone:c.phone||'', type:c.type||'개인', stage:c.stage||'연락전', fund:c.fund||'', memo:c.memo||'', fees:c.fees||null, owner:(IS_SHARER?((SHARER_NAME||'팀장')+' 팀장'):'사장님'), oid:id, up:Date.now()}; }
+/* ★2026-07-16 — summary(재무 진단서)·strategy(접수 전략)를 미러 대상에 추가.
+   종전 스냅샷엔 이 둘이 빠져 있어서, 사장님 화면엔 진단서가 떠도 팀장 화면엔
+   영영 안 보였다("공유했는데 팀장은 못 본다"의 원인). 서류(docs)는 _docMirror가 따로 복사. */
+function shareSnapshot(id,c){ return {nm:c.nm||'', biz:c.biz||c.bizName||'', phone:c.phone||'', type:c.type||'개인', stage:c.stage||'연락전', fund:c.fund||'', memo:c.memo||'', fees:c.fees||null, summary:c.summary||null, strategy:c.strategy||'', owner:(IS_SHARER?((SHARER_NAME||'팀장')+' 팀장'):'사장님'), oid:id, up:Date.now()}; }
 function toggleShare(id){
   var c=getCust(id); if(!c) return;
   var targets=shareTargets(c);
@@ -922,6 +925,25 @@ function setCust(id,patch){
   dref('customers/'+id).update(patch)
     .then(()=>toast('저장됨 ✓'))
     .catch(()=>{ offline=true; _lsave(); toast('저장됨 ✓ (이 PC)'); });
+  _mirrorShared(id);   /* ★2026-07-16 — 쉐어건이면 팀장 화면에도 즉시 반영 */
+}
+/* ===== 쉐어건 실시간 미러 (2026-07-16 신설) =====
+   사고: 사장님이 진단서를 만들거나 단계를 바꿔도 팀장 화면은 그대로였다.
+   원인: shared/<sid>/items 는 ①쉐어 켜는 순간(toggleShare) ②syncMirror가 '없을 때만 생성'
+         — 이 두 곳에서만 쓰였다. 즉 최초 1회 복사 후 영영 갱신 안 됨.
+   처방: 값이 바뀔 때마다(setCust) 담당 팀장 노드에 최신 스냅샷을 덮어쓴다.
+   · 쉐어 안 켠 건은 아무것도 안 함(팀장에게 새어나가지 않음)
+   · 실패해도 본 저장은 이미 끝났으므로 조용히 무시 */
+function _mirrorShared(id){
+  try{
+    if(typeof offline!=='undefined' && offline) return;
+    var c=getCust(id); if(!c||!c.shared) return;
+    var targets=shareTargets(c); if(!targets.length) return;
+    var snap=shareSnapshot(id,c);
+    targets.forEach(function(sid){
+      try{ RAWREF('shared/'+sid+'/items/'+id).update(snap); }catch(e){}
+    });
+  }catch(e){}
 }
 /* ===== 인라인 편집: 팝업 없이 그 자리에서 클릭→입력 ===== */
 function _commit(box,id,key,val,save){
@@ -1214,13 +1236,22 @@ function summaryHtml(id,c){
     return `<div class="fsum"><div class="empty"><div class="spin"></div><b style="color:#3b82f6;font-size:14px">🤖 제미나이가 재무요약 생성 중…</b><br><br>첨부한 서류를 읽고 있어요. 잠시만요.</div></div>`;
   }
   if(!sm||!Object.keys(sm).length){
+    /* ★2026-07-16 — 여기에 '서류로 분석' 버튼이 없던 게 사장님이 아무리 최신화해도
+       화면이 그대로였던 진짜 이유. 서류함에 10개가 있어도 분석을 시작할 버튼 자체가
+       이 화면(=요약 없음 상태)에 없었다. 버튼은 진단서가 이미 있을 때만 보였다. */
+    const nDoc=(typeof _docsOf==='function'?_docsOf(c):[]).filter(d=>d&&d.data&&SUM_MIMES[extOf(d.name)]).length;
+    const genBtn=nDoc?`<button class="btn p" style="padding:9px 16px;font-size:13px;font-weight:800" onclick="autoSummarizeStored('${id}')">🤖 서류 ${nDoc}건으로 재무 진단서 만들기</button>`:'';
     const auto=autoSummaryText(c);
     if(auto){
-      return `<div class="fsum"><div style="font-size:11.5px;color:#94a3b8;font-weight:700;margin-bottom:6px">🧾 입력된 정보 기반 자동 요약 <span style="font-weight:500">· 서류 올리면 재무 상세로 대체</span></div>
+      return `<div class="fsum">
+        ${genBtn?`<div style="background:#eef2ff;border:1px solid #c7d2fe;border-radius:11px;padding:12px 14px;margin-bottom:12px;text-align:center">
+          <div style="font-size:12px;color:#4338ca;font-weight:700;margin-bottom:8px">📄 서류함에 분석 가능한 서류가 ${nDoc}건 있습니다</div>${genBtn}</div>`:''}
+        <div style="font-size:11.5px;color:#94a3b8;font-weight:700;margin-bottom:6px">🧾 입력된 정보 기반 자동 요약 <span style="font-weight:500">· 서류 올리면 재무 상세로 대체</span></div>
         <div style="white-space:pre-wrap;font-size:13px;line-height:1.75;color:#334155">${esc(auto)}</div>
         <div style="text-align:right;margin-top:10px"><span class="add" onclick="editSummary('${id}')">✍️ 재무 직접 입력</span></div></div>`;
     }
-    return `<div class="fsum"><div class="empty">📊 재무 요약 없음<br><br>고객 정보(금액·단계·메모 등)를 입력하면<br>여기에 <b>자동 요약</b>이 뜹니다.<br><br><span class="add" onclick="editSummary('${id}')" style="display:inline-block;margin-top:6px">✍️ 직접 입력</span></div></div>`;
+    return `<div class="fsum">${genBtn?`<div style="text-align:center;margin-bottom:12px">${genBtn}</div>`:''}
+      <div class="empty">📊 재무 요약 없음<br><br>고객 정보(금액·단계·메모 등)를 입력하면<br>여기에 <b>자동 요약</b>이 뜹니다.<br><br><span class="add" onclick="editSummary('${id}')" style="display:inline-block;margin-top:6px">✍️ 직접 입력</span></div></div>`;
   }
   if(sm.note && !(sm.sales&&sm.sales.length)){
     return `<div class="fsum"><div style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:#334155">${esc(sm.note)}</div><div style="text-align:right;margin-top:10px"><span class="add" onclick="editSummary('${id}')">✏️ 요약 수정</span></div></div>`;
@@ -2971,7 +3002,7 @@ if('serviceWorker' in navigator){
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260716-145211';
+window.BUILD_VER='20260716-150311';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
