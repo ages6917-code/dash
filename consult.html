@@ -763,7 +763,13 @@ function custReferrerNames(c){ return custReferrers(c).map(id=>{const s=getShare
 /* 담당 팀장 + 소개자 = 쉐어 참여 전원(중복 제거) */
 function custShareParty(c){ const set=[]; custSharers(c).concat(custReferrers(c)).forEach(id=>{ if(id&&set.indexOf(id)<0)set.push(id); }); return set; }
 /* 사업자/상호명 — 다중 지원. c.bizNames 배열 우선, 없으면 단일 c.bizName 폴백 */
-function custBizNames(c){ if(!c) return []; if(Array.isArray(c.bizNames)) return c.bizNames.filter(Boolean); return c.bizName?[c.bizName]:[]; }
+/* ★2026-07-20 버그수정 — 제미나이가 뽑아준 상호가 화면에 안 뜨던 진짜 원인.
+   신규 고객 등록(saveNewCust)이 bizNames를 '항상' 배열로 저장한다 → 상호를 안 적으면 [].
+   구버전 코드는 Array.isArray(bizNames)만 보고 true → 빈 배열을 그대로 반환하고
+   단일 bizName 폴백으로 절대 못 내려갔다. AI가 bizName에 상호를 채워 넣어도
+   화면은 계속 비어 보였고, 사장님은 매번 손으로 다시 타이핑해야 했다.
+   → 배열이 '비어 있으면' 단일 bizName으로 폴백. 기존 데이터도 이걸로 같이 복구된다. */
+function custBizNames(c){ if(!c) return []; if(Array.isArray(c.bizNames)&&c.bizNames.filter(Boolean).length) return c.bizNames.filter(Boolean); return c.bizName?[c.bizName]:[]; }
 /* 유형(개인/법인 등) — 다중 지원. c.types 배열 우선, 없으면 c.type 문자열(·구분) 폴백 */
 function custTypes(c){ if(!c) return []; if(Array.isArray(c.types)) return c.types.filter(Boolean); return c.type?(''+c.type).split('·').filter(Boolean):[]; }
 function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');setTimeout(()=>t.classList.remove('on'),1400);}
@@ -2945,12 +2951,18 @@ function applySummary(id,sm,skipped){
   const cur=getCust(id)||{};
   const patch={summary:sm, memo:(cur.memo&&cur.memo.indexOf('제미나이')<0?cur.memo+'\n':'')+'🤖 제미나이 자동요약 완료 — 검수 필요'};
   if(prof.owner && (!cur.nm||cur.nm==='(이름 미정)')) patch.nm=prof.owner;
-  if(prof.bizName && !cur.bizName) patch.bizName=prof.bizName;
+  /* ★2026-07-20 — 상호는 bizNames(배열)가 진실이고 화면도 그걸 읽는다.
+     예전엔 단일 bizName에만 넣어서 자동입력이 화면에 안 보였다.
+     이미 적어둔 상호가 있으면 건드리지 않는다(사장님이 손으로 넣은 게 우선). */
+  if(prof.bizName && !custBizNames(cur).length){
+    patch.bizName=prof.bizName; patch.bizNames=[prof.bizName];
+  }
   if(prof.phone && !cur.phone) patch.phone=prof.phone;
   const bz=[prof.industry,prof.region].filter(Boolean).join('·'); if(bz && (!cur.biz||cur.biz==='-')) patch.biz=bz;
   if(prof.bizNo && !cur.bizNo) patch.bizNo=prof.bizNo;
+  if(prof.settleDate && !cur.settleDate) patch.settleDate=prof.settleDate;
   setCust(id,patch);
-  const filled=[patch.nm&&'성함',patch.bizName&&'상호',patch.phone&&'번호'].filter(Boolean);
+  const filled=[patch.nm&&'성함',patch.bizName&&'상호',patch.phone&&'번호',patch.bizNo&&'사업자번호'].filter(Boolean);
   toast('재무 진단서 생성 ✓'+(filled.length?' · '+filled.join('·')+' 자동입력':'')+((skipped&&skipped.length)?' (건너뜀 '+skipped.length+')':''));
 }
 function pickAndSummarize(id){
@@ -3176,7 +3188,7 @@ if('serviceWorker' in navigator){
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260720-100946';
+window.BUILD_VER='20260720-112333';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
