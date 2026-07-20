@@ -484,7 +484,15 @@ function toggleStage(id,st){
   const c=getCust(id)||{}; let arr=custStages(c).slice();
   const i=arr.indexOf(st); if(i>=0)arr.splice(i,1); else arr.push(st);
   const primary=arr.length?arr.slice().sort((a,b)=>STAGES.indexOf(b)-STAGES.indexOf(a))[0]:'연락전';
-  setCust(id,{stages:arr,stage:primary,contacted:arr.some(s=>s!=='연락전')});
+  const patch={stages:arr,stage:primary,contacted:arr.some(s=>s!=='연락전')};
+  /* ★2026-07-20 '접수중' 탭 — 자금접수완료를 켠 "그 순간"을 기록한다.
+     사장님: "언제 접수 했는 지 확인 가능해야돼. 여긴 이게 중요해."
+     - 켤 때: fundDate 없으면 오늘 날짜로 기록(이미 있으면 덮지 않음 = 최초 접수일 보존)
+     - 끌 때: 날짜를 지우지 않는다. 실수로 껐다 켜도 원래 접수일이 살아있어야 하고,
+       기록을 지우는 건 되돌릴 수 없기 때문. (지우려면 접수중 화면에서 직접 수정)
+     ※ 이 함수가 단계 변경의 유일한 통로라 여기 한 곳만 잡으면 샐 구멍이 없다. */
+  if(arr.indexOf('자금접수완료')>=0 && !c.fundDate){ patch.fundDate=today(); patch.fundAt=Date.now(); }
+  setCust(id,patch);
 }
 /* 인라인 편집창(피커) 바깥 클릭 시 닫기 — 잘못 눌러도 사라짐 */
 function _closePickers(e){
@@ -1592,7 +1600,7 @@ function toggleMenu(force){const s=$('#side'),c=$('#scrim');const open=force===t
    그 결과 최병진 과장님 화면에 '공유'가 살아남아 지시가 반쪽만 이행됐다. 예외 폐기.
    대신 팀장이 [쉐어]를 누르면 = 사장님과 공유 중인 건이 바로 뜬다(팀장은 상대가 사장님 1명뿐이라
    팀장 목록 화면이 무의미). 사장님은 [쉐어] → 팀장 카드 → 그 팀장과의 공유건. 좌우 대칭. */
-const NAVS_BOSS=[['dash','📊 대시보드'],['call','📞 연락 전(신규DB)'],['db','👥 고객 DB'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어'],['rev','💰 수익·정산'],['report','📈 리포트']];
+const NAVS_BOSS=[['dash','📊 대시보드'],['call','📞 연락 전(신규DB)'],['db','👥 고객 DB'],['fund','🏦 접수중'],['docs','📁 서류함'],['meet','📅 미팅'],['share','🤝 쉐어'],['rev','💰 수익·정산'],['report','📈 리포트']];
 const NAVS_SHARER=NAVS_BOSS;
 function navList(){ return IS_SHARER?NAVS_SHARER:NAVS_BOSS; }
 const NAVS=NAVS_SHARER;  // 하위호환(다른 코드가 NAVS를 참조할 경우)
@@ -1609,6 +1617,7 @@ function rerender(){
  else if(t==='sharer') renderSharerDetail(VIEW.id);
  else if(t==='customer') renderCustomer(VIEW.id);
  else if(t==='db') renderDB();
+ else if(t==='fund') renderFundIntake();
  else if(t==='flt') renderFiltered(VIEW.id);
  else if(t==='call') renderFiltered('연락전','call');
  else if(t==='search') renderSearch();
@@ -2586,6 +2595,63 @@ function docDropCloud(e, id) {
 }
 
 /*/DOCS_CLOUD*/
+
+/* ===== 🏦 접수중 (2026-07-20 사장님 지시) =====
+   고객 DB에서 '자금접수완료'를 켠 고객만 모아서 본다.
+   핵심 요구 = "언제 접수했는지" — 그래서 접수일과 경과일을 카드의 주인공으로 놓고,
+   오래 묵은 건이 위로 오도록 정렬한다(방치 감지가 이 화면의 목적).
+   ⚠️ 접수일이 없는 기존 건은 날짜를 지어내지 않는다. '미기록'으로 표시하고 직접 입력받는다. */
+function fundList(){
+  return custArr().filter(c=>custStages(c).indexOf('자금접수완료')>=0)
+    .sort((a,b)=>{                       // 접수일 오래된 순 → 미기록은 맨 위(확인이 필요하니까)
+      if(!a.fundDate && !b.fundDate) return 0;
+      if(!a.fundDate) return -1;
+      if(!b.fundDate) return 1;
+      return a.fundDate.localeCompare(b.fundDate);
+    });
+}
+function setFundDate(id){
+  const c=getCust(id)||{};
+  const v=prompt('접수일을 입력하세요 (YYYY-MM-DD)', c.fundDate||today());
+  if(v===null) return;
+  const s=v.trim();
+  if(s && !/^\d{4}-\d{2}-\d{2}$/.test(s)){ toast('날짜 형식이 올바르지 않습니다 (예: 2026-07-20)'); return; }
+  setCust(id,{fundDate:s, fundAt:s?new Date(s).getTime():0});
+}
+function renderFundIntake(){
+  buildNav('fund');
+  const list=fundList();
+  const miss=list.filter(c=>!c.fundDate).length;
+  const rows=list.map(c=>{
+    const d=c.fundDate;
+    const days=d?daysSince(d):null;
+    /* 30일 넘게 접수중이면 빨강, 14일 넘으면 주황 — 눈으로 바로 걸리게 */
+    const col = days===null?'#94a3b8':(days>=30?'#dc2626':(days>=14?'#d97706':'#8b5cf6'));
+    const dateBox = d
+      ? `<div style="text-align:right;min-width:104px;cursor:pointer" onclick="event.stopPropagation();setFundDate('${c.id}')" title="클릭해서 접수일 수정">
+           <div style="font-size:13px;font-weight:800;color:#334155">${esc(d)}</div>
+           <div style="font-size:12px;font-weight:800;color:${col}">접수 ${days}일째</div>
+         </div>`
+      : `<div style="text-align:right;min-width:104px"><span class="btn g" style="font-size:12px;padding:5px 10px"
+           onclick="event.stopPropagation();setFundDate('${c.id}')">📅 접수일 입력</span></div>`;
+    return `<div class="row click" onclick="go('customer','${c.id}')" style="border-left:3px solid ${col}">
+      <div class="av">${esc((c.nm||'·')[0])}</div>
+      <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz||'')}</span></b>
+        <div class="memo">${esc(c.memo||'')}</div></div>
+      <div class="amt">${esc(c.fund||'')}</div>${dateBox}</div>`;
+  }).join('')||'<div class="row" style="color:#94a3b8">접수중인 고객이 없습니다. 고객 카드에서 <b>자금접수완료</b>를 켜면 여기로 넘어옵니다.</div>';
+  const warn = miss
+    ? `<div class="panel" style="background:#fffbeb;border-color:#fde68a;margin-bottom:12px;padding:12px 16px;font-size:13px;color:#92400e">
+         ⚠️ 접수일이 기록되지 않은 고객 <b>${miss}명</b> — 이전에 접수 처리된 건이라 날짜가 없습니다.
+         날짜를 임의로 채우지 않았으니 <b>📅 접수일 입력</b>으로 직접 넣어주세요.
+       </div>` : '';
+  $('#main').innerHTML=`<div class="top"><div style="display:flex;align-items:center;gap:10px">
+      <button class="btn g menubtn" onclick="toggleMenu()">☰</button>
+      <h1>🏦 접수중 <span style="color:#94a3b8;font-size:15px;font-weight:600">${list.length}명</span></h1></div></div>
+    <div style="font-size:12.5px;color:#94a3b8;margin:-4px 0 12px">자금접수완료 처리된 고객 · 오래된 접수 순</div>
+    ${warn}<div class="panel">${rows}</div>`;
+}
+
 function renderStub(t){
  const T={call:'📞 오늘 콜',docs:'📁 서류함',meet:'📅 미팅',rev:'💰 수익·정산',report:'📈 리포트'}[t];
  buildNav(t);
@@ -3110,7 +3176,7 @@ if('serviceWorker' in navigator){
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260716-171359';
+window.BUILD_VER='20260720-100946';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
