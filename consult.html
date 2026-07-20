@@ -230,6 +230,25 @@ select.iedit{cursor:pointer}
 .feerow{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid #f1f5f9}
 .feerow:last-of-type{border-bottom:none}
 .feerow .fl{flex:1;font-size:13.5px;font-weight:700}
+/* ★2026-07-20 다자 쉐어 칩 — 2~3명이 들어가도 줄이 안 무너지게 wrap + 한 사람=한 덩어리 */
+.shrbox{display:inline-flex;flex-wrap:wrap;gap:4px;align-items:center;margin-left:5px;vertical-align:middle}
+.shrchip{display:inline-flex;align-items:center;background:#eef2ff;border:1px solid #dbe1fb;
+  border-radius:8px;overflow:hidden;font-size:10.5px;font-weight:700;line-height:1}
+.shrchip .n{padding:3px 7px;color:#4338ca;cursor:pointer;max-width:96px;overflow:hidden;
+  text-overflow:ellipsis;white-space:nowrap}
+.shrchip .n:hover{background:#e0e7ff}
+.shrchip .p{padding:3px 6px;color:#059669;font-weight:800;cursor:pointer;background:#fff;
+  border-left:1px solid #dbe1fb}
+.shrchip .p:hover{background:#ecfdf5}
+.shrchip .w{padding:3px 6px;color:#64748b;font-weight:700;background:#fff;border-left:1px solid #eef2f7}
+.shrchip .x{padding:3px 6px;color:#c7cddb;cursor:pointer;background:#fff;border-left:1px solid #eef2f7}
+.shrchip .x:hover{color:#dc2626;background:#fef2f2}
+.shradd{font-size:10.5px;font-weight:700;padding:3px 8px;color:#94a3b8;border:1px dashed #cbd5e1;
+  border-radius:8px;cursor:pointer;line-height:1}
+.shradd:hover{color:#4338ca;border-color:#a5b4fc;background:#f5f7ff}
+.shrsum{font-size:10px;font-weight:700;color:#94a3b8;padding:0 2px}
+.shrover{font-size:10px;font-weight:800;color:#b91c1c;background:#fef2f2;border:1px solid #fecaca;
+  border-radius:7px;padding:2px 6px}
 .feerow .fa{min-width:92px;text-align:right;font-size:13px;cursor:pointer}
 .st.예정{background:#fef3c7;color:#d97706}.st.없음{background:#f1f5f9;color:#94a3b8}
 .feetot{margin-top:12px;padding-top:11px;border-top:1px dashed #e2e8f0;font-size:12.5px;color:#64748b}.feetot b{color:#0f172a}
@@ -848,7 +867,14 @@ function promptCustomType(box,id){
 }
 function custTotal(c,status){ return ['insurance','consulting','tax'].reduce((a,k)=>{const f=fee(c,k);return f.status===status?a+feeWon(c,k):a;},0); }
 /* 스트림별 쉐어 몫(만원) — 세무는 taxShareWon, 나머지는 금액×shrPct% */
-function feeShareWon(c,k){ if(k==='tax'){ const it=taxItems(c); if(it.length) return taxShareWon(c); } const pct=(((c&&c.fees)||{})[k]||{}).shrPct; return pct?Math.round(feeWon(c,k)*(+pct)/100):0; }
+/* ★2026-07-20 다자 쉐어 반영 — 여러 명의 몫을 합산한다.
+   종전엔 shrPct 하나만 봐서 2명 이상이면 첫 사람 몫만 잡혔다(정산 과소집계). */
+function feeShareWon(c,k){
+  const list=feeShrs(c,k);
+  if(!list.length) return 0;
+  const base=feeWon(c,k);
+  return list.reduce((a,e)=>a+(e.pct?Math.round(base*(+e.pct)/100):0),0);
+}
 /* ★2026-07-15 버그수정 — 종전엔 고객 '단계'를 전혀 보지 않고 fees.status만 봤다.
    그래서 고객을 '부결'로 바꿔도 보험·세무 '예정' 금액이 수익 현황에 그대로 남아
    실제로는 날아간 돈이 계속 잡혀 있었다(엄태훈 건으로 실측 확인).
@@ -903,6 +929,107 @@ function iFeeAmt(box,id,k){ if(box.querySelector('input'))return;
 /* 스트림별 쉐어 팀장 (보험 쉐어 ≠ 세무 쉐어 가능, 다자 쉐어) */
 function feeShr(c,k){ const f=((c&&c.fees)||{})[k]; return (f&&f.shr) || (c&&c.sharer) || ''; }   // 명시 없으면 메인 담당으로 폴백
 function shrShort(name){ return (name||'').replace(/\s*(팀장님|과장님|팀장|대표님)\s*$/,''); }
+
+/* ★2026-07-20 다자 쉐어 — 한 수수료를 여러 명이 나눠 갖는 경우(2~3명)를 지원한다.
+   종전 구조: fees[k].shr(팀장 1명) + fees[k].shrPct(비율 1개) — 한 명밖에 못 넣었다.
+   신규 구조: fees[k].shrs = [{id, pct}, ...]
+   ★기존 데이터를 건드리지 않고 읽을 때 변환한다(마이그레이션 스크립트 없이 소급 호환).
+     shrs가 없고 옛 shr만 있으면 [{id:shr, pct:shrPct}] 로 취급 → 화면·정산 그대로 유지.
+     저장할 때만 shrs를 쓰고, 옛 필드는 첫 번째 사람 값으로 같이 갱신한다
+     (다른 화면·팀장뷰가 아직 shr을 읽을 수 있으므로 깨지지 않게). */
+function feeShrs(c,k){
+  const f=((c&&c.fees)||{})[k]||{};
+  if(Array.isArray(f.shrs)) return f.shrs.filter(x=>x&&x.id);
+  if(f.shr) return [{id:f.shr, pct:f.shrPct||''}];
+  return [];
+}
+function feeHasShr(c,k,sid){ return feeShrs(c,k).some(x=>x.id===sid); }
+function setFeeShrs(id,k,arr){
+  arr=(arr||[]).filter(x=>x&&x.id);
+  /* 옛 필드 동기화 = 하위호환. 첫 번째 사람을 대표로 남긴다. */
+  setFee(id,k,{shrs:arr, shr:(arr[0]&&arr[0].id)||'', shrPct:(arr[0]&&arr[0].pct)||''});
+}
+/* 이 고객·이 수수료에서 특정 팀장의 몫(만원) */
+function feeShrWonOf(c,k,sid){
+  const e=feeShrs(c,k).find(x=>x.id===sid); if(!e||!e.pct) return 0;
+  return Math.round(feeWon(c,k)*(+e.pct)/100);
+}
+/* 쉐어 칩 렌더 — 이름+% 를 한 덩어리로 보여주고, 클릭하면 그 사람 것만 수정 */
+function feeShrChips(c,k,id){
+  const list=feeShrs(c,k);
+  const chips=list.map((e,ix)=>{
+    const nm=shrShort((getSharer(e.id)||{}).name||'') || '?';
+    const won=e.pct?feeShrWonOf(c,k,e.id):0;
+    return `<span class="shrchip" title="${esc(nm)} — 클릭하면 비율 수정 / ✕ 제거">`
+      +`<span class="ev n" onclick="iFeeShrPick(this,'${id}','${k}',${ix})">${esc(nm)}</span>`
+      +`<span class="ev p" onclick="iFeeShrPct(this,'${id}','${k}',${ix})">${e.pct?e.pct+'%':'%▾'}</span>`
+      +(won?`<span class="w">${fmtMan(won)}</span>`:'')
+      +`<span class="x" onclick="delFeeShr('${id}','${k}',${ix})">✕</span></span>`;
+  }).join('');
+  const total=list.reduce((a,e)=>a+(+e.pct||0),0);
+  const over=total>100?`<span class="shrover" title="합이 100%를 넘습니다">합 ${total}% ⚠</span>`
+            :(list.length>1?`<span class="shrsum">합 ${total}%</span>`:'');
+  return `<span class="shrbox">${chips}`
+    +`<span class="ev shradd" title="쉐어 팀장 추가" onclick="iFeeShrPick(this,'${id}','${k}',-1)">`
+    +`${list.length?'＋':'🤝 쉐어 추가'}</span>${over}</span>`;
+}
+/* 팀장 고르기 — ix<0 이면 추가, 아니면 그 자리 교체 */
+function iFeeShrPick(box,id,k,ix){
+  if(box.querySelector('select,input'))return;
+  const c=getCust(id)||{}; const list=feeShrs(c,k);
+  const cur=ix>=0?(list[ix]||{}).id:'';
+  const used=list.map((e,i)=>i===ix?null:e.id).filter(Boolean);   // 이미 들어간 사람은 중복 제외
+  const opts=[['','(선택)']].concat(sharerArr().filter(s=>used.indexOf(s.id)<0).map(s=>[s.id,s.name]));
+  opts.push(['__new','➕ 새 팀장 추가…']);
+  box.innerHTML=`<select class="iedit">${opts.map(([v,l])=>`<option value="${esc(v)}" ${v===cur?'selected':''}>${esc(l)}</option>`).join('')}</select>`;
+  const sel=box.querySelector('select'); sel.focus();
+  const done=()=>{ if(box.dataset.done)return; box.dataset.done='1';
+    if(sel.value==='__new') return feeShrNew(box,id,k,ix);
+    if(!sel.value){ return rerender(); }
+    const arr=list.slice();
+    if(ix>=0) arr[ix]=Object.assign({},arr[ix],{id:sel.value});
+    else arr.push({id:sel.value, pct:''});
+    setFeeShrs(id,k,arr); };
+  sel.onchange=done; sel.onblur=done;
+}
+function feeShrNew(box,id,k,ix){
+  box.innerHTML=`<input class="iedit" style="width:150px" placeholder="새 팀장 이름 후 Enter">`;
+  const inp=box.querySelector('input'); inp.focus();
+  let h=false; const ok=()=>{ if(h)return; h=true; const nm=(inp.value||'').trim();
+    if(!nm) return rerender();
+    const sid=addSharer(nm); const arr=feeShrs(getCust(id)||{},k).slice();
+    if(ix>=0) arr[ix]=Object.assign({},arr[ix],{id:sid}); else arr.push({id:sid,pct:''});
+    setFeeShrs(id,k,arr); toast('새 팀장 「'+nm+'」 추가 ✓'); };
+  inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();inp.blur();} else if(e.key==='Escape'){h=true;rerender();} };
+  inp.onblur=ok;
+}
+/* 그 사람의 비율(%) */
+function iFeeShrPct(box,id,k,ix){
+  if(box.querySelector('select'))return;
+  const list=feeShrs(getCust(id)||{},k); const cur=(list[ix]||{}).pct||'';
+  let opts=['<option value="">비율 없음</option>'];
+  if(cur && (+cur)%5!==0) opts.push(`<option value="${cur}" selected>${cur}%</option>`);
+  for(let v=5; v<=100; v+=5) opts.push(`<option value="${v}" ${(''+v===''+cur)?'selected':''}>${v}%</option>`);
+  opts.push('<option value="__c">✍️ 직접 입력…</option>');
+  box.innerHTML=`<select class="iedit">${opts.join('')}</select>`;
+  const sel=box.querySelector('select'); sel.focus();
+  const apply=v=>{ const arr=feeShrs(getCust(id)||{},k).slice();
+    arr[ix]=Object.assign({},arr[ix],{pct:v}); setFeeShrs(id,k,arr); };
+  const done=()=>{ if(box.dataset.done)return; box.dataset.done='1';
+    if(sel.value==='__c'){
+      box.innerHTML=`<input class="iedit" style="width:60px" value="${cur}" inputmode="numeric" placeholder="%">`;
+      const inp=box.querySelector('input'); inp.focus(); inp.select();
+      let h=false; const ok=()=>{ if(h)return; h=true; let v=parseFloat(inp.value);
+        apply(isNaN(v)?'':Math.max(1,Math.min(100,Math.round(v)))); };
+      inp.onkeydown=e=>{ if(e.key==='Enter'){e.preventDefault();inp.blur();} else if(e.key==='Escape'){h=true;rerender();} };
+      inp.onblur=ok; return;
+    }
+    apply(sel.value?(+sel.value):''); };
+  sel.onchange=done; sel.onblur=done;
+}
+function delFeeShr(id,k,ix){
+  const arr=feeShrs(getCust(id)||{},k).slice(); arr.splice(ix,1); setFeeShrs(id,k,arr);
+}
 function iFeeSharer(box,id,k){
   if(box.querySelector('select,input'))return;
   const cur=(((getCust(id)||{}).fees||{})[k]||{}).shr||'';
@@ -1899,7 +2026,7 @@ function renderSharers(){
  const all=custArr();
  let shown=0;
  const cards=sharerArr().map(s=>{
-   const deals=all.filter(c=>(custShareParty(c).includes(s.id)||feeShr(c,'insurance')===s.id||feeShr(c,'consulting')===s.id||feeShr(c,'tax')===s.id) && _inShMonth(c));
+   const deals=all.filter(c=>(custShareParty(c).includes(s.id)||feeHasShr(c,'insurance',s.id)||feeHasShr(c,'consulting',s.id)||feeHasShr(c,'tax',s.id)) && _inShMonth(c));
    /* 공유풀 항목엔 날짜가 없다 → _cid로 원 고객을 찾아 그 접수월로 가른다(사장님 화면이라 customers 접근 가능) */
    const shared=sharedArrOf(s.id).filter(it=>_inShMonth(getCust(it._cid)||{}));
    const empty=SHMONTH && !deals.length && !shared.length;
@@ -1954,16 +2081,24 @@ function renderSharerDetail(id){
  buildNav('share');
  const s=getSharer(id); if(!s){ $('#main').innerHTML='<div class="panel">없는 팀장입니다.</div>'; return; }
  const all=custArr();
- const deals=all.filter(c=>custShareParty(c).includes(id) || feeShr(c,'insurance')===id || feeShr(c,'consulting')===id || feeShr(c,'tax')===id);
- const insDeals=all.filter(c=>feeShr(c,'insurance')===id);
- const taxDeals=all.filter(c=>feeShr(c,'tax')===id);
+ const deals=all.filter(c=>custShareParty(c).includes(id) || feeHasShr(c,'insurance',id) || feeHasShr(c,'consulting',id) || feeHasShr(c,'tax',id));
+ const insDeals=all.filter(c=>feeHasShr(c,'insurance',id));
+ const taxDeals=all.filter(c=>feeHasShr(c,'tax',id));
  const insDone=insDeals.filter(d=>fee(d,'insurance').status==='완료').length;
  const taxDone=taxDeals.filter(d=>fee(d,'tax').status==='완료').length;
  const link=`${location.origin+location.pathname}?share=${id}`;
  const dealRow=c=>`<div class="row click" onclick="go('customer','${c.id}')"><div class="av">${esc((c.nm||'·')[0])}</div>
    <div class="info"><b>${esc(c.nm)} <span>· ${esc(c.biz)}</span></b><div class="memo">${esc(c.fund)}</div></div>${chip(c.stage)}</div>`;
- const feeRow=(c,k)=>{const pct=((c.fees||{})[k]||{}).shrPct; const taxMulti=(k==='tax'&&taxItems(c).length); const amtSpan=taxMulti?`<span class="val" style="cursor:default" title="세무 사업자 ${taxItems(c).length}건 합계">${feeAmtDisp(c,k)}</span>`:`<span class="val" onclick="iFeeAmt(this,'${c.id}','${k}')">${fee(c,k).amt?fmtAmt(fee(c,k).amt):'＋ 금액'}</span>`; return `<div class="ins"><div><span class="nm">${esc(c.nm)}</span><span class="fd">${esc(c.fund)}</span></div>
-   <div style="display:flex;align-items:center;gap:10px"><span class="ev" style="font-size:11px;padding:2px 8px;font-weight:800;color:${pct?'#059669':'#cbd5e1'}" title="쉐어 비율(%)" onclick="iFeeSharePct(this,'${c.id}','${k}')">${pct?pct+'%':'%▾'}</span>${amtSpan}
+ /* ★2026-07-20 — 이 화면은 '이 팀장' 전용이므로, 여러 명이 쉐어할 때
+    전체 비율이 아니라 **이 팀장 본인의 비율**을 보여주고 그것만 수정하게 한다.
+    종전엔 fees[k].shrPct(대표 1개)를 그려서 2명 이상이면 남의 비율이 보였다. */
+ const feeRow=(c,k)=>{const _l=feeShrs(c,k); const _i=_l.findIndex(x=>x.id===id);
+   const pct=_i>=0?_l[_i].pct:''; const _my=_i>=0?feeShrWonOf(c,k,id):0;
+   const pctSpan=_i>=0
+     ?`<span class="ev" style="font-size:11px;padding:2px 8px;font-weight:800;color:${pct?'#059669':'#cbd5e1'}" title="내 쉐어 비율(%)" onclick="iFeeShrPct(this,'${c.id}','${k}',${_i})">${pct?pct+'%':'%▾'}</span>${_my?`<span style="font-size:11px;color:#64748b;font-weight:700">${fmtMan(_my)}</span>`:''}`
+     :`<span style="font-size:11px;color:#cbd5e1;font-weight:700" title="이 수수료에 배정되지 않음">—</span>`;
+   const taxMulti=(k==='tax'&&taxItems(c).length); const amtSpan=taxMulti?`<span class="val" style="cursor:default" title="세무 사업자 ${taxItems(c).length}건 합계">${feeAmtDisp(c,k)}</span>`:`<span class="val" onclick="iFeeAmt(this,'${c.id}','${k}')">${fee(c,k).amt?fmtAmt(fee(c,k).amt):'＋ 금액'}</span>`; return `<div class="ins"><div><span class="nm">${esc(c.nm)}</span><span class="fd">${esc(c.fund)}</span></div>
+   <div style="display:flex;align-items:center;gap:10px">${pctSpan}${amtSpan}
    <span class="st ${fee(c,k).status}" onclick="iFeeStatus(this,'${c.id}','${k}')">${fee(c,k).status} ▾</span></div></div>`;};
  $('#main').innerHTML=`
  <span class="back" onclick="goBack()">← 뒤로</span>
@@ -2040,13 +2175,20 @@ function renderCustomer(id){
      <div class="panel"><div class="ph"><b>💰 수수료·계약 현황</b><span class="sub">상태·금액 클릭 수정</span></div>
        ${FEE_KEYS.map(([k,ic,lb])=>{const f=fee(c,k); const esh=((c.fees||{})[k]||{}).shr; const shn=esh?shrShort((getSharer(esh)||{}).name||''):''; const pct=((c.fees||{})[k]||{}).shrPct; const items=k==='tax'?taxItems(c):null;
          const amtCell = (items&&items.length) ? `<span class="fa" style="font-weight:800;color:#0f172a">${fmtMan(taxWon(c))}원</span>` : `<span class="ev fa" onclick="iFeeAmt(this,'${id}','${k}')">${f.amt?fmtAmt(f.amt):'＋ 금액'}</span>`;
-         const head=`<div class="feerow"><div class="fl">${ic} ${lb} <span class="ev" style="font-size:10.5px;padding:2px 7px;color:${shn?'#3b82f6':'#94a3b8'};margin-left:3px;font-weight:700" title="쉐어 팀장 지정" onclick="iFeeSharer(this,'${id}','${k}')">🤝 ${shn?esc(shn):'쉐어'}</span><span class="ev" style="font-size:10.5px;padding:2px 7px;color:${pct?'#059669':'#cbd5e1'};margin-left:3px;font-weight:800" title="쉐어 비율(%)" onclick="iFeeSharePct(this,'${id}','${k}')">${pct?pct+'%':'%▾'}</span></div>
+         const head=`<div class="feerow"><div class="fl">${ic} ${lb} ${feeShrChips(c,k,id)}</div>
            <span class="st ${f.status}" onclick="iFeeStatus(this,'${id}','${k}')">${f.status} ▾</span>
            ${amtCell}</div>`;
          if(k!=='tax') return head;
          const mult=taxMult(c); const shp=taxSharePct(c);
          const rows=items.map((it,ix)=>{const fw=won(it&&it.amt)*mult; return `<div style="display:flex;align-items:center;gap:8px;padding:4px 0 4px 26px;font-size:12.5px"><span class="ev" style="padding:2px 9px;font-weight:700;background:${(it.type==='법인')?'#eef2ff':'#f1f5f9'};color:${(it.type==='법인')?'#4338ca':'#475569'}" title="개인/법인" onclick="iTaxType(this,'${id}',${ix})">${esc(it.type||'개인')} ▾</span><span class="ev" style="padding:2px 9px;font-weight:700" title="월 기장료" onclick="iTaxAmt(this,'${id}',${ix})">${it.amt?fmtAmt(it.amt):'＋ 월 기장료'}</span>${it.amt?`<span style="color:#94a3b8;font-size:11.5px">×${mult} = <b style="color:#0f172a">${fmtMan(fw)}원</b></span>`:''}<span style="margin-left:auto;color:#cbd5e1;cursor:pointer;font-weight:700;padding:0 4px" title="삭제" onclick="delTaxItem('${id}',${ix})">✕</span></div>`;}).join('');
-         const foot = items.length? `<div style="padding:6px 0 2px 26px;font-size:11.5px;color:#64748b">월 기장료 ×<span class="ev" style="padding:1px 7px;font-weight:800;color:#6366f1" title="배수 수정(보통 6배)" onclick="iTaxMult(this,'${id}')">${mult}</span>배 = 세무 수수료 <b style="color:#0f172a">${fmtMan(taxWon(c))}원</b>${shp?` · 쉐어 ${shp}% → <b style="color:#059669">${fmtMan(taxShareWon(c))}원</b>`:''}</div>` : '';
+         /* ★2026-07-20 — 쉐어가 2~3명이면 각자 몫을 나열하고 합계를 보여준다.
+            종전엔 taxSharePct(대표 1개)만 써서 첫 사람 몫만 표시됐다(과소집계). */
+         const _tl=feeShrs(c,'tax').filter(e=>e.pct);
+         const shareTxt=_tl.length
+           ? ' · 쉐어 ' + _tl.map(e=>`${esc(shrShort((getSharer(e.id)||{}).name||'?'))} ${e.pct}% <b style="color:#059669">${fmtMan(feeShrWonOf(c,'tax',e.id))}</b>`).join(' + ')
+             + (_tl.length>1?` = <b style="color:#059669">${fmtMan(feeShareWon(c,'tax'))}원</b>`:'원')
+           : '';
+         const foot = items.length? `<div style="padding:6px 0 2px 26px;font-size:11.5px;color:#64748b">월 기장료 ×<span class="ev" style="padding:1px 7px;font-weight:800;color:#6366f1" title="배수 수정(보통 6배)" onclick="iTaxMult(this,'${id}')">${mult}</span>배 = 세무 수수료 <b style="color:#0f172a">${fmtMan(taxWon(c))}원</b>${shareTxt}</div>` : '';
          return head+`<div style="border-left:2px solid #ede9fe;margin:0 0 8px 8px">${rows}${foot}<div style="padding:5px 0 2px 26px"><span class="ev" style="color:#6366f1;font-weight:700;font-size:12.5px" onclick="addTaxItem('${id}')">＋ 사업자 추가</span> <span style="color:#94a3b8;font-size:11px">개인/법인·월 기장료 보통 10~15만원</span></div></div>`;
        }).join('')}
        ${(()=>{const pf=fee(c,'product'); const pt=((c.fees||{}).product||{}).type||''; return `<div class="feerow" style="border-top:1.5px dashed #e2e8f0;padding-top:13px"><div class="fl" style="display:flex;align-items:center;gap:6px;flex-wrap:wrap">📋 <span class="ev" style="padding:4px 9px;font-size:12.5px;font-weight:700" onclick="iProductType(this,'${id}')">${esc(pt)||'서비스 유형 ▾'}</span></div>
@@ -2671,8 +2813,8 @@ function renderExt(){
  const m=$('#main'); m.style.marginLeft='0'; m.style.maxWidth='760px'; m.style.margin='0 auto';
  if(!s){ m.innerHTML='<div class="panel">유효하지 않은 공유 링크입니다.</div>'; return; }
  const all=custArr();
- const insDeals=all.filter(c=>feeShr(c,'insurance')===shareId);
- const taxDeals=all.filter(c=>feeShr(c,'tax')===shareId);
+ const insDeals=all.filter(c=>feeHasShr(c,'insurance',shareId));
+ const taxDeals=all.filter(c=>feeHasShr(c,'tax',shareId));
  const feeRow=(c,k)=>{const taxMulti=(k==='tax'&&taxItems(c).length); const amtSpan=taxMulti?`<span class="val" style="cursor:default" title="세무 사업자 ${taxItems(c).length}건 합계">${feeAmtDisp(c,k)}</span>`:`<span class="val" onclick="iFeeAmt(this,'${c.id}','${k}')">${fee(c,k).amt?fmtAmt(fee(c,k).amt):'＋ 금액'}</span>`; return `<div class="ins"><div><span class="nm">${esc(c.nm)}</span><span class="fd">${esc(c.biz)} · ${esc(c.fund)}</span><div style="margin-top:3px">${chip(c.stage)}</div></div>
    <div style="display:flex;align-items:center;gap:10px">${amtSpan}
    <span class="st ${fee(c,k).status}" onclick="iFeeStatus(this,'${c.id}','${k}')">${fee(c,k).status} ▾</span></div></div>`;};
@@ -3188,7 +3330,7 @@ if('serviceWorker' in navigator){
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260720-112333';
+window.BUILD_VER='20260720-131938';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
