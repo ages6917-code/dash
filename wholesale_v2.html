@@ -1,0 +1,521 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>위탁 대시보드 v2 (테무 기준)</title>
+<style>
+  :root{
+    --bg:#eef1f6; --card:#fff; --ink:#1f2937; --sub:#6b7280; --line:#e5e7eb;
+    --green:#2e7d32; --green-bg:#e7f4e8; --orange:#e08600; --orange-bg:#fff2dd;
+    --blue:#2563eb; --blue-bg:#e8eefc; --red:#d23f3f; --red-bg:#fde8e8;
+    --accent:#1b8f5a;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard','Malgun Gothic',-apple-system,sans-serif;background:var(--bg);color:var(--ink);padding:18px;max-width:1280px;margin:0 auto}
+  .hero{background:linear-gradient(120deg,#1b8f5a,#2e7d32);color:#fff;border-radius:18px;padding:20px 24px}
+  .hero h1{font-size:23px;font-weight:800}
+  .hero .date{float:right;font-size:13px;opacity:.9;font-weight:600}
+  .hero p{margin-top:4px;font-size:13.5px;opacity:.92}
+  .chips{margin-top:14px;display:flex;gap:10px;flex-wrap:wrap}
+  .chip{background:rgba(255,255,255,.18);border-radius:12px;padding:9px 15px;font-size:12.5px;font-weight:600}
+  .chip b{font-size:19px;display:block;font-weight:800}
+  .tabs{display:flex;gap:8px;margin:16px 0 12px;flex-wrap:wrap}
+  .tab{padding:10px 18px;border-radius:11px;background:#fff;border:1.5px solid var(--line);cursor:pointer;font-weight:700;font-size:14px;color:var(--sub)}
+  .tab.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .search{flex:1;min-width:160px;border:1.5px solid var(--line);border-radius:11px;padding:10px 14px;font-size:14px;outline:none}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:14px}
+  .vcard{background:var(--card);border-radius:16px;padding:15px 16px;cursor:pointer;border:1px solid var(--line);transition:.15s;box-shadow:0 2px 8px rgba(0,0,0,.04)}
+  .vcard:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(0,0,0,.10);border-color:var(--accent)}
+  .vname{font-weight:800;font-size:15.5px;line-height:1.3}
+  .vcat{font-size:12px;color:var(--sub);margin-top:2px}
+  .cutoff{display:flex;align-items:baseline;gap:6px;margin:10px 0 8px}
+  .cutoff .t{font-size:25px;font-weight:800;color:var(--orange)}
+  .cutoff .t.na{color:#9aa3af;font-size:18px}
+  .cutoff .l{font-size:12px;color:var(--sub)}
+  .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 9px;border-radius:20px;margin:2px 2px 0 0}
+  .b-go{background:var(--green-bg);color:var(--green)} .b-hold{background:var(--orange-bg);color:var(--orange)}
+  .b-no{background:var(--red-bg);color:var(--red)} .b-none{background:#eef0f3;color:var(--sub)}
+  .b-blue{background:var(--blue-bg);color:var(--blue)} .b-godone{background:#1b8f5a;color:#fff}
+  .b-stale{background:var(--red-bg);color:var(--red)}
+  .overlay{position:fixed;inset:0;background:rgba(17,24,39,.55);display:none;align-items:flex-start;justify-content:center;padding:28px 12px;overflow:auto;z-index:50}
+  .overlay.on{display:flex}
+  .modal{background:#f6f8fa;border-radius:20px;width:100%;max-width:940px;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.3)}
+  .mhead{display:flex;align-items:center;gap:12px;flex-wrap:wrap;border-bottom:2px solid var(--line);padding-bottom:14px}
+  .mhead h2{font-size:20px;font-weight:800}
+  .close{margin-left:auto;background:#fff;border:1px solid var(--line);border-radius:10px;width:38px;height:38px;font-size:18px;cursor:pointer;flex:none}
+  .contact{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0}
+  .ci{background:#fff;border:1px solid var(--line);border-radius:10px;padding:7px 12px;font-size:13px;font-weight:600}
+  .ci span{color:var(--sub);font-weight:500;margin-right:5px}
+  .mnote{background:#fffbe9;border:1px solid #f5e6a8;border-radius:10px;padding:9px 13px;font-size:13px;margin-bottom:12px}
+  .bizcard{max-width:320px;width:100%;border-radius:12px;border:1px solid var(--line);cursor:zoom-in;display:block;margin:6px 0 12px}
+  .catbar{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .catchip{border:1.5px solid var(--line);background:#fff;border-radius:999px;padding:7px 14px;font-size:13px;font-weight:700;color:#374151;cursor:pointer}
+  .catchip.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .prow-card{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 16px;margin-bottom:10px}
+  .prow-card.go{border:2px solid #7fc99a}
+  .prow-head{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .prow-head .pn{font-size:16px;font-weight:800}
+  .prow-head .ps{font-size:13px;color:var(--sub);font-weight:500}
+  .prow-head .meta{margin-left:auto;font-size:11.5px;color:var(--sub)}
+  .cells{display:grid;grid-template-columns:repeat(auto-fit,minmax(165px,1fr));gap:9px;margin-top:11px}
+  .cell{background:#f6f8fa;border-radius:9px;padding:9px 12px}
+  .cell .k{font-size:11.5px;color:var(--sub)}
+  .cell .v{font-size:17px;font-weight:800;margin-top:2px}
+  .cell .v.gd{color:var(--green)} .cell .v.bd{color:var(--red)} .cell .v.hd{color:var(--orange)}
+  .cell .d{font-size:11px;color:var(--sub);margin-top:3px;line-height:1.45}
+  .unitbar{height:9px;background:#e2e8f0;border-radius:5px;margin-top:7px;overflow:hidden}
+  .unitbar i{display:block;height:100%;border-radius:5px;background:#94a3b8}
+  .unitbar i.me{background:var(--accent)}
+  .verdictline{border-radius:8px;padding:8px 12px;margin-top:10px;font-size:13px;font-weight:700;display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+  .vl-go{background:var(--green-bg);color:var(--green)} .vl-hold{background:var(--orange-bg);color:#b06a00}
+  .vl-no{background:var(--red-bg);color:var(--red)} .vl-none{background:#eef0f3;color:var(--sub)}
+  .sctbl{width:100%;border-collapse:collapse;margin-top:9px;font-size:12.5px}
+  .sctbl th{background:#eef2f6;font-weight:700;color:var(--sub);padding:6px 8px;text-align:left;font-size:11.5px}
+  .sctbl td{padding:7px 8px;border-bottom:1px solid #eef1f4}
+  .sctbl .r{text-align:right}
+  .gob{border:none;border-radius:11px;padding:11px 20px;font-size:14px;font-weight:800;cursor:pointer;font-family:inherit;margin-right:6px}
+  .gob.go{background:var(--accent);color:#fff}
+  .gob.gray{background:#eef0f3;color:var(--sub)}
+  .thumb{width:74px;height:74px;border-radius:10px;background:#f1f4f7;flex:none;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:30px}
+  .thumb img{width:100%;height:100%;object-fit:contain;background:#fff}
+  .plantbl{width:100%;border-collapse:collapse;margin-top:8px;font-size:13px}
+  .plantbl th{background:#e7f4e8;color:#1b5e20;font-weight:800;padding:8px 10px;text-align:left;font-size:12px}
+  .plantbl td{padding:9px 10px;border-bottom:1px solid var(--line)}
+  .plantbl .r{text-align:right}
+  .foot{text-align:center;color:var(--sub);font-size:12px;margin:20px 0 6px}
+  .dcard{background:#fff;border-radius:13px;padding:8px 12px 12px;border:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div id="pwgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif"><div style="color:#fff;font-size:20px;margin-bottom:6px">🔒 위탁 거래처 대시보드</div><div style="color:#9fb3d1;font-size:13px;margin-bottom:18px">팀 전용 · 비밀번호를 입력하세요</div><input id="pwin" type="password" autocomplete="off" style="padding:13px 14px;font-size:16px;border-radius:10px;border:1px solid #2a3b5e;width:240px;background:#1a2540;color:#fff;outline:none" placeholder="비밀번호"><button id="pwbtn" style="margin-top:16px;padding:13px 0;width:240px;font-size:16px;font-weight:700;border:none;border-radius:10px;background:#2563eb;color:#fff;cursor:pointer">입력</button><div id="pwerr" style="color:#f87171;margin-top:12px;height:18px;font-size:13px"></div></div><script>(function(){var PW="5todghkfrhks!";var g=document.getElementById('pwgate');if(sessionStorage.getItem('cdash_ok')==='1'){g.style.display='none';return;}document.body.style.overflow='hidden';function ok(){sessionStorage.setItem('cdash_ok','1');g.style.display='none';document.body.style.overflow='';}function check(){var v=document.getElementById('pwin').value;if(v===PW){ok();}else{document.getElementById('pwerr').textContent='비밀번호가 틀렸습니다';}}var i=document.getElementById('pwin');i.addEventListener('keydown',function(e){if(e.key==='Enter')check();});var b=document.getElementById('pwbtn');if(b)b.addEventListener('click',check);setTimeout(function(){i.focus();},100);})();</script>
+  <div class="hero">
+    <span class="date" id="date"></span>
+    <h1>📦 위탁 거래처 대시보드 <span style="font-size:13px;opacity:.85">v2 · 테무 기준</span></h1>
+    <p>판정 = 테무 판매량 상위 3개 대비 단위가격(원/100g) 기준. 마진 = 등록가×(1−수수료) + 배송수취 3,000(19,800 미만) − 매입 − 거래처 택배비.</p>
+    <div class="chips" id="chips"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab on" id="tab-sup" onclick="setMode('sup')">🏢 거래처</button>
+    <button class="tab" id="tab-item" onclick="setMode('item')">📋 전 품목 심사표</button>
+    <input class="search" id="search" placeholder="🔍 거래처·품목 검색" oninput="render()">
+  </div>
+
+  <div id="view"></div>
+  <div class="foot" id="foot"></div>
+
+  <div class="overlay" id="overlay" onclick="if(event.target===this)closeModal()">
+    <div class="modal" id="modal"></div>
+  </div>
+
+<script>
+/* 자동생성 — 직접 수정 금지. products.json / vendors.json 을 수정한 뒤 data_pipeline.py build 실행.
+ * 원천: _데이터소스/vendors.json + products.json (진실원천 분리, SHARED_RULES 7조)
+ */
+window.DASH = {
+  updated: "2026-07-22",
+  builtAt: "2026-07-22 17:34",
+  priceNote: "v2: 판정 = 테무 판매량 top3 단위가(원/100g) 기준. 마진 = 등록가×(1-수수료)+배송수취3000(19800미만)-매입-거래처택배비.",
+  suppliers: [
+    { id:"dm", name:"(주)대명유통 · 홍지민", cat:"과일·가루선식", emoji:"🍑", status:"ok", phone:"010-8187-2435", email:"cvben900907@gmail.com", region:"충남 서산", card:"dm_card.png", note:"과일 카탈로그 + 국산 가루선식 공급 (사장님 확정)", shipPolicy:{fee:2500, feeRice:4000, freeDailyQty:200, note:"일반 2,500원 · 쌀 4,000원 · 택배 오후 4시 마감(당일출고) · 하루 200건 이상 무료(택배사 볼륨계약) (사장 확정 2026-07-14)"},
+      products:[
+        {pid:"dm-01", g:"과일", name:"두리안", spec:"1kg", buy:11000, ship:0, sell:26900, mkt:"네이버/쿠팡 통두리안 1kg 28,500~39,000", emoji:"🥥", note:"🟢 희소·고마진(46%) 유망 · 1kg 매입가 검증권장", mkt3:{naver:"통두리안 1kg 26,010~28,050", coupang:"쿠팡 최저 10,900원 · 리뷰1위 [신정푸드 최저마진 행사] 냉동 두리안 - 45 57,250원(3,902리뷰) · 판매량=윙필요 (2026-07-14)", temu:"판매1위 두리안 450g 13,084원(9,199판매!)·냉동400g 9,809 / g당 24~29원 (2026-07-08)"}, img:"dm-01.jpg"},
+        {pid:"dm-02", g:"과일", name:"망고(수입)", spec:"5kg", buy:21700, ship:0, emoji:"🥭", mkt3:{naver:"5kg 49,900~100,160", coupang:"쿠팡 최저 15,300원 · 리뷰1위 아라몰 베트남 그린망고 (Vietnam Keo  35,900원(611리뷰) · 판매량=윙필요 (2026-07-14)", temu:"5kg 29,408~37,088원(301~531판매)·소분 마하차녹 9,138(2,063) (2026-07-08)"}, img:"dm-02.jpg"},
+        {pid:"dm-03", g:"과일", name:"애플망고", spec:"1kg", buy:22700, ship:0, emoji:"🥭", mkt3:{naver:"제주 1kg 29,900~40,000", coupang:"쿠팡 최저 3,900원 · 리뷰1위 곰곰 냉동 애플망고, 1kg, 1개 6,690원(11,070리뷰) · 판매량=윙필요 · ⚠쿠팡은 냉동 애플망고 위주(생과 아님) (2026-07-14)", temu:"생과 애플망고 부재(젤리뿐)·직접경쟁 없음 (2026-07-08)"}, img:"dm-03.jpg"},
+        {pid:"dm-04", g:"과일", name:"람부탄", spec:"1kg", buy:8800, ship:0, emoji:"🔴", mkt3:{naver:"냉동 1kg 3,500~4,700", coupang:"쿠팡 최저 2,940원 · 리뷰1위 비비수산 집에서 즐기는 달콤한 영양만점 열대과일 8,510원(859리뷰) · 판매량=윙필요 (2026-07-14)", temu:"생과 없음(굿즈만)·시장 부재 (2026-07-08)"}, img:"dm-04.jpg"},
+        {pid:"dm-05", g:"과일", name:"후무사(자두)", spec:"1kg", buy:5700, ship:0, sell:9900, mkt:"네이버 자두 1kg 7,900~9,900", emoji:"🍑", mkt3:{naver:"1kg 10,900~19,900", coupang:"쿠팡 최저 5,850원 · 리뷰1위 김천앤 내몸에 당도선별 자두, 1kg(중과),  8,980원(3,739리뷰) · 판매량=윙필요 (2026-07-14)", temu:"🔴최다판매 국산 자두 1kg 3,655원(2,019판매)·최저 3,619원 → 매입가5,700>테무판매가, 경쟁불가 (2026-07-09)"}, img:"dm-05.jpg"},
+        {pid:"dm-06", g:"과일", name:"피자두", spec:"1kg", buy:7400, ship:0, sell:11900, mkt:"자두 1kg 7,900~", emoji:"🍑", mkt3:{naver:"피자두 1kg 12,700~", coupang:"쿠팡 최저 10,700원 · 리뷰1위 [100박스한정] 고당도 피자두 빨간 자두, 1 16,190원(52리뷰) · 판매량=윙필요 (2026-07-14)", temu:"🔴최다판매 국산 자두 1kg 3,655원(2,019판매)·최저 3,619원 → 매입가7,400>테무판매가, 경쟁불가 (2026-07-09)"}, img:"dm-06.jpg"},
+        {pid:"dm-07", g:"과일", name:"추희자두", spec:"1kg", buy:5100, ship:0, sell:9900, mkt:"네이버 자두 1kg 7,900~9,900", emoji:"🍑", mkt3:{naver:"추희자두 1kg 12,700~", coupang:"쿠팡 최저 7,500원 · 리뷰1위 새콤달콤한 제철 대석 후무사 도담 대왕 추희자두 11,900원(565리뷰) · 판매량=윙필요 (2026-07-14)", temu:"🔴최다판매 국산 자두 1kg 3,655원(2,019판매)·최저 3,619원 → 매입가5,100>테무판매가, 경쟁불가 (2026-07-09)"}, img:"dm-07.jpg"},
+        {pid:"dm-08", g:"과일", name:"털복숭아", spec:"1kg", buy:4800, ship:0, sell:9900, mkt:"천도/복숭아 1kg 9,900~11,900", emoji:"🍑", mkt3:{naver:"1kg 8,900~13,900", coupang:"쿠팡 최저 7,000원 · 리뷰1위 [하루딱30박스] 고당도 황도 복숭아 말랑이 털 10,900원(195리뷰) · 판매량=윙필요 (2026-07-14)", temu:"백도 1kg 4,696원(761)·복숭아 1kg 4,500~5,300대 (2026-07-08)"}, img:"dm-08.jpg"},
+        {pid:"dm-09", g:"과일", name:"천도복숭아", spec:"1kg", buy:4400, ship:0, sell:9900, mkt:"천도 1kg 9,900~11,900", emoji:"🍑", note:"🟢 고마진(50%)", mkt3:{naver:"천도 1kg 9,900~11,900", coupang:"쿠팡 최저 6,900원 · 리뷰1위 [타임특가] 꿀을품은 천도복숭아 벌꿀맛, 1개, 11,900원(357리뷰) · 판매량=윙필요 (2026-07-14)", temu:"천도복숭아 1kg 4,538원(722)·4kg 13,449 (2026-07-08)"}, img:"dm-09.jpg"},
+        {pid:"dm-10", g:"과일", name:"메론", spec:"1kg", buy:3300, ship:0, emoji:"🍈", mkt3:{naver:"국산 1kg 7,800~24,300", coupang:"쿠팡 최저 5,250원 · 리뷰1위 달달과수원 신선하고 맛있는 머스크 메론 한박스, 29,800원(645리뷰) · 판매량=윙필요 (2026-07-14)", temu:"설향메론 1kg 4,317원(189)·5kg 16,030(≈3,206/kg) (2026-07-08)"}, img:"dm-10.jpg"},
+        {pid:"dm-11", g:"가루 선식", name:"15곡 미숫가루", spec:"1kg", buy:11300, ship:0, sell:16900, mkt:"국산 1kg 14,500~22,500", emoji:"🥣", note:"🟢 상온·경량 테무 최적", mkt3:{naver:"국산 1kg 7,110~14,900", coupang:"쿠팡 최저 3,900원 · 리뷰1위 배대감 국산 고소한 미숫가루, 1kg, 1개 12,500원(21,267리뷰) · 판매량=윙필요 (2026-07-14)", temu:"판매1위 설빙 1.2kg 11,509원(2,410판매)·1kg환산 ≈9,590 / 동종최저 5,212 (2026-07-08)"}, img:"dm-11.jpg"},
+        {pid:"dm-12", g:"가루 선식", name:"검정서리태 콩가루선식", spec:"1kg", buy:7800, ship:0, sell:13900, mkt:"콩가루선식 국산대", emoji:"🥣", mkt3:{naver:"국산 1kg 14,500~19,900", coupang:"쿠팡 최저 5,300원 · 리뷰1위 태광선식 국산 서리태 귀리쉐이크 1.5kg, 2 22,020원(39,330리뷰) · 판매량=윙필요 (2026-07-14)", temu:"서리태원물 1kg 10,439원(1,177) / 가루는 소분 70g뿐·1kg가루 희소 (2026-07-08)"}, img:"dm-12.jpg"},
+        {pid:"dm-13", g:"가루 선식", name:"국산 귀리가루", spec:"1kg", buy:3480, ship:0, sell:7900, mkt:"귀리가루 1kg 8,000~12,000", emoji:"🌾", note:"최저단가·고마진", mkt3:{naver:"국산 1kg 9,500~16,900", coupang:"쿠팡 최저 1,800원 · 리뷰1위 태광선식 국산 서리태 귀리쉐이크 1.5kg, 2 22,020원(39,330리뷰) · 판매량=윙필요 · ⚠리뷰1위는 귀리쉐이크(혼합)·순수가루는 최저가존 (2026-07-14)", temu:"동종 희소(귀리분말 200g×2 13,256)·직접경쟁 거의없음 (2026-07-08)"}, img:"dm-13.jpg"},
+        {pid:"dm-14", g:"가루 선식", name:"볶은 율무가루", spec:"1kg", buy:5800, ship:0, sell:9900, mkt:"율무가루 1kg ~9,900", emoji:"🌾", mkt3:{naver:"국산 1kg 8,300~18,000", coupang:"쿠팡 최저 6,060원 · 리뷰1위 담터 율무차 자판기용, 1kg, 1개입, 1개 7,070원(10,203리뷰) · 판매량=윙필요 · ⚠리뷰1위는 담터 율무차(음료용)·순수 율무가루 아님 (2026-07-14)", temu:"동종 없음(생과/분말 부재)·경쟁 없음 (2026-07-08)"}, img:"dm-14.jpg"},
+        {pid:"dm-15", g:"음료", name:"맥심 티오피(T.O.P)", spec:"275ml×20개입/박스", buy:12980, ship:0, sell:21900, mkt:"네이버/쿠팡 20개입 23,900~30,900", emoji:"☕", note:"🟢 동서식품 정품 · 상온·12개월·캔 안깨짐 테무최적 · 박스단가 VAT포함 · MOQ 10박스 권장"},
+        {pid:"dm-16", g:"음료", name:"맥심 마스터라떼", spec:"275ml×20개입/박스", buy:12980, ship:0, sell:21900, mkt:"네이버/쿠팡 20개입 23,900~30,900", emoji:"☕"},
+        {pid:"dm-17", g:"음료", name:"맥심 더블랙", spec:"275ml×20개입/박스", buy:12980, ship:0, sell:21900, mkt:"네이버/쿠팡 20개입 23,900~30,900", emoji:"☕"},
+        {pid:"dm-18", g:"음료", name:"맥심 스위트아메리카노", spec:"275ml×20개입/박스", buy:12980, ship:0, sell:21900, mkt:"네이버/쿠팡 20개입 23,900~30,900", emoji:"☕"},
+        {pid:"dm-19", g:"음료", name:"맥심 돌체 스모키라떼", spec:"275ml×20개입/박스", buy:12980, ship:0, sell:21900, mkt:"네이버/쿠팡 20개입 23,900~30,900", emoji:"☕"},
+        {pid:"dm-20", g:"음료", name:"맥심 스모키블랙", spec:"275ml×20개입/박스", buy:12980, ship:0, sell:21900, mkt:"네이버/쿠팡 20개입 23,900~30,900", emoji:"☕"},
+        {pid:"dm-21", g:"음료", name:"코카콜라(190ml)", spec:"190ml×30캔/박스", buy:11440, ship:0, sell:14900, mkt:"네이버/도매 30캔 14,000~17,280", emoji:"🥤", note:"정품·상온·캔 안깨짐 · 박스단가 VAT포함 · MOQ 박스단위"},
+        {pid:"dm-22", g:"음료", name:"코카콜라(355ml)", spec:"355ml×24캔/박스", buy:13640, ship:0, sell:17900, mkt:"24캔 15,800~19,900", emoji:"🥤"},
+        {pid:"dm-23", g:"음료", name:"스프라이트", spec:"355ml×24캔/박스", buy:11990, ship:0, sell:16900, mkt:"24캔 15,800~22,200", emoji:"🥤"},
+        {pid:"dm-24", g:"음료", name:"칠성사이다", spec:"190ml×30캔/박스", buy:9860, ship:0, sell:13900, mkt:"30캔 13,480~15,900", emoji:"🥤"},
+        {pid:"dm-25", g:"음료", name:"맥콜", spec:"190ml×30캔/박스", buy:7350, ship:0, sell:13900, mkt:"30캔 14,400~18,900", emoji:"🥤", note:"🟢 고마진(37%) 매입가 저렴"},
+        {pid:"dm-26", g:"음료", name:"천연사이다", spec:"190ml×30캔/박스", buy:7050, ship:0, sell:11900, mkt:"[추정] 30캔 9,900~13,000", emoji:"🥤"},
+        {pid:"dm-27", g:"음료", name:"게토레이", spec:"240ml×30캔/박스", buy:9030, ship:0, sell:15900, mkt:"30캔 14,890~18,700", emoji:"🥤", note:"🟢 고마진(33%)"},
+        {pid:"dm-28", g:"음료", name:"포카리스웨트", spec:"240ml×30캔/박스", buy:10090, ship:0, sell:16900, mkt:"30캔 16,000~18,900", emoji:"🥤", note:"🟢 고마진(30%)"},
+        {pid:"dm-29", g:"음료", name:"스타벅스 돌체", spec:"275ml×12캔/박스", buy:11990, ship:0, sell:24900, mkt:"12캔 28,850~38,500", emoji:"☕", note:"🟢 초고마진(42%) · 동서식품 정품 · 시장최저보다 한참 아래 덤핑가능"},
+        {pid:"dm-30", g:"음료", name:"스타벅스 에스프레소&크림", spec:"275ml×12캔/박스", buy:11990, ship:0, sell:24900, mkt:"스타벅스RTD 12캔 28,850~38,500", emoji:"☕"},
+        {pid:"dm-31", g:"음료", name:"스타벅스 초콜렛", spec:"275ml×12캔/박스", buy:11990, ship:0, sell:24900, mkt:"스타벅스RTD 12캔 28,850~38,500", emoji:"☕"},
+        {pid:"dm-32", g:"쌀", name:"한음미가 신동진 쌀", spec:"20kg", buy:35680, ship:4000, emoji:"🍚", note:"🌾 신동진(국산 품종) 20kg · 배송비 4,000원(쌀 예외) · 상세 고시정보(도정일·등급·생산연도) 공급처 확인 필요 · 시장가 미조사", mkt3:{}, img:"dm-32.jpg"}
+      ]},
+    { id:"kc", name:"케이앤씨푸드컴퍼니", cat:"냉면·밀키트", emoji:"🍜", status:"ok", phone:"010-8800-7273", email:"", region:"경기", card:"kc_card.jpg", note:"부가세 포함 · 파렛트 발주시 용차비 별도 · 택배 1~2세트 3,500/3세트 4,500",
+      products:[
+        {pid:"kc-01", name:"함흥물냉면", spec:"2인세트 (면200g×2·육수400g×2·겨자·식초)", buy:4300, ship:3500, sell:10900, mkt:"네이버 2인세트 8,500~9,400", emoji:"🍜", mkt3:{naver:"2인세트 8,500~9,600", coupang:"쿠팡 최저 910원 · 리뷰1위 둥지냉면 동치미 물냉면 161g, 4개 6,650원(23,277리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"대용량세트 위주(물냉면 10인 12,207원·5,719판매)·2인 단품 희소 (2026-07-08)"}},
+        {pid:"kc-02", name:"함흥비빔냉면", spec:"2인세트 (+참기름×2)", buy:4500, ship:3500, sell:10900, mkt:"네이버 2인세트 8,500~9,400", emoji:"🌶️", mkt3:{naver:"2인세트 8,500~9,620", coupang:"쿠팡 최저 5,500원 · 리뷰1위 풀무원 동치미 물냉면 2인 + 함흥 비빔 8,640원(20,037리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"대용량 위주(물+비빔 10인 12,818원·5,719판매) (2026-07-08)"}},
+        {pid:"kc-03", name:"츠메타이냉소바", spec:"2인세트 (+갈은무·와사비·김가루)", buy:4800, ship:3500, sell:11900, mkt:"냉소바 프리미엄대", emoji:"🥢", mkt3:{naver:"2인세트 9,900~10,580", coupang:"쿠팡 최저 2,900원 · 리뷰1위 풀무원 가쓰오 메밀소바 4인, 1.154 8,480원(11,222리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"메밀소바 6인 6,967원(1,326판매)~12인 12,758 (2026-07-08)"}}
+      ]},
+    { id:"chili", name:"농산물 온 · 백승원 이사", cat:"고춧가루·양파 도매", emoji:"🧅", status:"ok", phone:"010-5788-5988", email:"haneul8884@naver.com", region:"충북 진천", card:"chili_card.png", note:"국내산 양파 도매·소매 / 대량납품·소량판매 / 위탁배송 가능 (명함 확정) · 매입가 받으면 마진확정",
+      products:[
+        {pid:"chili-01", name:"국내산 고춧가루", spec:"500g / 1kg", ship:0, sell:19900, mkt:"국산 1kg 18,900~22,000", emoji:"🌶️", note:"상온·경량 테무유망 · 매입가 받으면 마진확정", mkt3:{naver:"국산 1kg 18,900~24,900", coupang:"쿠팡 최저 6,490원 · 리뷰1위 곰곰 국내산 고춧가루, 1kg, 1개 28,780원(31,496리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"국산 햇 1kg 6,450원(909판매)·수입 14,900(1,478) (2026-07-08)"}},
+        {pid:"chili-02", name:"깐양파", spec:"랩 개별포장", ship:0, emoji:"🧅", note:"냉장→테무 부적합", mkt3:{naver:"국산 1kg 7,500 / 냉동다이스 1,680~", coupang:"쿠팡 최저 900원 · 리뷰1위 국내산 양파, 1.5kg, 1개 2,990원(627,951리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"양파 대용량 위주(4.5kg 5,989원·3,330판매)·깐양파 소분 희소 (2026-07-08)"}},
+        {pid:"chili-03", name:"양파(만생)", spec:"채반건조", ship:0, emoji:"🧅", mkt3:{naver:"국산 10kg 6,900~13,900", coupang:"쿠팡 최저 6,900원 · 리뷰1위 최상품 국내산 단단한 무안 햇 양파, 1 15,360원(10,634리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"10kg 7,611~10,296원(44~141판매) (2026-07-08)"}}
+      ]},
+    { id:"sc", name:"(주)씨터치 · 정현준 과장", cat:"자반고등어·수산물", emoji:"🐟", status:"ok", phone:"010-9193-9959", email:"", region:"부산 사하구", card:"", note:"국내산(부산) 냉동 자반고등어/순살필렛 · 진공+아이스팩 · CJ대한통운 16시마감 · 합배송 가능 (사업자 204-88-02802) · ⚠️냉동+택배비4,400 원가부담 → 특대2미·순살필렛이 그나마 유망",
+      products:[
+        {pid:"sc-01", name:"진공 자반고등어 10미 (대)", spec:"1미 310~370g·10미 3.1~3.7kg / 면세·냉동", buy:17700, ship:4400, sell:27900, mkt:"네이버 대짜 10미 22,500~30,900", emoji:"🐟", note:"🔴 원가 22,100원·마진 약11% · 냉동+택배비로 덤핑여력 적음", mkt3:{naver:"국산 대 10미 14,600~25,900", coupang:"쿠팡 최저 12,800원 · 리뷰1위 해물총각 간고등어 10마리 국내산 손질  21,750원(4,712리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 #국내산 손질 자반 고등어 12미(1.7kg~2.3kg내외) 13,236원(3814판매) · 매칭 3건 13,236~25,800원 (2026-07-19)"}},
+        {pid:"sc-02", name:"진공 자반고등어 10미 (중대)", spec:"1미 250~300g·10미 2.5~3kg / 면세·냉동", buy:15000, ship:4400, sell:23900, mkt:"중사이즈 10미 14,600~22,900", emoji:"🐟", note:"🟡 원가 19,400원·마진 약9% — 빡빡", mkt3:{naver:"국산 10미 14,600~24,000", coupang:"쿠팡 최저 12,800원 · 리뷰1위 청어당 안동 간고등어 (냉동), 100g 17,400원(18,946리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 #국내산 손질 자반 고등어 12미(1.7kg~2.3kg내외) 13,236원(3814판매) · 매칭 5건 13,236~25,499원 (2026-07-19)"}},
+        {pid:"sc-03", name:"자반고등어 가정용 10미", spec:"1미 230g내외·10미 2.3kg / 면세·냉동", buy:11300, ship:4400, sell:17900, mkt:"가정용 10미 14,600~15,900", emoji:"🐟", note:"🔴 원가 15,700원 > 시장 가정용가 — 마진 거의없음·테무 비추천", mkt3:{naver:"가정용 10미 13,620~16,910", coupang:"쿠팡 최저 7,980원 · 리뷰1위 해물총각 간고등어 1박스 국내산 자반고등 34,100원(4,712리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 #국내산 자반고등어(30cm내외) 10미 / 총 2.5kg-3kg내외 21,840원(395판매) · 매칭 5건 10,886~21,840원 (2026-07-19)"}},
+        {pid:"sc-04", name:"특대 자반고등어 2미", spec:"손질후 900g~1.1kg·37~40cm / 면세·냉동", buy:7100, ship:4400, sell:16900, mkt:"특대 2미 10,000~18,900", emoji:"🐟", note:"🟢 마진 약22% — 씨터치 중 최고후보 · 합배송 8세트", mkt3:{naver:"특대 2미 10,000~14,200", coupang:"쿠팡 최저 7,980원 · 리뷰1위 해물총각 간고등어 1박스 국내산 자반고등 34,100원(4,712리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 #갓성비 특가!! 국내산 자반고등어 소 12마리(1.7kg~2.3kg내외) 13,591원(593판매) · 매칭 6건 10,224~28,929원 (2026-07-19)"}},
+        {pid:"sc-05", name:"고갈비 1미", spec:"손질후 280~300g·30cm / 면세·냉동·진공", buy:2300, ship:4400, sell:8900, mkt:"[추정] 단품 시장 희소", emoji:"🐟", note:"🟡 택배비 > 매입가 — 합배송 묶음(10세트) 구성 필수", mkt3:{naver:"고갈비/반건조 6,980~28,000", coupang:"쿠팡 최저 7,980원 · 리뷰1위 해물총각 간고등어 1박스 국내산 자반고등 34,100원(4,712리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 #갓성비 특가!! 국내산 자반고등어 소 12마리(1.7kg~2.3kg내외) 13,591원(593판매) · 매칭 1건 13,591~13,591원 (2026-07-19)"}},
+        {pid:"sc-06", name:"국내산 순살 고등어 필렛 600g", spec:"9~12쪽·가시제거99.99% / 면세·냉동·진공", buy:11000, ship:4400, sell:19900, mkt:"600g 필렛 16,900~19,900", emoji:"🐟", note:"🟢 원가 15,400원·마진 약13% · 가시제거 강점 유망", mkt3:{naver:"국산 600g 10,900~19,900", coupang:"쿠팡 최저 10,800원 · 리뷰1위 해물총각 간고등어 10마리 국내산 손질  22,250원(4,712리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 #국내산 손질 자반 고등어 12미(1.7kg~2.3kg내외) 13,236원(3814판매) · 매칭 5건 4,637~14,241원 (2026-07-19)"}}
+      ]},
+    { id:"yc", name:"㈜예찬F&S · 조민진", cat:"냉동 양념육·가공육 (정성예찬)", emoji:"🍗", status:"ok", phone:"010-8552-8319", email:"mecaracing@naver.com", region:"부산 기장군", card:"", note:"브랜드 '정성예찬' 냉동 양념육·가공육 29종 · 위탁공급가 VAT포함, 택배비 3,500원 별도 · 소비기한 제조일로부터 2년 · ⚠️냉동+택배비 별도라 테무 반관리 경쟁은 대용량·저단가 위주 선별 필요 · 상당수 카카오 톡딜 고정상품",
+      products:[
+        {pid:"yc-01", g:"비가열 양념육", name:"특공 닭구이 고추장맛", spec:"550g·과세", buy:4800, ship:3500, mkt:"온라인상시가 2팩 15,900 · 톡딜 고정상품", emoji:"🍗", note:"원산지 브라질 · 통 닭갈비+특제 고추장소스", mkt3:{coupang:"쿠팡 최저 2,200원 · 리뷰1위 국내산닭 냉장 춘천 닭갈비 당일제조발송  21,220원(11,273리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 김연자셰프 춘천 양념 닭갈비 600g+ 600g /순살 닭다리살 10,525원(778판매) · 매칭 1건 10,525~10,525원 (2026-07-19)"}},
+        {pid:"yc-02", g:"비가열 양념육", name:"특공 닭구이 간장맛", spec:"550g·과세", buy:4800, ship:3500, mkt:"온라인상시가 2팩 15,900 · 톡딜 고정상품", emoji:"🍗", note:"원산지 브라질 · 단짠 간장소스", mkt3:{coupang:"쿠팡 최저 2,200원 · 리뷰1위 청정원 찜닭 양념, 280g, 1개 3,300원(9,942리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 김연자셰프 춘천 양념 닭갈비 600g+ 600g /순살 닭다리살 10,525원(778판매) · 매칭 6건 4,417~13,126원 (2026-07-19)"}},
+        {pid:"yc-03", g:"비가열 양념육", name:"기장철마 등심소불고기", spec:"500g·과세", buy:7600, ship:3500, mkt:"온라인상시가 1팩 13,900", emoji:"🥩", note:"🔴 판매일시중단 · 국내산 육우 등심 2mm", mkt3:{coupang:"쿠팡 최저 3,600원 · 리뷰1위 곰곰 양념 소불고기 (냉장), 1kg,  18,980원(130,608리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 소고기 등심 슬라이스 200g 소분포장 담백 쫄깃 고소한 소등심 불고기용 6,354원(509판매) · 매칭 1건 6,354~6,354원 (2026-07-19)"}},
+        {pid:"yc-04", g:"비가열 양념육", name:"로스트치킨 찹스테이크", spec:"300g·과세", buy:3900, ship:3500, mkt:"온라인상시가 3팩 16,900", emoji:"🍗", note:"원산지 브라질 · 에어프라이어 허브시즈닝", mkt3:{coupang:"쿠팡 최저 4,200원 · 리뷰1위 호주산 부채살 스테이크용 (냉장), 60 20,190원(19,447리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"동종 미발견(테무에 직접 경쟁상품 없음) (2026-07-19)"}},
+        {pid:"yc-05", g:"비가열 양념육", name:"자이언트 통다리치킨", spec:"1.2kg·과세", buy:7800, ship:3500, mkt:"온라인상시가 1팩 15,900 · 톡딜 5천만원↑", emoji:"🍗", note:"원산지 브라질 · 닭다리 3개↑ 빅사이즈", mkt3:{coupang:"쿠팡 최저 10,900원 · 리뷰1위 [비비큐] BBQ 자메이카 통다리 바베큐 18,900원(10,350리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 브라질 순살 닭다리살 닭정육 2kg 1팩 13,624원(2682판매) · 매칭 2건 8,554~13,624원 (2026-07-19)"}},
+        {pid:"yc-06", g:"비가열 양념육", name:"자이언트 장각구이(통다리)", spec:"750g·과세", buy:5500, ship:3500, emoji:"🍗", note:"원산지 브라질 · 1인가구용 2~3개입", mkt3:{coupang:"쿠팡 최저 7,490원 · 리뷰1위 마니커에프앤지 참나무로 훈연한 훈제닭다리 16,200원(5,502리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 브라질 순살 닭다리살 닭정육 2kg 1팩 13,624원(2682판매) · 매칭 4건 8,554~13,624원 (2026-07-19)"}},
+        {pid:"yc-07", g:"비가열 양념육", name:"버팔로윙봉 콤보", spec:"500g·과세", buy:6000, ship:3500, mkt:"온라인상시가 1팩 10,900 · 온라인 베스트", emoji:"🍗", note:"원산지 브라질 · 매콤 윙봉", mkt3:{coupang:"쿠팡 최저 1,680원 · 리뷰1위 마니커 1등급 닭윗날개 봉 (냉장), 1 15,900원(19,553리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 사세 버팔로윙봉 오리지널맛 820G 치킨윙봉 버팔로 양념 소스 13,157원(705판매) · 매칭 7건 5,602~29,606원 (2026-07-19)"}},
+        {pid:"yc-08", g:"비가열 양념육", name:"블랙페퍼윙봉 콤보", spec:"700g·과세", buy:7300, ship:3500, mkt:"온라인상시가 1팩 11,900 · 온라인 베스트", emoji:"🍗", note:"원산지 브라질 · 흑후추 윙봉", mkt3:{coupang:"쿠팡 최저 6,000원 · 리뷰1위 하림 자연실록 무항생제 인증 닭봉 윗날개 6,000원(44,121리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 [신선특가]우리아이 영양간식 닭윙봉날개 푸짐하게 1kg+kg 총2kg 12,094원(2437판매) · 매칭 1건 12,094~12,094원 (2026-07-19)"}},
+        {pid:"yc-09", g:"비가열 양념육", name:"대쪽갈비(돼지등갈비)", spec:"500g·과세", buy:6500, ship:3500, mkt:"온라인상시가 1팩 11,900 · 톡딜 4천만원↑", emoji:"🥩", note:"원산지 브라질 · 통 돼지등갈비 숙성·연육", mkt3:{coupang:"쿠팡 최저 12,900원 · 리뷰1위 포크밸리 등갈비 찜용 / 구이용 (냉장) 28,410원(20,254리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 암돼지 깔끔손질 프라임 등갈비 1kg 쪽갈비 구이·찜 겸용 10,707원(7260판매) · 매칭 4건 10,616~30,327원 (2026-07-19)"}},
+        {pid:"yc-10", g:"비가열 양념육", name:"후다닭 닭다리", spec:"450g·과세", buy:5500, ship:3500, mkt:"온라인상시가 2팩 15,900 · 톡딜 고정", emoji:"🍗", note:"원산지 브라질 · 바삭 파우더 닭다리", mkt3:{coupang:"쿠팡 최저 2,900원 · 리뷰1위 하림 자연실록 무항생제 인증 닭다리살 정 15,000원(93,785리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 생닭다리 2kg 닭북채 닭볶음탕용 구이용 10,794원(5713판매) · 매칭 3건 3,942~10,794원 (2026-07-19)"}},
+        {pid:"yc-11", g:"비가열 양념육", name:"닭목살 담백/매콤 2종", spec:"500g·담백 면세/매콤 과세", buy:5000, ship:3500, mkt:"온라인상시가 1팩 10,900", emoji:"🍗", note:"🔴 판매일시중단 · 특수부위 닭목살", mkt3:{coupang:"쿠팡 최저 6,200원 · 리뷰1위 곰곰 닭 목살 (냉동), 1kg, 1개 9,990원(3,127리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"동종 미발견(테무에 직접 경쟁상품 없음) (2026-07-19)"}},
+        {pid:"yc-12", g:"비가열 양념육", name:"부산 금정산성 양념 오리주물럭", spec:"500g·과세", buy:7500, ship:3500, mkt:"온라인상시가 1팩 13,900 · 톡딜 5천만원↑", emoji:"🦆", note:"국내산 유황오리 · 24시간 저온숙성", mkt3:{coupang:"쿠팡 최저 7,900원 · 리뷰1위 다향오리 무항생제 인증 우리땅 오리 다리 11,650원(12,668리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"동종 미발견(테무에 직접 경쟁상품 없음) (2026-07-19)"}},
+        {pid:"yc-13", g:"비가열 양념육", name:"안동식 찜닭", spec:"700g·과세", buy:5500, ship:3500, mkt:"온라인상시가 1팩 10,900 · 온라인 베스트", emoji:"🍗", note:"원산지 브라질 · 안동식 간장찜닭", mkt3:{coupang:"쿠팡 최저 1,780원 · 리뷰1위 홈스토랑 애슐리 당면 듬뿍 매콤 안동찜닭 13,900원(11,761리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 자꾸 생각나는 솥뚜껑 간장찜닭 1kg 안동찜닭 간편조리 밀키트 8,488원(2549판매) · 매칭 1건 8,488~8,488원 (2026-07-19)"}},
+        {pid:"yc-14", g:"비가열 양념육", name:"춘천식 닭갈비", spec:"700g·과세", buy:5500, ship:3500, mkt:"온라인상시가 1팩 10,900 · 온라인 베스트", emoji:"🍗", note:"원산지 브라질 · 깔끔한 특제소스", mkt3:{coupang:"쿠팡 최저 10,990원 · 리뷰1위 셰프초이스 춘천식닭갈비 (냉장), 1kg 13,900원(151,063리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 김연자셰프 춘천 양념 닭갈비 600g+ 600g /순살 닭다리살 10,525원(778판매) · 매칭 6건 5,795~22,480원 (2026-07-19)"}},
+        {pid:"yc-15", g:"비가열 양념육", name:"로스트치킨 1마리 (1kg)", spec:"1kg·과세", buy:5000, ship:3500, mkt:"온라인상시가 2팩 16,900 · 300만팩↑ 판매", emoji:"🍗", note:"국내산 · 에어프라이어/오븐 조리", mkt3:{coupang:"쿠팡 최저 5,400원 · 리뷰1위 마니커에프앤지 바사삭치킨 한마리 (냉동) 16,890원(33,852리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 기름에 튀기지 않아 담백한 로스트치킨 1kg 겉바속촉 구운치킨 에어프라이어 간편 6,174원(8385판매) · 매칭 6건 6,174~16,371원 (2026-07-19)"}},
+        {pid:"yc-16", g:"비가열 양념육", name:"로스트치킨 1마리 (650g)", spec:"650g·과세", buy:4500, ship:3500, mkt:"300만팩↑ 판매 베스트", emoji:"🍗", note:"국내산 · 소용량", mkt3:{coupang:"쿠팡 최저 5,760원 · 리뷰1위 [비비큐] BBQ 자메이카 통다리 바베큐 18,900원(10,350리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 기름에 튀기지 않아 담백한 로스트치킨 1kg 겉바속촉 구운치킨 에어프라이어 간편 6,174원(8385판매) · 매칭 7건 6,174~16,371원 (2026-07-19)"}},
+        {pid:"yc-17", g:"비가열 양념육", name:"온천장돼지불고기", spec:"1kg·과세", buy:7500, ship:3500, mkt:"온라인상시가 15,900 · 공구/행사 1등", emoji:"🥩", note:"국내산 · 부산 온천장 불백", mkt3:{coupang:"쿠팡 최저 4,480원 · 리뷰1위 셰프초이스 칼집 돼지왕구이, 1kg, 1 15,860원(108,575리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 [600g 1+1+1] 자연백계 온가족 양념돼지왕구이 600g 1+1+1 (3팩 12,940원(6555판매) · 매칭 6건 6,416~20,966원 (2026-07-19)"}},
+        {pid:"yc-18", g:"비가열 양념육", name:"댓잎 칼집 돼지왕구이", spec:"1kg·과세", buy:7500, ship:3500, mkt:"온라인상시가 16,900 · 공구/행사 1등", emoji:"🥩", note:"수입산 · 칼집 왕구이", mkt3:{coupang:"쿠팡 최저 9,600원 · 리뷰1위 셰프초이스 칼집 돼지왕구이, 1kg, 1 15,860원(108,575리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 암돼지 깔끔손질 보쌈·수육용 통오겹살 3등분 2kg 바베큐 21,257원(7205판매) · 매칭 8건 5,814~21,257원 (2026-07-19)"}},
+        {pid:"yc-19", g:"비가열 양념육", name:"솥뚜껑 얼큰 닭볶음탕", spec:"1kg·과세", buy:5500, ship:3500, mkt:"온라인상시가 12,900 · 공구/행사 1등", emoji:"🍗", note:"국내산 닭 · 대용량 2~3인", mkt3:{coupang:"쿠팡 최저 4,400원 · 리뷰1위 하림 닭볶음탕용 (냉장), 1000g,  7,860원(195,205리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"동종 미발견(테무에 직접 경쟁상품 없음) (2026-07-19)"}},
+        {pid:"yc-20", g:"비가열 양념육", name:"가마솥 간장찜닭", spec:"1kg·과세", buy:5500, ship:3500, mkt:"온라인상시가 12,900 · 공구/행사 1등", emoji:"🍗", note:"국내산 닭 · 대용량 2~3인", mkt3:{coupang:"쿠팡 최저 4,480원 · 리뷰1위 홈스토랑 애슐리 당면 듬뿍 매콤 안동찜닭 13,900원(11,761리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 자꾸 생각나는 솥뚜껑 간장찜닭 1kg 안동찜닭 간편조리 밀키트 8,488원(2549판매) · 매칭 1건 8,488~8,488원 (2026-07-19)"}},
+        {pid:"yc-21", g:"비가열 양념육", name:"마늘폭탄통닭", spec:"800g·과세", buy:6500, ship:3500, mkt:"온라인상시가 12,900", emoji:"🍗", note:"🆕 신메뉴 · 국내산 · 마늘소스", mkt3:{coupang:"미확인 (셀록홈즈 로딩지연 → 재조사 필요) (2026-07-08)", temu:"판매1위 [고기중독]에어프라이어용 국내산 옛날 통닭 4마리 (염지닭) 15,534원(2149판매) · 매칭 4건 8,010~15,534원 (2026-07-19)"}},
+        {pid:"yc-22", g:"비가열 양념육", name:"정직한 꼬치어묵 (꼬치10+소스1)", spec:"300g·과세", buy:2500, ship:3500, mkt:"온라인상시가 5,900", emoji:"🍢", note:"🆕 신메뉴 · 국내산 갈치순살 어육", mkt3:{coupang:"쿠팡 최저 1,000원 · 리뷰1위 고래사어묵 가정용 꼬치어묵 밀가루 0%  12,240원(44,550리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 높은 연육함량 갈치순살만 사용한 어묵꼬치 10개입(300g) 어묵탕 오뎅 분식  3,719원(1381판매) · 매칭 9건 2,978~13,588원 (2026-07-19)"}},
+        {pid:"yc-23", g:"비가열 양념육", name:"양념우삼겹", spec:"300g·과세", buy:4800, ship:3500, mkt:"온라인상시가 9,900", emoji:"🥩", note:"🆕 신메뉴 · 수입산 · 배 양념", mkt3:{coupang:"쿠팡 최저 800원 · 리뷰1위 국내산 알배기, 1개입, 1개 1,960원(325,267리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 [고기중독] 3초구이 우삼겹 1kg 15,904원(1119판매) · 매칭 1건 15,904~15,904원 (2026-07-19)"}},
+        {pid:"yc-24", g:"가공품", name:"5분완성 볏짚초벌삼겹살", spec:"초벌후 280g±10%·과세", buy:6000, ship:3500, mkt:"온라인상시가 1팩 11,900 · 온라인 베스트", emoji:"🥓", note:"수입산 · 볏짚초벌 향·육즙 · 후기만족 95%↑", mkt3:{coupang:"쿠팡 최저 6,800원 · 리뷰1위 다향 바베큐 통삼겹, 450g, 2개 24,500원(18,692리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 암돼지 통밀먹인 오겹살 구이용 2kg (1kg+1kg) 냉동 돼지고기 가성비 22,156원(1116판매) · 매칭 4건 4,999~22,156원 (2026-07-19)"}},
+        {pid:"yc-25", g:"가공품", name:"스팀 닭가슴살 3종 (오리지널/갈릭/훈제)", spec:"500g(100g×5)·과세", buy:4500, ship:3500, mkt:"온라인상시가 10,000 · 공구/행사 1등", emoji:"🍗", note:"국내산 · 촉촉 스팀 가슴살", mkt3:{coupang:"쿠팡 최저 10,000원 · 리뷰1위 미트리 닭가슴살 볼 7종 혼합 21팩(각 33,100원(12,092리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 [네네치킨] 네꼬닭 크런치 닭가슴살 4종 20팩 (쌀가루O) 37,840원(752판매) · 매칭 6건 5,548~37,840원 (2026-07-19)"}},
+        {pid:"yc-26", g:"가공품", name:"숯불 그릴드 로스트치킨", spec:"500g·과세", buy:6000, ship:3500, emoji:"🍗", note:"🆕 신메뉴 · 국내산 · 숯불향", mkt3:{coupang:"쿠팡 최저 4,900원 · 리뷰1위 [비비큐] BBQ 자메이카 통다리 바베큐 18,900원(10,350리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 기름에 튀기지 않아 담백한 로스트치킨 1kg 겉바속촉 구운치킨 에어프라이어 간편 6,174원(8385판매) · 매칭 8건 6,174~54,952원 (2026-07-19)"}},
+        {pid:"yc-27", g:"가공품", name:"숯불 그릴드 로스트 윙봉콤보", spec:"400g·과세", buy:6000, ship:3500, emoji:"🍗", note:"🆕 신메뉴 · 국내산 · 숯불향 윙봉", mkt3:{coupang:"쿠팡 최저 12,300원 · 리뷰1위 [비비큐] BBQ 자메이카 통다리 바베큐 18,900원(10,350리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 [신선특가]우리아이 영양간식 닭윙봉날개 푸짐하게 1kg+kg 총2kg 12,094원(2437판매) · 매칭 1건 12,094~12,094원 (2026-07-19)"}},
+        {pid:"yc-28", g:"원료육", name:"부채살 큐브스테이크", spec:"200g·면세", buy:4500, ship:3500, emoji:"🥩", note:"🔴 판매일시중단 · 미국산 · 큐브 간편조리", mkt3:{coupang:"쿠팡 최저 5,000원 · 리뷰1위 호주산 부채살 스테이크 (냉장), 1kg 31,990원(19,447리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 [고기중독]프리미엄 부위 1kg(소갈비살200g+부채살200g+안창살300g+토 26,790원(2027판매) · 매칭 3건 3,251~26,790원 (2026-07-19)"}},
+        {pid:"yc-29", g:"원료육", name:"7호닭 닭도리육 (볶음탕/찜닭용)", spec:"650g·면세", buy:3800, ship:3500, emoji:"🍗", note:"국내산 · 컷팅 닭", mkt3:{coupang:"쿠팡 최저 5,400원 · 리뷰1위 하림 닭볶음탕용 (냉장), 1000g,  7,860원(195,205리뷰) · 판매량/전환율=윙필요 (2026-07-08)", temu:"판매1위 생닭다리 2kg 닭북채 닭볶음탕용 구이용 10,794원(5713판매) · 매칭 2건 10,794~13,109원 (2026-07-19)"}}
+      ]},
+    { id:"chm", name:"(주)천해무 · 정윤식", cat:"국물육수팩·건강스낵", emoji:"🌊", status:"ok", phone:"010-4495-1472", email:"01044951472@daum.net", region:"인천 부평구", card:"chm_card.png", note:"국물 육수팩 제조사(가정용·식자재) chmfood.kr · 부가세 포함가 · 배송비 무조건 건당 3,000원(사장 확정 — 공급사 시트의 벌크 5,000 미적용) · 소량주문 가능 · 출고지 인천 부평구 주부토로 236 유원센터 B동 413호 · 택배사 CJ대한통운 · ⚠️저단가 스낵은 배송비 3,000 부담 커 묶음판매 필수 · 주문마감 낮 12시(정오) 당일발송 (사장 정정 2026-07-15 — 종전 '오전 12시(자정)' 표기는 주문서 파일명에서 온 오기)", shipPolicy:{fee:3000, note:"무조건 건당 3,000원(사장 확정) · 묶음발송도 건당 3,000 · 공급사 시트 벌크5,000 미적용"},
+      products:[
+        {pid:"chm-01", g:"국물육수팩", name:"원물 다시팩", spec:"150g (15g×10개입)·면세", buy:5500, ship:3000, sell:9900, mkt:"온라인가 10,000 · 네이버 다시팩15g×10 4,650~9,900", emoji:"🌊", note:"🟡 상온·경량 테무적합 / 단품 원가8,500(매입5,500+배송3,000)로 마진 얇음 → 3개묶음 권장 · 면세 · 테무=원물멸치 위주(티백 다시팩 희소)→편의 프리미엄 포지셔닝 필요 · 박스입수 30개", mkt3:{naver:"다시팩 15g×10 4,650~9,900", coupang:"쿠팡 최저 1,900원 · 리뷰1위 해통령 디포리 다시팩 16g×20 14,000원(19,151리뷰) · 판매량=윙필요 (2026-07-14)", temu:"테무 원물멸치 150g 3,972원(1,100판매·국내발송) · ⚠원물멸치/분말 위주, 티백 다시팩은 직접경쟁 희소 (2026-07-14)"}, img:"chm-01.jpg"},
+        {pid:"chm-02", g:"국물육수팩", name:"코인 육수", spec:"4g×10개입·과세", buy:2200, ship:3000, mkt:"온라인가 5,000 · 네이버 코인육수 큐브 2,250~8,900(규격상이)", emoji:"🧊", note:"🔴 단품 원가5,200(매입2,200+배송3,000)>온라인가5,000 역마진 → 묶음(4~6개) 필수 · 과세 · 테무 직접경쟁 부재(오매칭)→희소하나 수요 미검증 · 박스입수 100개", mkt3:{naver:"코인육수 큐브 2,250~8,900(규격상이)", coupang:"쿠팡 최저 3,000원 · 리뷰1위 곰곰 한알육수 3g 70입 9,490원(69,624리뷰) · 판매량=윙필요 (2026-07-14)", temu:"⚠테무 '코인육수' 검색=주방용품(그릇/냄비) 오매칭·직접경쟁 상품 부재(희소) · 실질경쟁=쿠팡 곰곰 한알육수 (2026-07-14)"}, img:"chm-02.jpg"},
+        {pid:"chm-03", g:"건강스낵", name:"참마깨스틱", spec:"60g·과세", buy:1250, ship:3000, mkt:"온라인가 2,500 · 네이버 구운참깨참마스틱 300g 7,900/500g 9,900(대용량 주류)", emoji:"🍪", note:"🔴 단품 원가4,250(매입1,250+배송3,000)>온라인가2,500 역마진 → 묶음필수·대용량경쟁 심함 · 과세 · 🔴테무 대용량 저가경쟁 확인→단품불가, 묶음필수 · 박스입수 100개", mkt3:{naver:"구운 참깨참마스틱 300g 7,900/500g 9,900(대용량 주류)", coupang:"쿠팡 최저 3,000원 · 리뷰1위 구운 참마 흑임자스틱 400g 10,800원(2,032리뷰) · 판매량=윙필요 (2026-07-14)", temu:"🔴테무 참마깨스틱 100g 1,920원(499판매·국내발송)·강정400g 5,349(724) → 우리 60g 원가4,250 > 테무 100g, 대용량 저가경쟁 (2026-07-14)"}, img:"chm-03.jpg"},
+        {pid:"chm-04", g:"건강스낵", name:"고구마스틱", spec:"50g·과세", buy:1250, ship:3000, mkt:"온라인가 2,500 · 네이버 고구마스틱 대용량 800g 13,480/소포장 990~2,000", emoji:"🍠", note:"🔴 단품 원가4,250 역마진 → 묶음필수·대용량경쟁 심함 · 과세 · 🔴테무 대용량 저가경쟁 확인→단품불가, 묶음필수 · 박스입수 100개", mkt3:{naver:"고구마스틱 대용량 800g 13,480/소포장 990~2,000", coupang:"쿠팡 최저 900원 · 리뷰1위 군고구마바 22g×20 17,800원(17,004리뷰) · 판매량=윙필요 (2026-07-14)", temu:"🔴테무 고구마말랭이 100~200g 1,300~2,766원(948~1,565판매·국내발송) → 우리 50g 원가4,250 > 테무 대용량, 저가경쟁 심함 (2026-07-14)"}, img:"chm-04.jpg"},
+        {pid:"chm-05", g:"건강스낵", name:"누룽지스낵", spec:"60g·과세", buy:2000, ship:3000, mkt:"온라인가 4,000 · 네이버 누룽지스낵 60~100g 2,400~3,390", emoji:"🍘", note:"🔴 단품 원가5,000(매입2,000+배송3,000)>온라인가4,000 역마진 → 묶음필수 · 과세 · 🔴테무 대용량 저가경쟁 확인→단품불가, 묶음필수 · 박스입수 100개", mkt3:{naver:"누룽지스낵 60~100g 2,400~3,390", coupang:"쿠팡 최저 3,020원 · 리뷰1위 농심 누룽지팝 142g×10 23,220원(52,356리뷰) · 판매량=윙필요 (2026-07-14)", temu:"🔴테무 찹쌀누룽지과자 288g 3,220원(677판매·국내발송)·농심 누룽지팝142g 5,082(1,458) → 우리 60g 원가5,000 > 테무 대용량, 저가경쟁 (2026-07-14)"}, img:"chm-05.jpg"}
+      ]},
+    { id:"sb", name:"샛별푸드", cat:"닭가슴살·간편식·밀키트", emoji:"🍱", status:"ok", note:"다즐샵·에브리쿡·편한한끼 브랜드 제조/공급 · 공급가=부가세포함 제안가 · 배송비 5,000원(아이스박스 냉동 발송) · 전품목 상시제조·소비기한 제조일+1년 · ⚠️저단가 300g 안주류는 배송비 5,000 때문에 단품 역마진 → 묶음 필수 · ⚠️브랜드상품이므로 테무 등록 시 브랜드 승인서류 필요 여부 확인 요(음료 17종 사례)", shipPolicy:{fee:5000, note:"건당 5,000원 · 아이스박스 냉동 발송 · 공급사 시트값"},
+      products:[
+        {pid:"sb-01", g:"닭가슴살(간편)", name:"다즐샵 소스 슬라이스 닭가슴살 6종", spec:"100g x 6ea · 가열된제품 전자렌지용", buy:6600, ship:5000, sell:12470, mkt:"테무 16,276원(401판매) · 공급사 권장 12,470원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 12,470원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 셀렉트밀 소스 닭가슴살 5종 혼합 세트 (총 15팩) 16,276원(401판매) · 매칭 1건 16,276~16,276원 (2026-07-19)"}},
+        {pid:"sb-02", g:"닭가슴살(간편)", name:"다즐샵 스팀 통 닭가슴살 5종", spec:"100g x 5ea · 가열된제품 전자렌지용", buy:6600, ship:5000, sell:12470, mkt:"테무 동종 미발견 · 공급사 권장 12,470원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 12,470원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"동종 미발견(테무에 직접 경쟁상품 없음) (2026-07-19)"}},
+        {pid:"sb-03", g:"닭가슴살(간편)", name:"다즐샵 그릴 닭가슴살 5종", spec:"100g x 5ea · 가열된제품 전자렌지용", buy:6600, ship:5000, sell:12470, mkt:"테무 동종 미발견 · 공급사 권장 12,470원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 12,470원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"동종 미발견(테무에 직접 경쟁상품 없음) (2026-07-19)"}},
+        {pid:"sb-04", g:"닭가슴살(간편)", name:"다즐샵 닭가슴살 스테이크 6종", spec:"100g x 6ea · 가열된제품 전자렌지용", buy:5500, ship:5000, sell:9970, mkt:"테무 16,276원(403판매) · 공급사 권장 9,970원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 9,970원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 셀렉트밀 소스 닭가슴살 5종 혼합 세트 (총 15팩) 16,276원(403판매) · 매칭 7건 5,548~38,988원 (2026-07-19)"}},
+        {pid:"sb-05", g:"닭가슴살(간편)", name:"다즐샵 닭가슴살 큐브 6종", spec:"100g x 6ea · 가열된제품 전자렌지용", buy:5500, ship:5000, sell:9900, mkt:"테무 37,840원(752판매) · 공급사 권장 9,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 9,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 [네네치킨] 네꼬닭 크런치 닭가슴살 4종 20팩 (쌀가루O) 37,840원(752판매) · 매칭 2건 16,276~37,840원 (2026-07-19)"}},
+        {pid:"sb-06", g:"밀키트·안주", name:"에브리쿡 마늘 닭똥집 볶음", spec:"300g · 가열하여 조리해야하는제품", buy:2310, ship:5000, sell:5900, mkt:"테무 동종 미발견 · 공급사 권장 5,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 5,900원 · 카톤입수 20 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"동종 미발견(테무에 직접 경쟁상품 없음) (2026-07-19)"}, img:"sb-06.jpg"},
+        {pid:"sb-07", g:"밀키트·안주", name:"에브리쿡 양념불쭈꾸미", spec:"500g · 가열하여 조리해야하는제품", buy:7700, ship:5000, sell:15000, mkt:"테무 16,465원(559판매) · 공급사 권장 15,000원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,000원 · 카톤입수 20 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 [한국제품/국내배송] 24/7 주꾸미철판볶음 350g*3개 / 반찬 식사 즉석  16,465원(559판매) · 매칭 6건 5,931~16,961원 (2026-07-19)"}, img:"sb-07.jpg"},
+        {pid:"sb-08", g:"밀키트·안주", name:"에브리쿡 소불고기", spec:"300g · 가열하여 조리해야하는제품", buy:3960, ship:5000, sell:7966, mkt:"테무 4,146원(3445판매) · 공급사 권장 7,966원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 7,966원 · 카톤입수 20 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 아빠식당 당면 뚝배기 소불고기400g 4,146원(3445판매) · 매칭 4건 4,146~16,340원 (2026-07-19)"}, img:"sb-08.jpg"},
+        {pid:"sb-09", g:"밀키트·안주", name:"에브리쿡 고추장 닭갈비", spec:"300g · 가열하여 조리해야하는제품", buy:2200, ship:5000, sell:8100, mkt:"테무 5,795원(240판매) · 공급사 권장 8,100원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 8,100원 · 카톤입수 20 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 김연자셰프 춘천 양념 닭갈비 600g /순살 닭다리살 5,795원(240판매) · 매칭 2건 5,795~13,126원 (2026-07-19)"}, img:"sb-09.jpg"},
+        {pid:"sb-10", g:"밀키트·안주", name:"에브리쿡 간장 닭갈비", spec:"300g · 가열하여 조리해야하는제품", buy:2310, ship:5000, sell:8100, mkt:"테무 5,795원(240판매) · 공급사 권장 8,100원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 8,100원 · 카톤입수 20 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 김연자셰프 춘천 양념 닭갈비 600g /순살 닭다리살 5,795원(240판매) · 매칭 2건 5,795~13,126원 (2026-07-19)"}, img:"sb-10.jpg"},
+        {pid:"sb-11", g:"밀키트·안주", name:"에브리쿡 앞다리살 고추장 불고기", spec:"300g · 가열하여 조리해야하는제품", buy:2420, ship:5000, sell:8966, mkt:"테무 12,845원(4445판매) · 공급사 권장 8,966원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 8,966원 · 카톤입수 20 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 [냉장제품] 100% 앞다리! 수비드 공법 마스터 통 족발 1,200g 내외 1 12,845원(4445판매) · 매칭 7건 7,740~20,677원 (2026-07-19)"}, img:"sb-11.jpg"},
+        {pid:"sb-12", g:"밀키트·안주", name:"에브리쿡 앞다리살로 만든 간장 불고기", spec:"300g · 가열하여 조리해야하는제품", buy:2640, ship:5000, sell:8100, mkt:"테무 12,845원(4445판매) · 공급사 권장 8,100원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 8,100원 · 카톤입수 20 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 [냉장제품] 100% 앞다리! 수비드 공법 마스터 통 족발 1,200g 내외 1 12,845원(4445판매) · 매칭 7건 7,740~20,677원 (2026-07-19)"}, img:"sb-12.jpg"},
+        {pid:"sb-13", g:"밀키트·안주", name:"에브리쿡 무뼈닭발", spec:"300g · 가열하여 조리해야하는제품", buy:4378, ship:5000, sell:9900, mkt:"테무 5,852원(5531판매) · 공급사 권장 9,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 9,900원 · 카톤입수 20 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 자꾸만 손이 가는 26년 전통 콜라겐 무뼈닭발(일반맛, 매운맛) 5,852원(5531판매) · 매칭 8건 5,604~16,851원 (2026-07-19)"}, img:"sb-13.jpg"},
+        {pid:"sb-14", g:"밀키트·안주", name:"에브리쿡 국물닭발", spec:"300g · 가열하여 조리해야하는제품", buy:2609, ship:5000, sell:6900, mkt:"테무 5,852원(5531판매) · 공급사 권장 6,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 6,900원 · 카톤입수 20 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 자꾸만 손이 가는 26년 전통 콜라겐 무뼈닭발(일반맛, 매운맛) 5,852원(5531판매) · 매칭 4건 5,852~16,851원 (2026-07-19)"}, img:"sb-14.jpg"},
+        {pid:"sb-15", g:"밀키트·안주", name:"에브리쿡 돼지갈비찜", spec:"700g · 가열하여 조리해야하는제품", buy:6565, ship:5000, sell:15900, mkt:"테무 10,707원(7262판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 8 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 암돼지 깔끔손질 프라임 등갈비 1kg 쪽갈비 구이·찜 겸용 10,707원(7262판매) · 매칭 3건 8,207~10,707원 (2026-07-19)"}, img:"sb-15.jpg"},
+        {pid:"sb-16", g:"밀키트·안주", name:"에브리쿡 소금 돼지껍데기", spec:"300g · 가열하여 조리해야하는제품", buy:2310, ship:5000, sell:6900, mkt:"테무 9,839원(216판매) · 공급사 권장 6,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 6,900원 · 카톤입수 20 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 돼지껍데기 간장 직화양념 300g x 2팩 9,839원(216판매) · 매칭 1건 9,839~9,839원 (2026-07-19)"}},
+        {pid:"sb-17", g:"밀키트·안주", name:"에브리쿡 매콤 돼지껍데기", spec:"300g · 가열하여 조리해야하는제품", buy:2310, ship:5000, sell:6900, mkt:"테무 9,839원(216판매) · 공급사 권장 6,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 6,900원 · 카톤입수 20 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 돼지껍데기 간장 직화양념 300g x 2팩 9,839원(216판매) · 매칭 1건 9,839~9,839원 (2026-07-19)"}, img:"sb-17.jpg"},
+        {pid:"sb-18", g:"밀키트·안주", name:"에브리쿡 간장 돼지껍데기", spec:"300g · 가열하여 조리해야하는제품", buy:2310, ship:5000, sell:6900, mkt:"테무 9,839원(216판매) · 공급사 권장 6,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 6,900원 · 카톤입수 20 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 돼지껍데기 간장 직화양념 300g x 2팩 9,839원(216판매) · 매칭 1건 9,839~9,839원 (2026-07-19)"}},
+        {pid:"sb-19", g:"도시락·간편식", name:"다즐샵 치킨마요덮밥", spec:"300g · 전자렌지용 간편식", buy:2860, ship:5000, sell:5400, mkt:"테무 동종 미발견 · 공급사 권장 5,400원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 5,400원 · 카톤입수 18 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"동종 미발견(테무에 직접 경쟁상품 없음) (2026-07-19)"}, img:"sb-19.jpg"},
+        {pid:"sb-20", g:"도시락·간편식", name:"다즐샵 햄마요덮밥", spec:"300g · 전자렌지용 간편식", buy:2860, ship:5000, sell:5400, mkt:"테무 동종 미발견 · 공급사 권장 5,400원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 5,400원 · 카톤입수 18 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"동종 미발견(테무에 직접 경쟁상품 없음) (2026-07-19)"}, img:"sb-20.jpg"},
+        {pid:"sb-21", g:"도시락·간편식", name:"다즐샵 참치마요덮밥", spec:"300g · 전자렌지용 간편식", buy:2860, ship:5000, sell:5400, mkt:"테무 동종 미발견 · 공급사 권장 5,400원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 5,400원 · 카톤입수 18 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"동종 미발견(테무에 직접 경쟁상품 없음) (2026-07-19)"}, img:"sb-21.jpg"},
+        {pid:"sb-22", g:"닭가슴살(대용량)", name:"다즐샵 닭가슴살 큐브 오리지널", spec:"1kg · 가열된 완제품", buy:8250, ship:5000, sell:15900, mkt:"테무 16,276원(403판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 셀렉트밀 소스 닭가슴살 5종 혼합 세트 (총 15팩) 16,276원(403판매) · 매칭 1건 16,276~16,276원 (2026-07-19)"}},
+        {pid:"sb-23", g:"닭가슴살(대용량)", name:"다즐샵 닭가슴살 큐브 깻잎", spec:"1kg · 가열된 완제품", buy:8250, ship:5000, sell:15900, mkt:"테무 16,276원(403판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 셀렉트밀 소스 닭가슴살 5종 혼합 세트 (총 15팩) 16,276원(403판매) · 매칭 1건 16,276~16,276원 (2026-07-19)"}},
+        {pid:"sb-24", g:"닭가슴살(대용량)", name:"다즐샵 닭가슴살 큐브 치즈", spec:"1kg · 가열된 완제품", buy:8250, ship:5000, sell:15900, mkt:"테무 16,276원(403판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 셀렉트밀 소스 닭가슴살 5종 혼합 세트 (총 15팩) 16,276원(403판매) · 매칭 1건 16,276~16,276원 (2026-07-19)"}},
+        {pid:"sb-25", g:"닭가슴살(대용량)", name:"다즐샵 닭가슴살 큐브 청양고추", spec:"1kg · 가열된 완제품", buy:8250, ship:5000, sell:15900, mkt:"테무 16,276원(403판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 셀렉트밀 소스 닭가슴살 5종 혼합 세트 (총 15팩) 16,276원(403판매) · 매칭 1건 16,276~16,276원 (2026-07-19)"}},
+        {pid:"sb-26", g:"닭가슴살(대용량)", name:"다즐샵 닭가슴살 큐브 갈비", spec:"1kg · 가열된 완제품", buy:8250, ship:5000, sell:15900, mkt:"테무 16,276원(403판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 셀렉트밀 소스 닭가슴살 5종 혼합 세트 (총 15팩) 16,276원(403판매) · 매칭 1건 16,276~16,276원 (2026-07-19)"}},
+        {pid:"sb-27", g:"닭가슴살(대용량)", name:"다즐샵 닭가슴살 큐브 마늘", spec:"1kg · 가열된 완제품", buy:8250, ship:5000, sell:15900, mkt:"테무 16,276원(403판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 셀렉트밀 소스 닭가슴살 5종 혼합 세트 (총 15팩) 16,276원(403판매) · 매칭 1건 16,276~16,276원 (2026-07-19)"}},
+        {pid:"sb-28", g:"닭가슴살(대용량)", name:"다즐샵 스테이크 닭가슴살 오리지널", spec:"1kg · 가열된 완제품", buy:8250, ship:5000, sell:15900, mkt:"테무 22,468원(478판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 [신선생활] 100% 국내산 냉장 닭가슴살 3kg (1kg씩 진공포장) 22,468원(478판매) · 매칭 1건 22,468~22,468원 (2026-07-19)"}},
+        {pid:"sb-29", g:"닭가슴살(대용량)", name:"다즐샵 스테이크 닭가슴살 깻잎", spec:"1kg · 가열된 완제품", buy:8250, ship:5000, sell:15900, mkt:"테무 22,468원(478판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 [신선생활] 100% 국내산 냉장 닭가슴살 3kg (1kg씩 진공포장) 22,468원(478판매) · 매칭 1건 22,468~22,468원 (2026-07-19)"}},
+        {pid:"sb-30", g:"닭가슴살(대용량)", name:"다즐샵 스테이크 닭가슴살 치즈", spec:"1kg · 가열된 완제품", buy:8250, ship:5000, sell:15900, mkt:"테무 22,468원(478판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 [신선생활] 100% 국내산 냉장 닭가슴살 3kg (1kg씩 진공포장) 22,468원(478판매) · 매칭 1건 22,468~22,468원 (2026-07-19)"}},
+        {pid:"sb-31", g:"닭가슴살(대용량)", name:"다즐샵 스테이크 닭가슴살 청양고추", spec:"1kg · 가열된 완제품", buy:8250, ship:5000, sell:15900, mkt:"테무 22,468원(478판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 [신선생활] 100% 국내산 냉장 닭가슴살 3kg (1kg씩 진공포장) 22,468원(478판매) · 매칭 1건 22,468~22,468원 (2026-07-19)"}},
+        {pid:"sb-32", g:"닭가슴살(대용량)", name:"다즐샵 스테이크 닭가슴살 갈비", spec:"1kg · 가열된 완제품", buy:8250, ship:5000, sell:15900, mkt:"테무 22,468원(478판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 [신선생활] 100% 국내산 냉장 닭가슴살 3kg (1kg씩 진공포장) 22,468원(478판매) · 매칭 1건 22,468~22,468원 (2026-07-19)"}},
+        {pid:"sb-33", g:"닭가슴살(대용량)", name:"다즐샵 스테이크 닭가슴살 마늘", spec:"1kg · 가열된 완제품", buy:8250, ship:5000, sell:15900, mkt:"테무 22,468원(478판매) · 공급사 권장 15,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 15,900원 · 카톤입수 10 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 [신선생활] 100% 국내산 냉장 닭가슴살 3kg (1kg씩 진공포장) 22,468원(478판매) · 매칭 1건 22,468~22,468원 (2026-07-19)"}},
+        {pid:"sb-34", g:"도시락·간편식", name:"편한한끼 식단도시락 215g x 8개", spec:"8ea · 전자렌지용 간편식", buy:20240, ship:5000, sell:37750, mkt:"테무 동종 미발견 · 공급사 권장 37,750원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 37,750원 · 카톤입수 8 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"동종 미발견(테무에 직접 경쟁상품 없음) (2026-07-19)"}, img:"sb-34.jpg"},
+        {pid:"sb-35", g:"도시락·간편식", name:"다즐샵 간편한끼 도시락 220g x 5종 A세트 (냉동), 1세트", spec:"5ea · 전자렌지용 간편식", buy:12650, ship:5000, sell:22900, mkt:"테무 21,018원(3841판매) · 공급사 권장 22,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 22,900원 · 카톤입수 5 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 한우물 볶음밥 3종 혼합 15팩 기획구성, 4분완성 맛있는 한끼 21,018원(3841판매) · 매칭 1건 21,018~21,018원 (2026-07-19)"}, img:"sb-35.jpg"},
+        {pid:"sb-36", g:"도시락·간편식", name:"다즐샵 간편한끼 도시락 220g x 5종 B세트 (냉동), 1세트", spec:"5ea · 전자렌지용 간편식", buy:12650, ship:5000, sell:22900, mkt:"테무 21,018원(3841판매) · 공급사 권장 22,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 22,900원 · 카톤입수 5 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 한우물 볶음밥 3종 혼합 15팩 기획구성, 4분완성 맛있는 한끼 21,018원(3841판매) · 매칭 1건 21,018~21,018원 (2026-07-19)"}, img:"sb-36.jpg"},
+        {pid:"sb-37", g:"도시락·간편식", name:"다즐샵 닭가슴살 도시락 220g x 5종 A세트 (냉동), 1세트", spec:"5ea · 전자렌지용 간편식", buy:12650, ship:5000, sell:23400, mkt:"테무 21,018원(3841판매) · 공급사 권장 23,400원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 23,400원 · 카톤입수 5 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 한우물 볶음밥 3종 혼합 15팩 기획구성, 4분완성 맛있는 한끼 21,018원(3841판매) · 매칭 1건 21,018~21,018원 (2026-07-19)"}, img:"sb-37.jpg"},
+        {pid:"sb-38", g:"도시락·간편식", name:"다즐샵 닭가슴살 도시락 220g x 5종 B세트 (냉동), 1세트", spec:"5ea · 전자렌지용 간편식", buy:12650, ship:5000, sell:23400, mkt:"테무 21,018원(3841판매) · 공급사 권장 23,400원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 23,400원 · 카톤입수 5 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 한우물 볶음밥 3종 혼합 15팩 기획구성, 4분완성 맛있는 한끼 21,018원(3841판매) · 매칭 1건 21,018~21,018원 (2026-07-19)"}, img:"sb-38.jpg"},
+        {pid:"sb-39", g:"도시락·간편식", name:"일품도시락 10종 11팩", spec:"11ea · 전자렌지용 간편식", buy:29040, ship:5000, sell:44200, mkt:"테무 동종 미발견 · 공급사 권장 44,200원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 44,200원 · 카톤입수 11 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"동종 미발견(테무에 직접 경쟁상품 없음) (2026-07-19)"}},
+        {pid:"sb-40", g:"도시락·간편식", name:"맛있는(5팩)", spec:"5ea · 전자렌지용 간편식", buy:12650, ship:5000, sell:21900, mkt:"테무 21,018원(3841판매) · 공급사 권장 21,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 21,900원 · 카톤입수 5 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 한우물 볶음밥 3종 혼합 15팩 기획구성, 4분완성 맛있는 한끼 21,018원(3841판매) · 매칭 9건 13,031~28,929원 (2026-07-19)"}, img:"sb-40.jpg"},
+        {pid:"sb-41", g:"도시락·간편식", name:"건강한(5팩)", spec:"5ea · 전자렌지용 간편식", buy:12650, ship:5000, sell:21900, mkt:"테무 21,018원(3841판매) · 공급사 권장 21,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 21,900원 · 카톤입수 5 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 한우물 볶음밥 3종 혼합 15팩 기획구성, 4분완성 맛있는 한끼 21,018원(3841판매) · 매칭 9건 13,031~28,929원 (2026-07-19)"}, img:"sb-41.jpg"},
+        {pid:"sb-42", g:"도시락·간편식", name:"가벼운(5팩)", spec:"5ea · 전자렌지용 간편식", buy:12650, ship:5000, sell:21900, mkt:"테무 21,018원(3841판매) · 공급사 권장 21,900원", emoji:"🍱", note:"공급사 제안가(부가세포함) · 권장소비자가 21,900원 · 카톤입수 5 · 소비기한 제조일+1년(상시제조) · ⚠️배송비 5,000원(아이스박스 냉동)", mkt3:{temu:"판매1위 한우물 볶음밥 3종 혼합 15팩 기획구성, 4분완성 맛있는 한끼 21,018원(3841판매) · 매칭 9건 13,031~28,929원 (2026-07-19)"}, img:"sb-42.jpg"}
+      ]}
+  ],
+  directory: []
+};
+
+</script>
+<script>
+  var D = window.DASH;
+  if(!D||!D.suppliers){ document.body.innerHTML='<div style="padding:50px;max-width:560px;margin:0 auto"><h2>⚠ data.js 로드 실패</h2><p style="margin-top:10px;line-height:1.7">data.js 문법 오류 가능성. backups/ 최근 사본으로 복구하거나 T봇에게 문법 검사를 지시하세요.</p></div>'; throw new Error('DASH load fail'); }
+
+  /* ── 상수 ── */
+  var FEE = (D.feeRate!=null? D.feeRate : 0.07);      /* 수수료: 공식 미공개, 실셀러 증언 ~7%. 첫 정산 실측 후 data.js에 feeRate 확정 */
+  var FEEPCT = Math.round(FEE*100);
+  var SHIP_CREDIT = 3000;                              /* 19,800 미만: 고객 배송비 수취(정산 유입 — 사장 확정 2026-07-22) */
+  var FREE_LIMIT = 19800;
+  var STALE_DAYS = 7;
+
+  /* ── pid 인덱스 ── */
+  var PMAP={};
+  D.suppliers.forEach(function(s,si){ (s.products||[]).forEach(function(p,pi){
+    p._pid=p.pid||((s.id||('v'+si))+'-'+pi); p._si=si; PMAP[p._pid]={s:s,p:p};
+  });});
+
+  function won(n){return n==null?"–":Math.round(n).toLocaleString()+"원";}
+  function esc(x){return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+
+  /* ── 배송비: 거래처 정책 단일 원천 (제품별 예외는 shipOverride만 허용) ── */
+  function vendorShip(p){
+    if(p.shipOverride!=null) return p.shipOverride;
+    var s=D.suppliers[p._si], pol=s&&s.shipPolicy;
+    if(!pol||pol.fee==null) return null;               /* 미확인 → 마진 계산 보류 */
+    if(pol.freeOver&&p.buy!=null&&p.buy>=pol.freeOver) return 0;
+    return pol.fee;
+  }
+  function cost(p){ var sh=vendorShip(p); if(p.buy==null||sh==null) return null; return p.buy+sh; }
+
+  /* ── 마진 엔진 (사장 확정 공식) ── */
+  function profit(price,p){ var c=cost(p); if(c==null||price==null) return null;
+    return price*(1-FEE) + (price<FREE_LIMIT?SHIP_CREDIT:0) - c; }
+  function consumer(price){ return price + (price<FREE_LIMIT?SHIP_CREDIT:0); }
+  function mgPct(price,p){ var pr=profit(price,p); if(pr==null||!price) return null; return Math.round(pr/price*100); }
+
+  /* ── 단위가격(원/100g): 실부담가 기준 ── */
+  function unit(price,g){ if(!price||!g) return null; return Math.round(consumer(price)/g*100); }
+  function top3(p){ return (p.temu_top3&&p.temu_top3.length)? p.temu_top3.slice(0,3):null; }
+  function bestComp(p){ var t=top3(p); if(!t) return null;
+    var best=null; t.forEach(function(c){ var u=unit(c.price,c.qty_g);
+      if(u!=null){ if(!best||u<best.u) best={u:u,c:c}; }
+      else if(!best) best={u:null,c:c}; });
+    return best; }
+  function staleDays(p){ var t=top3(p); var d=(p.judge&&p.judge.researched_at)||(t&&t[0].researched_at);
+    if(!d) return null; var ms=Date.now()-new Date(d+'T00:00:00').getTime();
+    return Math.floor(ms/86400000); }
+
+  /* ── 판정: 직원15 저장값(judge) 우선, 없으면 '조사 전' ── */
+  var VD={GO:['b-go','vl-go','🟢 GO'],HOLD:['b-hold','vl-hold','🟡 보류'],NOGO:['b-no','vl-no','🔴 NO-GO']};
+  function verdict(p){ return (p.judge&&VD[p.judge.verdict])? p.judge.verdict : null; }
+  function vcounts(s){ var c={GO:0,HOLD:0,NOGO:0,NONE:0,going:0};
+    (s.products||[]).forEach(function(p){ var v=verdict(p); if(v)c[v]++; else c.NONE++;
+      if(p.status==='GO확정'||p.status==='등록중'||p.status==='판매중')c.going++; });
+    return c; }
+
+  /* ── 등록가 시나리오 ── */
+  function scenarios(p){
+    var out=[], c=cost(p); if(c==null) return out;
+    if(p.judge&&p.judge.price_reco) out.push({lbl:'권장 등록가',price:p.judge.price_reco});
+    out.push({lbl:'무료배송 경계',price:19900});
+    var b=bestComp(p);
+    if(b&&b.u!=null&&p.unit_g){ var m=Math.round(b.u*p.unit_g/100/100)*100-SHIP_CREDIT;
+      if(m>0) out.push({lbl:'최저단가 매칭',price:m}); }
+    var seen={}; return out.filter(function(x){ if(!x.price||seen[x.price])return false; seen[x.price]=1; return true; });
+  }
+
+  function copyTxt(txt){
+    try{ var ta=document.createElement('textarea'); ta.value=txt; ta.style.position='fixed'; ta.style.opacity='0';
+      document.body.appendChild(ta); ta.select(); document.execCommand('copy'); ta.remove(); }catch(e){}
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(txt).then(function(){},function(){});
+  }
+
+  /* ── GO/보류/NO-GO 클릭 → 직원14(상태 반영 담당) 지시문 복사 ── */
+  function decide(pid,action){
+    var e=PMAP[pid]; if(!e)return;
+    var today=new Date().toISOString().slice(0,10);
+    var line=JSON.stringify({ts:today,actor:'사장',pid:pid,name:e.p.name,vendor:e.s.name,action:action});
+    copyTxt('[상태반영 요청 → 직원14] 아래 1줄을 handoff/status_queue.jsonl 에 append 하고 tools/apply_status.py 실행 → 빌드·푸시:\n'+line);
+    alert('✅ '+e.p.name+' → '+action+'\n지시문이 복사됐습니다.\nTTAPP 직원14(테무운영) 채팅에 붙여넣으면 1~2분 내 모든 화면에 반영됩니다.');
+  }
+  /* ── 조사 요청 → 직원15 지시문 복사 ── */
+  function reqResearch(pid){
+    var e=PMAP[pid]; if(!e)return; var s=e.s,p=e.p;
+    copyTxt('[테무 조사 요청 → 직원15] '+new Date().toISOString().slice(0,10)+'\n'+
+      '제품: '+p.name+(p.spec?' ('+p.spec+')':'')+' | 거래처: '+s.name+' | pid: '+p._pid+'\n'+
+      '절차: 견적인입·조사 SOP v2 (위탁수집_14 크롬 프로필 · 판매량순 고정 · 상위20 파싱 · top3 구조화 · 스크린샷 증빙 · 검수게이트 통과 후 반영)');
+    alert('✅ 조사 지시문 복사됨 — TTAPP 직원15 채팅에 붙여넣으세요.');
+  }
+
+  function setHeader(){
+    document.getElementById('date').textContent=(D.builtAt? '🤖 '+D.builtAt+' 생성' : (D.updated||''));
+    var tot={GO:0,HOLD:0,NOGO:0,NONE:0,going:0}, np=0;
+    D.suppliers.forEach(function(s){ var c=vcounts(s); Object.keys(tot).forEach(function(k){tot[k]+=c[k];}); np+=(s.products||[]).length; });
+    document.getElementById('chips').innerHTML=
+      '<div class="chip">거래처<b>'+D.suppliers.length+'</b></div>'+
+      '<div class="chip">품목<b>'+np+'</b></div>'+
+      '<div class="chip">GO<b>'+tot.GO+'</b></div>'+
+      '<div class="chip">보류<b>'+tot.HOLD+'</b></div>'+
+      '<div class="chip">진행중<b>'+tot.going+'</b></div>'+
+      '<div class="chip">조사 전<b>'+tot.NONE+'</b></div>';
+  }
+
+  var MODE='sup';
+  function setMode(m){ MODE=m;
+    document.getElementById('tab-sup').classList.toggle('on',m==='sup');
+    document.getElementById('tab-item').classList.toggle('on',m==='item');
+    render(); }
+  function render(){ if(MODE==='item') renderItems(); else renderSup(); }
+
+  /* ── 첫 화면: 거래처 카드 (마감시간 크게) ── */
+  function renderSup(){
+    var q=(document.getElementById('search').value||'').toLowerCase();
+    var list=D.suppliers.filter(function(s){return (s.name+(s.cat||'')+(s.products||[]).map(function(p){return p.name;}).join()).toLowerCase().indexOf(q)>=0;});
+    document.getElementById('view').innerHTML='<div class="grid">'+list.map(function(s){
+      var c=vcounts(s), pol=s.shipPolicy;
+      var cut=s.cutoff? '<span class="t">'+esc(s.cutoff)+'</span><span class="l">마감'+(s.courier?' · '+esc(s.courier):'')+'</span>'
+                      : '<span class="t na">미확인</span><span class="l" style="color:var(--red)">거래처 확인 필요</span>';
+      return '<div class="vcard" onclick="openSup('+D.suppliers.indexOf(s)+')">'+
+        '<div class="vname">'+esc(s.name)+'</div><div class="vcat">'+esc(s.cat||'')+' · '+(s.products||[]).length+'품목</div>'+
+        '<div class="cutoff">⏰ '+cut+'</div>'+
+        (c.GO?'<span class="badge b-go">GO '+c.GO+'</span>':'')+
+        (c.HOLD?'<span class="badge b-hold">보류 '+c.HOLD+'</span>':'')+
+        (c.NOGO?'<span class="badge b-no">NO-GO '+c.NOGO+'</span>':'')+
+        (c.NONE?'<span class="badge b-none">조사 전 '+c.NONE+'</span>':'')+
+        (c.going?'<span class="badge b-godone">▶ 진행 '+c.going+'</span>':'')+
+        '<div style="margin-top:8px"><span class="badge b-blue">'+(pol&&pol.fee!=null?'택배 '+pol.fee.toLocaleString():'택배비 미확인')+(pol&&pol.freeOver?' · '+pol.freeOver.toLocaleString()+'↑무료':'')+'</span></div>'+
+        '</div>';
+    }).join('')+'</div>';
+    document.getElementById('foot').textContent='💡 카드를 누르면 제품별 원가·테무 top3·판정이 펼쳐집니다. ⏰는 거래처 택배 마감시간.';
+  }
+
+  /* ── 제품 행 (가로형) ── */
+  function prowHtml(p){
+    var s=D.suppliers[p._si], v=verdict(p), c=cost(p), sh=vendorShip(p);
+    var t=top3(p), b=bestComp(p), sd=staleDays(p);
+    var img=p.img?'<img src="images/'+esc(p.img)+'" onerror="this.style.display=\'none\'">':'';
+    var going=(p.status==='GO확정'||p.status==='등록중'||p.status==='판매중');
+    var h='<div class="prow-card'+(v==='GO'?' go':'')+'">';
+    h+='<div class="prow-head"><div class="thumb">'+(img||(p.emoji||'📦'))+'</div>'+
+       '<div><span class="pn">'+esc(p.name)+'</span> <span class="ps">'+esc(p.spec||'')+'</span><br>'+
+       (v?'<span class="badge '+VD[v][0]+'">'+VD[v][2].slice(2)+'</span>':'<span class="badge b-none">조사 전</span>')+
+       (going?'<span class="badge b-godone">▶ '+esc(p.status)+'</span>':'')+
+       (sd!=null&&sd>STALE_DAYS?'<span class="badge b-stale">조사 '+sd+'일 경과</span>':'')+
+       '</div><span class="meta">'+((p.judge&&p.judge.researched_at)||(t&&t[0].researched_at)||'')+'</span></div>';
+
+    /* 숫자 3칸 */
+    h+='<div class="cells">';
+    h+='<div class="cell"><div class="k">원가</div><div class="v">'+won(c)+'</div><div class="d">매입 '+won(p.buy)+' + 택배 '+(sh==null?'<b style="color:var(--red)">미확인</b>':won(sh))+'</div></div>';
+    if(t){
+      var rows=t.map(function(x,i){ var u=unit(x.price,x.qty_g);
+        return (i+1)+'위 '+won(x.price)+(x.qty_g?' /'+x.qty_g+'g':'')+(x.sales!=null?' · '+x.sales.toLocaleString()+'판매':'')+(u?' · <b>'+u.toLocaleString()+'원/100g</b>':''); }).join('<br>');
+      h+='<div class="cell"><div class="k">테무 판매량 top3 (실부담 단가)</div><div class="d" style="margin-top:4px;font-size:11.5px">'+rows+'</div></div>';
+      var myU=(p.unit_g&&c!=null)? Math.round(c/p.unit_g*100):null;
+      if(myU!=null&&b&&b.u!=null){
+        var cheaper=Math.round((1-myU/b.u)*100);
+        var w1=Math.min(100,Math.round(myU/Math.max(myU,b.u)*100)), w2=Math.min(100,Math.round(b.u/Math.max(myU,b.u)*100));
+        h+='<div class="cell"><div class="k">단위가 비교 (원/100g)</div>'+
+           '<div class="v '+(cheaper>0?'gd':'bd')+'">'+(cheaper>0?'원가가 '+cheaper+'% 저렴':'원가가 '+(-cheaper)+'% 비쌈')+'</div>'+
+           '<div class="unitbar"><i class="me" style="width:'+w1+'%"></i></div><div class="d">내 원가 '+myU.toLocaleString()+'/100g</div>'+
+           '<div class="unitbar"><i style="width:'+w2+'%"></i></div><div class="d">테무 최저 '+b.u.toLocaleString()+'/100g</div></div>';
+      }
+    } else {
+      h+='<div class="cell"><div class="k">테무 조사</div><div class="v" style="color:var(--sub);font-size:14px">아직 없음 (새 형식 재조사 대상)</div>'+
+         '<div class="d"><button class="gob gray" style="padding:7px 12px;font-size:12px" onclick="reqResearch(\''+p._pid+'\')">🔍 조사 요청 지시문 복사</button></div></div>';
+    }
+    h+='</div>';
+
+    /* 판정 사유 */
+    if(v) h+='<div class="verdictline '+VD[v][1]+'">'+VD[v][2]+(p.judge.reason?' — '+esc(p.judge.reason):'')+
+      ((p.judge&&p.judge.researcher)?'<span style="margin-left:auto;font-weight:500;font-size:11px">'+esc(p.judge.researcher)+'</span>':'')+'</div>';
+
+    /* 등록가 시나리오 */
+    var sc=scenarios(p);
+    if(sc.length&&c!=null){
+      h+='<table class="sctbl"><tr><th>시나리오</th><th class="r">등록가</th><th class="r">고객 실부담</th><th class="r">개당 이익</th><th class="r">마진</th></tr>';
+      sc.forEach(function(x){ var pr=profit(x.price,p), m=mgPct(x.price,p);
+        h+='<tr><td>'+x.lbl+(x.price<FREE_LIMIT?' <span style="color:var(--sub);font-size:11px">(배송 3천 수취)</span>':' <span style="color:var(--sub);font-size:11px">(무료배송·내부담)</span>')+'</td>'+
+           '<td class="r">'+won(x.price)+'</td><td class="r">'+won(consumer(x.price))+'</td>'+
+           '<td class="r" style="font-weight:800;color:'+(pr>0?'var(--green)':'var(--red)')+'">'+(pr>0?'+':'')+won(pr)+'</td>'+
+           '<td class="r">'+(m!=null?m+'%':'–')+'</td></tr>'; });
+      h+='</table>';
+    }
+
+    /* 결정 버튼 */
+    h+='<div style="margin-top:11px">';
+    if(!going) h+='<button class="gob go" onclick="decide(\''+p._pid+'\',\'GO확정\')">▶ GO — 등록 진행</button>';
+    h+='<button class="gob gray" onclick="decide(\''+p._pid+'\',\'보류\')">보류</button>'+
+       '<button class="gob gray" onclick="decide(\''+p._pid+'\',\'NO-GO\')">NO-GO</button></div>';
+    h+='</div>';
+    return h;
+  }
+
+  function openSup(i){
+    var s=D.suppliers[i], c=vcounts(s), pol=s.shipPolicy;
+    var h='<div class="mhead"><div><h2>'+esc(s.name)+'</h2><span class="vcat">'+esc(s.cat||'')+'</span></div>'+
+      '<div class="cutoff" style="margin:0 0 0 auto">⏰ '+(s.cutoff?'<span class="t">'+esc(s.cutoff)+'</span><span class="l">마감</span>':'<span class="t na">마감 미확인</span>')+'</div>'+
+      '<button class="close" onclick="closeModal()">✕</button></div>';
+    h+='<div class="contact">'+
+      (s.phone?'<div class="ci"><span>📞</span>'+esc(s.phone)+'</div>':'')+
+      (s.email?'<div class="ci"><span>✉️</span>'+esc(s.email)+'</div>':'')+
+      (s.region?'<div class="ci"><span>📍</span>'+esc(s.region)+'</div>':'')+
+      '<div class="ci"><span>🚚</span>'+(pol&&pol.fee!=null?('택배 '+pol.fee.toLocaleString()+'원'+(pol.freeOver?' · '+pol.freeOver.toLocaleString()+'↑무료':'')+(pol.note?' · '+esc(pol.note):'')):'<b style="color:var(--red)">배송정책 미확인 — 거래처 확인 필요</b>')+'</div>'+
+      '<div class="ci"><span>📊</span>GO '+c.GO+' · 보류 '+c.HOLD+' · NO-GO '+c.NOGO+' · 조사 전 '+c.NONE+'</div></div>';
+    if(s.card) h+='<img class="bizcard" src="images/'+esc(s.card)+'" alt="명함" onclick="window.open(this.src)" onerror="this.style.display=\'none\'">';
+    if(s.note) h+='<div class="mnote">📝 '+esc(s.note)+'</div>';
+    var prods=s.products||[];
+    var cats=[]; prods.forEach(function(p){ var g=p.g||'전체'; if(cats.indexOf(g)<0)cats.push(g); });
+    if(cats.length>1){
+      h+='<div class="catbar" id="catbar">'+cats.map(function(g,idx){
+        var n=prods.filter(function(p){return (p.g||'전체')===g;}).length;
+        return '<button class="catchip'+(idx===0?' on':'')+'" data-g="'+esc(g)+'" onclick="showCat('+i+',this.dataset.g)">'+esc(g)+' '+n+'</button>';}).join('')+'</div>';
+      h+='<div id="pgrid">'+prods.filter(function(p){return (p.g||'전체')===cats[0];}).map(prowHtml).join('')+'</div>';
+    } else h+='<div id="pgrid">'+prods.map(prowHtml).join('')+'</div>';
+    document.getElementById('modal').innerHTML=h;
+    document.getElementById('overlay').classList.add('on');
+  }
+  function showCat(i,g){
+    var s=D.suppliers[i];
+    document.getElementById('pgrid').innerHTML=(s.products||[]).filter(function(p){return (p.g||'전체')===g;}).map(prowHtml).join('');
+    var bar=document.getElementById('catbar');
+    for(var k=0;k<bar.children.length;k++) bar.children[k].classList.toggle('on',bar.children[k].dataset.g===g);
+  }
+
+  /* ── 전 품목 심사표 (테무 기준만) ── */
+  function renderItems(){
+    var q=(document.getElementById('search').value||'').toLowerCase();
+    var rows=[];
+    D.suppliers.forEach(function(s){(s.products||[]).forEach(function(p){
+      if(((s.name||'')+(p.name||'')+(p.spec||'')+(p.g||'')).toLowerCase().indexOf(q)>=0) rows.push(p);});});
+    var ord={GO:0,HOLD:1,NOGO:3};
+    rows.sort(function(a,b){ var va=verdict(a),vb=verdict(b);
+      return (va?ord[va]:2)-(vb?ord[vb]:2); });
+    var h='<table class="plantbl"><tr><th>제품</th><th>거래처</th><th class="r">원가</th><th>테무 최저단가</th><th class="r">권장가 이익</th><th>판정</th><th>조사일</th></tr>';
+    rows.slice(0,300).forEach(function(p){
+      var s=D.suppliers[p._si], v=verdict(p), b=bestComp(p), c=cost(p), sd=staleDays(p);
+      var reco=p.judge&&p.judge.price_reco, pr=reco?profit(reco,p):null;
+      h+='<tr style="cursor:pointer" onclick="openSup('+p._si+')">'+
+        '<td><b>'+esc(p.name)+'</b> <span style="color:var(--sub);font-size:11.5px">'+esc(p.spec||'')+'</span></td>'+
+        '<td>'+esc(s.name)+'</td><td class="r">'+won(c)+'</td>'+
+        '<td>'+(b&&b.u!=null?b.u.toLocaleString()+'원/100g':(top3(p)?won(b&&b.c.price):'<span style="color:var(--sub)">조사 전</span>'))+'</td>'+
+        '<td class="r" style="font-weight:800;color:'+(pr>0?'var(--green)':(pr==null?'var(--sub)':'var(--red)'))+'">'+(pr!=null?(pr>0?'+':'')+won(pr):'–')+'</td>'+
+        '<td>'+(v?'<span class="badge '+VD[v][0]+'">'+VD[v][2].slice(2)+'</span>':'<span class="badge b-none">조사 전</span>')+'</td>'+
+        '<td>'+((p.judge&&p.judge.researched_at)||'–')+(sd!=null&&sd>STALE_DAYS?' <span class="badge b-stale">'+sd+'일</span>':'')+'</td></tr>';});
+    h+='</table>';
+    document.getElementById('view').innerHTML='<div class="dcard">'+h+'</div>';
+    document.getElementById('foot').textContent='💡 GO → 보류 → 조사 전 → NO-GO 순 정렬. 행을 누르면 거래처 상세.'+(rows.length>300?' (상위 300개 표시)':'');
+  }
+
+  function closeModal(){document.getElementById('overlay').classList.remove('on');}
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+  setHeader(); render();
+</script>
+</body>
+</html>
