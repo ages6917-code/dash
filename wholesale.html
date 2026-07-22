@@ -336,12 +336,16 @@ window.__IMG__={"chili_card.png": "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgA
 function _img(n){return (window.__IMG__&&window.__IMG__[n])||('images/'+n);}
 </script>
 <script>
+  /* CLAUDEPATCH 2026-07-22: 마진 공식 v2 (수수료 7% 가정·첫 정산 실측 후 확정, 19,800 미만 배송수취 3,000) */
+  window.__FEE=0.07;
+  window.__NET=function(sell,cost){ if(sell==null||cost==null) return null; return sell*(1-window.__FEE) + (sell<19800?3000:0) - cost; };
+  window.__BEP=function(cost){ var f=1-window.__FEE; var p=Math.ceil((cost-3000)/f/100)*100; if(p>=19800) p=Math.ceil(cost/f/100)*100; if(p<100)p=100; return p; };
   var D = window.DASH;
   var BADGE = {ok:["b-ok","✅ 발주가능"],star:["b-ok","⭐ 확보·검수"],check:["b-check","❓ 확인필요"],new:["b-new","🔹 발굴"],no:["b-no","❌ 제외"]};
   function won(n){return n==null?"–":n.toLocaleString()+"원";}
-  function calc(buy,ship){ if(buy==null) return null; var c=buy+(ship||0); return {bep:Math.ceil(c/0.9/100)*100, sell:Math.ceil(c/0.65/100)*100}; }
+  function calc(buy,ship){ if(buy==null) return null; var c=buy+(ship||0); return {bep:window.__BEP(c), sell:Math.ceil(c/0.65/100)*100}; }
   function recPrice(p){ if(p.sell!=null) return p.sell; var c=calc(p.buy,p.ship); return c?c.sell:null; }
-  function marginPct(p){ if(p.buy==null) return null; var rec=recPrice(p); if(rec==null) return null; var net=rec*0.9-(p.buy+(p.ship||0)); return Math.round(net/rec*100); }
+  function marginPct(p){ if(p.buy==null) return null; var rec=recPrice(p); if(rec==null) return null; var net=window.__NET(rec,p.buy+(p.ship||0)); return Math.round(net/rec*100); }
   function sellRange(s){
     var v=s.products.map(function(p){return recPrice(p);}).filter(function(x){return x!=null;});
     if(!v.length) return "단가 확인필요";
@@ -658,9 +662,9 @@ function dashForceRefresh(){
   function won(n) { return n == null ? '–' : Number(n).toLocaleString() + '원'; }
   function esc(s) { return String(s == null ? '' : s).replace(/[<>&"]/g, function (c) { return ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c]; }); }
   // 마진 = 판매가의 90%(플랫폼 수수료 10% 차감) - (매입가+배송비). 기존 대시보드 공식 유지.
-  function calcOf(buy, ship) { if (buy == null) return null; var c = buy + (ship || 0); return { bep: Math.ceil(c / 0.9 / 100) * 100, sell: Math.ceil(c / 0.65 / 100) * 100 }; }
+  function calcOf(buy, ship) { if (buy == null) return null; var c = buy + (ship || 0); return { bep: window.__BEP(c), sell: Math.ceil(c / 0.65 / 100) * 100 }; }
   function recOf(p) { if (p.sell != null) return p.sell; var c = calcOf(p.buy, p.ship); return c ? c.sell : null; }
-  function mgOf(p) { if (p.buy == null) return null; var r = recOf(p); if (r == null) return null; return Math.round((r * 0.9 - (p.buy + (p.ship || 0))) / r * 100); }
+  function mgOf(p) { if (p.buy == null) return null; var r = recOf(p); if (r == null) return null; return Math.round(window.__NET(r, p.buy + (p.ship || 0)) / r * 100); }
   window.__v2 = { won: won, recOf: recOf, mgOf: mgOf };
 
   /* ---------- 1) RTDB 단일 소스 로드 (요구 5) ---------- */
@@ -917,7 +921,7 @@ function dashForceRefresh(){
       return;
     }
     var cost = buy + ship;
-    var bep = Math.ceil(cost / 0.9 / 100) * 100;      // 손익분기(수수료 10% 감안)
+    var bep = window.__BEP(cost);      // 손익분기(수수료 7% + 배송수취 반영)
     var auto = Math.ceil(cost / 0.65 / 100) * 100;    // 판매가 미입력 시 자동산출
     var sell = parseInt(elSell.value, 10);
     var mgIn = parseInt(elMg.value, 10);
@@ -925,20 +929,20 @@ function dashForceRefresh(){
 
     if (src === 'mg' && !isNaN(mgIn)) {
       /* 마진률 → 판매가 역산 */
-      if (mgIn >= 90) {                                // 수수료 10% 때문에 90% 이상은 수학적으로 불가
-        box.innerHTML = '<div class="pe-warn">⚠️ 마진률은 90% 미만만 가능합니다(플랫폼 수수료 10% 때문)</div>';
+      if (mgIn >= 93) {                                // 수수료 7% 때문에 93% 이상은 수학적으로 불가
+        box.innerHTML = '<div class="pe-warn">⚠️ 마진률은 93% 미만만 가능합니다(수수료 7% 기준)</div>';
         return;
       }
-      var denom = 0.9 - (mgIn / 100);
+      var denom = (1-window.__FEE) - (mgIn / 100);
       if (denom <= 0) { box.innerHTML = '<div class="pe-warn">⚠️ 불가능한 마진률입니다</div>'; return; }
-      sell = Math.ceil(cost / denom / 100) * 100;      // 100원 단위 올림
+      sell = Math.ceil((cost - 3000) / denom / 100) * 100; if (sell >= 19800 || sell < 100) sell = Math.ceil(cost / denom / 100) * 100;      // 배송수취 3,000 반영 역산
       elSell.value = sell;                             // 판매가 칸을 채워준다
       backCalc = true;
     } else if (isNaN(sell)) {
       sell = auto;                                     // 판매가 비었으면 자동산출값으로 계산
     }
 
-    var net = Math.round(sell * 0.9 - cost);
+    var net = Math.round(window.__NET(sell, cost));
     var mg = Math.round(net / sell * 100);
     if (src !== 'mg') elMg.value = mg;                 // 판매가를 만졌으면 마진칸을 갱신(반대는 안 함)
 
@@ -951,7 +955,7 @@ function dashForceRefresh(){
       '<div class="pe-line"><span>원가(매입+배송)</span><b>' + won(cost) + '</b></div>'
       + '<div class="pe-line"><span>손익분기 <i>이 아래로 팔면 손해</i></span><b>' + won(bep) + '</b></div>'
       + '<div class="pe-line"><span>판매가' + (backCalc ? ' <i>(마진률로 역산)</i>' : (parseInt(elSell.value, 10) === auto && !elSell.value ? ' <i>(자동산출)</i>' : '')) + '</span><b>' + won(sell) + '</b></div>'
-      + '<div class="pe-line big"><span>마진 <i>판매가×0.9 − 원가</i></span>'
+      + '<div class="pe-line big"><span>마진 <i>판매가×0.93 + 배송수취(19,800 미만 3천) − 원가</i></span>'
       + '<b><span class="mgb ' + cls + '">' + mg + '%</span> ' + won(net) + '</b></div>'
       + warn;
   };
@@ -1084,7 +1088,7 @@ function dashForceRefresh(){
       '</tr></thead><tbody>' +
       rows.map(function (r) {
         var p = r.p, cost = (p.buy == null ? null : p.buy + (p.ship || 0));
-        var mgAmt = (r.rec != null && cost != null) ? Math.round(r.rec * 0.9 - cost) : null;
+        var mgAmt = (r.rec != null && cost != null) ? Math.round(window.__NET(r.rec, cost)) : null;
         var cls = r.mg == null ? '' : (r.mg >= 40 ? 'good' : (r.mg < 20 ? 'bad' : 'mid'));
         return '<tr>' +
           '<td><b>' + (p.emoji || '📦') + ' ' + esc(p.name) + '</b><div class="sub">' + esc(p.spec || '') + (p.note ? ' · ' + esc(p.note).slice(0, 40) : '') + '</div></td>' +
@@ -1095,7 +1099,7 @@ function dashForceRefresh(){
           '<td class="r">' + (mgAmt == null ? '–' : won(mgAmt)) + '</td>' +
           '</tr>';
       }).join('') + '</tbody></table></div>';
-    if (foot) foot.innerHTML = '💡 마진 = 판매가×0.9(수수료 10% 차감) − (매입가+배송비). 판매가 미입력 제품은 매입가÷0.65로 <b>자동산출</b>한 값입니다.';
+    if (foot) foot.innerHTML = '💡 마진 = 판매가×0.93(수수료 7% 가정) + 배송수취 3,000(판매가 19,800 미만) − (매입가+배송비). 판매가 미입력 제품은 매입가÷0.65로 <b>자동산출</b>. 수수료는 첫 정산 실측 후 확정.';
   }
 
   /* ---------- 8) 거래처 모달 확장 (양식·마감·수집) ---------- */
