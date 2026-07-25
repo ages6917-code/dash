@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="T봇 현황판">
 <link rel="apple-touch-icon" href="icon180.png">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260725193102">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260725195650">
 <script>(function(){var B=(document.querySelector('meta[name=app-build]')||{}).content;function c(){fetch(location.pathname+'?_c='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/name="app-build" content="([^"]+)"/);if(m&&m[1]&&m[1]!=B){location.replace(location.pathname+'?v='+encodeURIComponent(m[1]))}}).catch(function(){})}setTimeout(c,700);document.addEventListener('visibilitychange',function(){if(!document.hidden)c()})})();</script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon512.png">
@@ -30,6 +30,22 @@ body{background:#eef0f7;color:var(--ink)}
 .kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin-bottom:16px}
 .kpi{background:#fff;border-radius:13px;padding:14px;text-align:center}.kpi .n{font-size:22px;font-weight:800;color:var(--p1)}.kpi .l{font-size:11px;color:var(--mut);margin-top:3px}
 .r2{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:14px}
+.autop{background:#fff;border-radius:14px;padding:15px 17px;margin-bottom:14px;border-left:5px solid #5b4fd0}
+.autop h3{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.autop h3 .cc{font-size:11px;font-weight:800;color:#fff;background:#5b4fd0;border-radius:20px;padding:1px 9px}
+.autop .stamp{font-size:10.5px;color:#9a96b5;font-weight:600;margin-left:auto}
+.autop .eg{margin-top:11px;padding-top:9px;border-top:1.5px solid #ece9f8}
+.autop .eg:first-of-type{border-top:none;padding-top:0}
+.autop .eh{font-size:12.5px;font-weight:800;color:#3f3a5c;margin-bottom:5px;display:flex;gap:6px;align-items:center}
+.autop .eh .nb{background:#f0eefc;color:#5b4fd0;border-radius:7px;padding:1px 7px;font-size:10.5px}
+.autop .row{display:flex;gap:8px;align-items:flex-start;font-size:11.8px;color:#4c4862;line-height:1.55;padding:2.5px 0}
+.autop .row .cy{color:#8a83b0;font-weight:700;flex:none;min-width:96px}
+.autop .row .tk{flex:1;word-break:keep-all}
+.autop .row .st{flex:none;font-size:9.5px;font-weight:800;border-radius:6px;padding:1px 6px}
+.autop .row .st.on{background:#dcfce7;color:#16a34a}
+.autop .row .st.off{background:#f1f5f9;color:#94a3b8}
+.autop .none{font-size:11.5px;color:#b6b2c9;padding:2px 0}
+@media(max-width:780px){.autop .row{flex-wrap:wrap;gap:5px}.autop .row .cy{min-width:0;font-size:11px}.autop .row .tk{flex:1 1 100%;order:3}}
 .pn{background:#fff;border-radius:14px;padding:15px 17px}.pn h3{font-size:14px;font-weight:800;margin-bottom:10px}
 .pa{background:#fff5f5}.pb{background:#f3f8ff}.pc{background:#f5f3ff}
 .it{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;padding:9px 0;border-bottom:1.5px solid #d3cde8;cursor:pointer;gap:10px}.it:last-child{border:none}
@@ -497,7 +513,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-25 19:31",
+    "asof": "07-25 19:56",
     "ago": "16일 전",
     "ok": false,
     "date": "2026-07-08 20:43",
@@ -565,7 +581,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-25 19:31",
+    "asof": "07-25 19:56",
     "ago": "14시간 전",
     "ok": true,
     "date": "2026-07-25 05:20",
@@ -639,8 +655,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-25 19:31",
-    "ago": "2시간 전",
+    "asof": "07-25 19:56",
+    "ago": "3시간 전",
     "ok": true,
     "date": "2026-07-25 16:47",
     "stale_days": 0,
@@ -726,7 +742,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-25 19:31",
+    "asof": "07-25 19:56",
     "ago": "4시간 전",
     "ok": true,
     "date": "2026-07-25 15:01",
@@ -775,7 +791,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-25 19:31",
+    "asof": "07-25 19:56",
     "ago": "7시간 전",
     "ok": true,
     "date": "2026-07-25 12:00",
@@ -823,7 +839,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-25 19:31",
+    "asof": "07-25 19:56",
     "ago": "18일 전",
     "ok": false,
     "date": "2026-07-07 13:05",
@@ -863,7 +879,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-25 19:31",
+    "asof": "07-25 19:56",
     "ago": "5시간 전",
     "ok": true,
     "date": "2026-07-25 14:09",
@@ -901,10 +917,10 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-25 19:31",
-    "ago": "29분 전",
+    "asof": "07-25 19:56",
+    "ago": "13분 전",
     "ok": true,
-    "date": "2026-07-25 19:01",
+    "date": "2026-07-25 19:43",
     "stale_days": 0,
     "state": "가동"
    }
@@ -938,13 +954,13 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-25 19:31",
-    "ago": "25분 전",
+    "asof": "07-25 19:56",
+    "ago": "방금",
     "ok": true,
-    "date": "2026-07-25 19:05",
+    "date": "2026-07-25 19:56",
     "stale_days": 0,
     "state": "가동",
-    "headline": "오늘 발굴 23건(검수대기)"
+    "headline": "오늘 발굴 27건(검수대기)"
    },
    "detail": {
     "역할": "사이언숯 탈취제 해외 바이어 수집 + 콜드메일 발송",
@@ -1498,7 +1514,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-07-25 19:31",
+ "_autosync": "2026-07-25 19:56",
  "perf": {
   "overseas_total": 11,
   "by_country": [
@@ -1510,7 +1526,571 @@ body{background:#eef0f7;color:var(--ink)}
   "asof": "2026-07-25"
  },
  "_detail_updated": "2026-07-25T08:41:05"
-};window.__BACKEND__=false;window.__SYNC__="2026-07-25 19:31";</script>
+};window.__AUTO__={
+ "built": "07-25 19:56",
+ "snapshot": "07-25 19:54",
+ "total": 62,
+ "on_total": 55,
+ "groups": [
+  {
+   "no": 0,
+   "name": "T봇 공통 · 인프라",
+   "items": [
+    {
+     "cycle": "30분마다",
+     "task": "감시탑",
+     "on": true,
+     "src": "자동화",
+     "sort": "00:00"
+    },
+    {
+     "cycle": "30분마다 (8~23시)",
+     "task": "관제탑 실측 자동발행",
+     "on": true,
+     "src": "자동화",
+     "sort": "00:00"
+    },
+    {
+     "cycle": "30분마다",
+     "task": "지시서 워치독 (30분) — OneDrive 신규 지시서 감지",
+     "on": true,
+     "src": "자동화",
+     "sort": "00:00"
+    },
+    {
+     "cycle": "1회 2026-07-23",
+     "task": "인스타 자동발행 — 배수구 카드뉴스",
+     "on": false,
+     "src": "알람",
+     "sort": "08:00"
+    },
+    {
+     "cycle": "매일 08:10",
+     "task": "계측 커버리지 점검",
+     "on": true,
+     "src": "알람",
+     "sort": "08:10"
+    },
+    {
+     "cycle": "매일 08:30",
+     "task": "현황판 직원 상세 갱신",
+     "on": true,
+     "src": "알람",
+     "sort": "08:30"
+    },
+    {
+     "cycle": "매일 08:40",
+     "task": "대시보드 전체 동기화",
+     "on": true,
+     "src": "알람",
+     "sort": "08:40"
+    },
+    {
+     "cycle": "매일 09:30",
+     "task": "오전 통합점검",
+     "on": true,
+     "src": "알람",
+     "sort": "09:30"
+    },
+    {
+     "cycle": "매일 11:20",
+     "task": "감시탑 중간 자가복구 ①",
+     "on": true,
+     "src": "알람",
+     "sort": "11:20"
+    },
+    {
+     "cycle": "매일 11:30",
+     "task": "전송 드레인",
+     "on": true,
+     "src": "알람",
+     "sort": "11:30"
+    },
+    {
+     "cycle": "매일 16:00",
+     "task": "오후 통합점검",
+     "on": true,
+     "src": "알람",
+     "sort": "16:00"
+    },
+    {
+     "cycle": "매일 16:40",
+     "task": "감시탑 중간 자가복구 ②",
+     "on": true,
+     "src": "알람",
+     "sort": "16:40"
+    },
+    {
+     "cycle": "매일 17:00",
+     "task": "전송 드레인",
+     "on": true,
+     "src": "알람",
+     "sort": "17:00"
+    },
+    {
+     "cycle": "1회 2026-07-19",
+     "task": "신발장 배경 복구 확인",
+     "on": false,
+     "src": "알람",
+     "sort": "17:30"
+    },
+    {
+     "cycle": "매일 21:00",
+     "task": "마감 통합점검",
+     "on": true,
+     "src": "알람",
+     "sort": "21:00"
+    },
+    {
+     "cycle": "매일 21:10",
+     "task": "감시탑 자가복구 드레인",
+     "on": true,
+     "src": "알람",
+     "sort": "21:10"
+    },
+    {
+     "cycle": "매시간",
+     "task": "상주 워치독 헬스",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    },
+    {
+     "cycle": "매시간 (8~21시)",
+     "task": "전직원 가동 워치독 → ttapp 푸시",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    },
+    {
+     "cycle": "매일 21:00",
+     "task": "해외 파이프라인 멈춤 감지",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    }
+   ],
+   "on_count": 17
+  },
+  {
+   "no": 1,
+   "name": "블로그",
+   "items": [],
+   "on_count": 0
+  },
+  {
+   "no": 2,
+   "name": "경영컨설팅",
+   "items": [],
+   "on_count": 0
+  },
+  {
+   "no": 3,
+   "name": "자금렌탈(중지)",
+   "items": [],
+   "on_count": 0
+  },
+  {
+   "no": 4,
+   "name": "학원DB(중지)",
+   "items": [],
+   "on_count": 0
+  },
+  {
+   "no": 5,
+   "name": "밴더수집(중지)",
+   "items": [],
+   "on_count": 0
+  },
+  {
+   "no": 6,
+   "name": "부업·시장조사",
+   "items": [
+    {
+     "cycle": "매일 10:00",
+     "task": "직원6 부업 발굴 ①",
+     "on": true,
+     "src": "알람",
+     "sort": "10:00"
+    },
+    {
+     "cycle": "매일 12:00",
+     "task": "직원6 해외 부업 발굴 ①",
+     "on": true,
+     "src": "알람",
+     "sort": "12:00"
+    },
+    {
+     "cycle": "매일 16:00",
+     "task": "직원6 부업 발굴 ②",
+     "on": true,
+     "src": "알람",
+     "sort": "16:00"
+    },
+    {
+     "cycle": "매일 21:00",
+     "task": "직원6 해외 부업 발굴 ②",
+     "on": true,
+     "src": "알람",
+     "sort": "21:00"
+    },
+    {
+     "cycle": "매일 11:00",
+     "task": "직원6 부업 감시",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    },
+    {
+     "cycle": "2시간마다 (9~23시)",
+     "task": "학원DB 검수→구글시트 동기화",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    },
+    {
+     "cycle": "매일 9:00·22:00",
+     "task": "학원DB 수집 멈춤 워치독",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    }
+   ],
+   "on_count": 7
+  },
+  {
+   "no": 7,
+   "name": "AI음악",
+   "items": [
+    {
+     "cycle": "매일 15:40",
+     "task": "관련영상_부착실패_감시_매일1540",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    }
+   ],
+   "on_count": 1
+  },
+  {
+   "no": 8,
+   "name": "쇼핑몰등록",
+   "items": [],
+   "on_count": 0
+  },
+  {
+   "no": 9,
+   "name": "쇼핑쇼츠(중지)",
+   "items": [],
+   "on_count": 0
+  },
+  {
+   "no": 10,
+   "name": "해외수집",
+   "items": [
+    {
+     "cycle": "매일 08:30",
+     "task": "해외 회신 감지→텔레그램 ①",
+     "on": true,
+     "src": "알람",
+     "sort": "08:30"
+    },
+    {
+     "cycle": "매일 09:30",
+     "task": "해외 회신 브리핑",
+     "on": true,
+     "src": "알람",
+     "sort": "09:30"
+    },
+    {
+     "cycle": "매일 10:00",
+     "task": "직원10 서비스 수요처 발굴 (10시) + T봇 검수",
+     "on": true,
+     "src": "알람",
+     "sort": "10:00"
+    },
+    {
+     "cycle": "매일 11:00",
+     "task": "직원10 PR Newswire 수집",
+     "on": true,
+     "src": "알람",
+     "sort": "11:00"
+    },
+    {
+     "cycle": "매일 13:00",
+     "task": "해외 회신 감지→텔레그램 ②",
+     "on": true,
+     "src": "알람",
+     "sort": "13:00"
+    },
+    {
+     "cycle": "매일 18:00",
+     "task": "해외 회신 감지→텔레그램 ③",
+     "on": true,
+     "src": "알람",
+     "sort": "18:00"
+    },
+    {
+     "cycle": "매일 23:00",
+     "task": "직원10 서비스 수요처 검수→마스터",
+     "on": true,
+     "src": "알람",
+     "sort": "23:00"
+    },
+    {
+     "cycle": "매시간 (8~20시)",
+     "task": "해외 회신 → T봇 검수+초안 보고 → ttapp 푸시",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    },
+    {
+     "cycle": "매일 12:00·16:00·20:00",
+     "task": "해외팀(직원10) 감시",
+     "on": false,
+     "src": "자동화",
+     "sort": "50:00"
+    }
+   ],
+   "on_count": 8
+  },
+  {
+   "no": 11,
+   "name": "해외발송",
+   "items": [
+    {
+     "cycle": "매일 11:00",
+     "task": "직원13 콜드메일 발송",
+     "on": true,
+     "src": "알람",
+     "sort": "11:00"
+    },
+    {
+     "cycle": "매일 22:00",
+     "task": "발송대장 자동기록",
+     "on": true,
+     "src": "알람",
+     "sort": "22:00"
+    },
+    {
+     "cycle": "매일 9:30",
+     "task": "콜드메일 T봇 검수게이트",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    },
+    {
+     "cycle": "매일 9:00",
+     "task": "콜드메일 배치 발송",
+     "on": false,
+     "src": "자동화",
+     "sort": "50:00"
+    },
+    {
+     "cycle": "매일 9:15",
+     "task": "콜드메일 후보 공급",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    },
+    {
+     "cycle": "매일 10:00·15:00",
+     "task": "해외 발송 무인 자동발사",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    },
+    {
+     "cycle": "매일 11:00·16:00",
+     "task": "해외발송 0통 감지 워치독",
+     "on": false,
+     "src": "자동화",
+     "sort": "50:00"
+    }
+   ],
+   "on_count": 5
+  },
+  {
+   "no": 12,
+   "name": "탈취제 수출",
+   "items": [
+    {
+     "cycle": "매일 00:00",
+     "task": "사이언 발굴 ④",
+     "on": true,
+     "src": "알람",
+     "sort": "00:00"
+    },
+    {
+     "cycle": "매일 03:00",
+     "task": "사이언 발굴 ⑤",
+     "on": true,
+     "src": "알람",
+     "sort": "03:00"
+    },
+    {
+     "cycle": "매일 04:00",
+     "task": "사이언숯 T봇 검수",
+     "on": true,
+     "src": "알람",
+     "sort": "04:00"
+    },
+    {
+     "cycle": "매일 09:00",
+     "task": "🇯🇵 사이언 발굴 ①",
+     "on": true,
+     "src": "알람",
+     "sort": "09:00"
+    },
+    {
+     "cycle": "매일 10:00",
+     "task": "사이언숯 탈취제 콜드메일",
+     "on": true,
+     "src": "알람",
+     "sort": "10:00"
+    },
+    {
+     "cycle": "매일 10:00",
+     "task": "직원12 전시회 수집 로테이션",
+     "on": true,
+     "src": "알람",
+     "sort": "10:00"
+    },
+    {
+     "cycle": "매일 14:00",
+     "task": "🇺🇸 사이언 발굴 ②",
+     "on": true,
+     "src": "알람",
+     "sort": "14:00"
+    },
+    {
+     "cycle": "1회 2026-07-19",
+     "task": "사이언숯 발송 2차",
+     "on": false,
+     "src": "알람",
+     "sort": "17:20"
+    },
+    {
+     "cycle": "1회 2026-07-19",
+     "task": "사이언숯 발송 3차",
+     "on": false,
+     "src": "알람",
+     "sort": "19:00"
+    },
+    {
+     "cycle": "매일 19:00",
+     "task": "🇪🇺 사이언 발굴 ③",
+     "on": true,
+     "src": "알람",
+     "sort": "19:00"
+    },
+    {
+     "cycle": "매일 21:00",
+     "task": "사이언 발굴 ⑥",
+     "on": true,
+     "src": "알람",
+     "sort": "21:00"
+    },
+    {
+     "cycle": "매일 12:00",
+     "task": "결과지표 이상감지 워치독",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    }
+   ],
+   "on_count": 10
+  },
+  {
+   "no": 13,
+   "name": "광고조사(노트북)",
+   "items": [],
+   "on_count": 0
+  },
+  {
+   "no": 14,
+   "name": "테무운영(노트북)",
+   "items": [
+    {
+     "cycle": "매일 8:00",
+     "task": "거래처수집 아침 워치독",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    }
+   ],
+   "on_count": 1
+  },
+  {
+   "no": 15,
+   "name": "테무관리(노트북)",
+   "items": [],
+   "on_count": 0
+  },
+  {
+   "no": 16,
+   "name": "인스타 생활노트",
+   "items": [
+    {
+     "cycle": "20분마다",
+     "task": "직원16_조사완료_감시",
+     "on": true,
+     "src": "자동화",
+     "sort": "00:00"
+    },
+    {
+     "cycle": "매일 07:30",
+     "task": "릴스 미리보기 (내일 컨텐츠 예고) 매일",
+     "on": true,
+     "src": "알람",
+     "sort": "07:30"
+    },
+    {
+     "cycle": "매일 08:00",
+     "task": "릴스 제작·발송 (경제지원단+생활노트) 매일",
+     "on": true,
+     "src": "알람",
+     "sort": "08:00"
+    },
+    {
+     "cycle": "매일 09:00",
+     "task": "직원16·17 인스타 현황",
+     "on": true,
+     "src": "알람",
+     "sort": "09:00"
+    },
+    {
+     "cycle": "매일 18:00",
+     "task": "직원16·17 인스타 현황",
+     "on": true,
+     "src": "알람",
+     "sort": "18:00"
+    }
+   ],
+   "on_count": 5
+  },
+  {
+   "no": 17,
+   "name": "인스타 정찰",
+   "items": [
+    {
+     "cycle": "주 1회 09:00",
+     "task": "인스타 정찰병(직원17) 주간 브리핑 (매주 일 09:00) + 쓰레드트랙 + T봇 검수",
+     "on": true,
+     "src": "알람",
+     "sort": "09:00"
+    }
+   ],
+   "on_count": 1
+  },
+  {
+   "no": 18,
+   "name": "동기화",
+   "items": [],
+   "on_count": 0
+  }
+ ]
+};window.__BACKEND__=false;window.__SYNC__="2026-07-25 19:56";</script>
 </head><body><div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
   <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
   <div style="color:#9fb3d1;font-size:13px">접속 비밀번호를 입력하세요</div>
@@ -1617,6 +2197,14 @@ return '<div class="iv6"><div class="ih"><div><h2>🔍 직원6 · AI시장조사
  +'<div class="chips">'+chips+'</div><div class="srcline">'+sl+'</div>'+rows+'</div>'}
 function goItems(){cur='items6';cl();[].forEach.call(document.querySelectorAll('.nav button'),function(x){x.classList.remove('on')});render();window.scrollTo(0,0)}
 function goItems6Back(){cur='all';[].forEach.call(document.querySelectorAll('.nav button'),function(x){x.classList.toggle('on',x.dataset.k=='all')});render();window.scrollTo(0,0)}
+function autoPanel(){var A=window.__AUTO__;if(!A||!A.groups)return '';
+var h='<div class="autop"><h3>⚙️ 직원별 자동화 현황 <span class="cc">'+A.total+'</span><span class="stamp">🕒 마지막 동기화 '+(A.built||'-')+'</span></h3>';
+A.groups.forEach(function(g){if(!g.items.length&&g.no!==0&&g.no!==17)return;
+h+='<div class="eg"><div class="eh"><span class="nb">'+(g.no===0?'공통':'직원'+g.no)+'</span>'+g.name+'</div>';
+if(!g.items.length){h+='<div class="none">자동화 없음</div>'}
+else{g.items.forEach(function(i){h+='<div class="row"><span class="cy">'+i.cycle+'</span><span class="tk">'+i.task+'</span><span class="st '+(i.on?'on':'off')+'">'+(i.on?'ON':'OFF')+'</span></div>'})}
+h+='</div>'});
+return h+'</div>'}
 function card(e){var wt='';if(e.auto){var _s=e.auto.state||(e.auto.ok?'가동':'정체');var auto24=(e.cad=='24h');if(_s=='가동')wt='<span class="wtag ok">오늘✅</span>';else if(auto24&&_s=='저조')wt='<span class="wtag" style="background:#fef9c3;color:#a16207">🟡 어제</span>';else if(auto24&&_s=='무산출')wt='<span class="wtag" style="background:#f1f5f9;color:#64748b">⚪ 무산출</span>';else if(auto24&&_s!='가동')wt='<span class="wtag no" style="background:#fee2e2;color:#dc2626">🔴 정체'+(e.auto.stale_days?' '+e.auto.stale_days+'일':'')+'</span>';}return '<div class="cd c'+(e.cad||'24h')+'" data-no="'+e.no+'"><div class="em"><span class="dot"></span>직원'+e.no+' · '+e.n+wt+'<span class="mtag">'+e.m+'</span></div><div class="ln">'+(e.identity||'')+'</div><div class="ln"><b>목표</b> '+(e.goal||'')+'</div></div>'}
 function grid(m){var es=E.filter(function(e){return e.m===m}).sort(function(a,b){return a.no-b.no});return '<div class="gr">'+es.map(card).join('')+'</div>'}
 function probLv(e){if(e.cad!='24h')return 0;var st=(e.auto||{}).state||'';return (st=='정체'||st=='무산출')?2:0}
@@ -1642,6 +2230,7 @@ main+='<div class="tsec" style="margin-top:6px">🖥️ 데스크탑 직원 <spa
 main+='<div class="tsec">💻 노트북 직원 <span class="ct">BOOK-7HRV1V3LVH</span></div>'+grid('노트북');
 main+='<div class="bf tspace"><h3>💳 AI 사용료 · 결제일 <span style="font-weight:500;color:#9a96b5;font-size:11px">(환율 1,550원)</span></h3>'+BILLING.map(function(b){return '<div class="it" style="cursor:default"><span class="ttl"><a href="'+b.u+'" target="_blank" style="color:var(--p1);text-decoration:none;font-weight:700">'+b.n+'</a> · '+b.c+'</span><span class="w">'+b.d+'</span></div>'}).join('')+'<div style="text-align:right;font-weight:800;color:var(--p1);margin-top:9px;font-size:14px">월 총 사용료 ≈ '+BILLTOTAL+'</div></div>';
 side+=perfCard();
+side+=autoPanel();
 side+='<div class="bf hero"><h3>🐱 T봇 오늘 브리핑 <span class="cc">'+BRIEF.length+'</span><span class="sc">🕒 '+(SYNC||'-')+'</span></h3>'+briefRows(BRIEF)+'</div>';
 side+='<div class="pn pa" id="pnl-iv"><h3>🚨 사람 개입 대기 <span class="cc">'+vis(INTERV,'iv')+'</span><span class="sc">🕒 '+(SYNC||'-')+'</span></h3>'+itrow(INTERV,'iv')+'</div>';
 side+='<div class="pn pb"><h3>📋 T봇 검수 대기 <span class="cc">'+vis(REVIEW,'rv')+'</span><span class="sc">🕒 '+(SYNC||'-')+'</span></h3>'+itrow(REVIEW,'rv')+'</div>';
