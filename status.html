@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="T봇 현황판">
 <link rel="apple-touch-icon" href="icon180.png">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260726163108">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260726163634">
 <script>(function(){var B=(document.querySelector('meta[name=app-build]')||{}).content;function c(){fetch(location.pathname+'?_c='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/name="app-build" content="([^"]+)"/);if(m&&m[1]&&m[1]!=B){location.replace(location.pathname+'?v='+encodeURIComponent(m[1]))}}).catch(function(){})}setTimeout(c,700);document.addEventListener('visibilitychange',function(){if(!document.hidden)c()})})();</script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon512.png">
@@ -40,7 +40,7 @@ body{background:#eef0f7;color:var(--ink)}
 .autop .eh .nb{background:#f0eefc;color:#5b4fd0;border-radius:7px;padding:1px 7px;font-size:10.5px}
 .autop .row{display:flex;gap:8px;align-items:flex-start;font-size:11.8px;color:#4c4862;line-height:1.55;padding:2.5px 0}
 .autop .row .cy{color:#8a83b0;font-weight:700;flex:none;min-width:96px}
-.autop .row .tk{flex:1;word-break:keep-all}
+.autop .row .tk{flex:1;word-break:keep-all;text-align:left;background:none;padding:0;min-width:0;border-radius:0}
 .autop .row .st{flex:none;font-size:9.5px;font-weight:800;border-radius:6px;padding:1px 6px}
 .autop .row .st.on{background:#dcfce7;color:#16a34a}
 .autop .row .st.off{background:#f1f5f9;color:#94a3b8}
@@ -64,6 +64,17 @@ body{background:#eef0f7;color:var(--ink)}
 .autop .wrow .wt{flex:1;word-break:keep-all;font-weight:700}
 .autop .wrow .wd{flex:none;font-size:10.5px;color:#b45c5c;font-weight:700}
 .autop .wrow.off .wno{background:#f1f5f9;color:#64748b}.autop .wrow.off{color:#475569}.autop .wrow.off .wd{color:#94a3b8}
+@media(max-width:780px){
+ .autop .smeta{margin-left:0;flex:1 1 100%;white-space:normal;padding-left:26px}
+ .autop details.eg>div.body{padding-left:10px}
+ .autop .wrow{flex-wrap:wrap}.autop .wrow .wt{flex:1 1 auto}.autop .wrow .wd{flex:1 1 100%;padding-left:34px}
+ /* 폰: 업무명 먼저, 그 아래 주기·ON/OFF (왼쪽 정렬) */
+ .autop .row{flex-wrap:wrap;padding:5px 0;border-top:1px dashed #f1eefb}
+ .autop .row:first-child{border-top:none}
+ .autop .row .tk{order:1;flex:1 1 100%;font-weight:700;color:#3f3a5c}
+ .autop .row .cy{order:2;flex:none}
+ .autop .row .st{order:3;flex:none}
+}
 /* ── 팀 성과 ── */
 .perfw{background:#fff;border-radius:14px;padding:15px 17px;margin-bottom:16px;border-left:5px solid #38bdf8}
 .perfw h3{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:#2f2b45}
@@ -559,7 +570,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-26 16:31",
+    "asof": "07-26 16:36",
     "ago": "17일 전",
     "ok": false,
     "date": "2026-07-08 20:43",
@@ -627,7 +638,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 16:31",
+    "asof": "07-26 16:36",
     "ago": "어제",
     "ok": false,
     "date": "2026-07-25 05:20",
@@ -701,7 +712,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 16:31",
+    "asof": "07-26 16:36",
     "ago": "5시간 전",
     "ok": true,
     "date": "2026-07-26 11:26",
@@ -787,7 +798,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 16:31",
+    "asof": "07-26 16:36",
     "ago": "1시간 전",
     "ok": true,
     "date": "2026-07-26 15:01",
@@ -836,7 +847,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-26 16:31",
+    "asof": "07-26 16:36",
     "ago": "어제",
     "ok": false,
     "date": "2026-07-25 12:00",
@@ -884,7 +895,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 16:31",
+    "asof": "07-26 16:36",
     "ago": "19일 전",
     "ok": false,
     "date": "2026-07-07 13:05",
@@ -924,7 +935,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 16:31",
+    "asof": "07-26 16:36",
     "ago": "4시간 전",
     "ok": true,
     "date": "2026-07-26 12:27",
@@ -962,8 +973,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 16:31",
-    "ago": "30분 전",
+    "asof": "07-26 16:36",
+    "ago": "35분 전",
     "ok": true,
     "date": "2026-07-26 16:01",
     "stale_days": 0,
@@ -1000,7 +1011,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 16:31",
+    "asof": "07-26 16:36",
     "ago": "3시간 전",
     "ok": true,
     "date": "2026-07-26 12:38",
@@ -1564,7 +1575,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-07-26 16:31",
+ "_autosync": "2026-07-26 16:36",
  "perf": {
   "overseas_total": 11,
   "by_country": [
@@ -1577,7 +1588,7 @@ body{background:#eef0f7;color:var(--ink)}
  },
  "_detail_updated": "2026-07-26T08:41:14"
 };window.__AUTO__={
- "built": "07-26 16:31",
+ "built": "07-26 16:36",
  "snapshot": "07-26 11:31",
  "total": 67,
  "on_total": 60,
@@ -2245,7 +2256,7 @@ body{background:#eef0f7;color:var(--ink)}
   }
  ]
 };window.__PERF__={
- "built": "2026-07-26 16:31",
+ "built": "2026-07-26 16:36",
  "team": "해외팀 (직원10 수집 · 직원11 발송 · 직원12 사이언숯)",
  "month": "2026-07",
  "prev_month": "2026-06",
@@ -2366,7 +2377,7 @@ body{background:#eef0f7;color:var(--ink)}
   "한국대행사업_MVP\\_발송로그.csv",
   "_회신감시.log"
  ]
-};window.__BACKEND__=false;window.__SYNC__="2026-07-26 16:31";</script>
+};window.__BACKEND__=false;window.__SYNC__="2026-07-26 16:36";</script>
 </head><body><div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
   <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
   <div style="color:#9fb3d1;font-size:13px">접속 비밀번호를 입력하세요</div>
