@@ -79,8 +79,14 @@ for v in vendors_raw:
         "vatIncluded": v.get("vatIncluded") if isinstance(v.get("vatIncluded"), bool) else None,
         "shipPolicy": v.get("shipPolicy") if isinstance(v.get("shipPolicy"), dict) else None,
         # ★신규 필드 — 요구 2번(택배 마감시간)
-        "shipDeadline": "",                    # 확정값(사장님이 화면에서 입력)
-        "shipDeadlineGuess": guess_deadline(note),  # note에서 뽑은 후보(참고용, 확정 아님)
+        # 2026-07-22 수정: vendors.json의 cutoff 필드를 여기로 실어 나른다.
+        #   그전엔 이 시드가 cutoff를 아예 안 읽어서, 직원15가 vendors.json에
+        #   기입한 마감시간(대명16:00·씨터치16:00·천해무12:00)이 대시보드까지
+        #   못 갔다. note 텍스트에서 추측(guess)한 값만 올라가고 있었다.
+        #   확정값(cutoff)이 있으면 그걸 쓰고, 없을 때만 note 추측값을 참고로 남긴다.
+        "shipDeadline": clean(v.get("cutoff")) or "",   # 확정값 = vendors.json cutoff
+        "shipDeadlineGuess": guess_deadline(note),      # note에서 뽑은 후보(확정 아님)
+        "courier": clean(v.get("courier")) or "",       # 택배사(있으면)
     })
 
 for p in products_raw:
@@ -98,6 +104,12 @@ for p in products_raw:
         "note": clean(p.get("note")) or "",
         "origin": clean(p.get("origin")) or "",
         "img": clean(p.get("img")) or "",
+        # ★2026-07-22 추가 — 직원15 테무 조사 결과를 대시보드까지 실어 나른다.
+        #   그전엔 이 시드가 judge/temu_top3를 아예 안 읽어서, 조사를 해도
+        #   대시보드에서는 볼 수 없었다(cutoff와 똑같은 유실 지점).
+        "unit_g": p.get("unit_g"),
+        "judge": p.get("judge") if isinstance(p.get("judge"), dict) else None,
+        "temu_top3": p.get("temu_top3") if isinstance(p.get("temu_top3"), list) else None,
     })
 
 # 실측 요약
