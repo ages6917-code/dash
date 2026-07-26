@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="T봇 현황판">
 <link rel="apple-touch-icon" href="icon180.png">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260726223100">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260726224536">
 <script>(function(){var B=(document.querySelector('meta[name=app-build]')||{}).content;function c(){fetch(location.pathname+'?_c='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/name="app-build" content="([^"]+)"/);if(m&&m[1]&&m[1]!=B){location.replace(location.pathname+'?v='+encodeURIComponent(m[1]))}}).catch(function(){})}setTimeout(c,700);document.addEventListener('visibilitychange',function(){if(!document.hidden)c()})})();</script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon512.png">
@@ -56,6 +56,49 @@ body{background:#eef0f7;color:var(--ink)}
 .autop .smeta b{color:#5b4fd0}
 .autop .nxt{background:#f0eefc;color:#5b4fd0;border-radius:6px;padding:1px 7px;font-size:10.5px;font-weight:800}
 .autop details.eg>div.body{padding:3px 0 8px 16px;border-left:2px solid #f0eefc;margin-left:5px}
+/* ── 오늘의 검증 현황 (2026-07-26) — 접이식. 요약만 보이고 탭하면 상세 ── */
+.vfy{background:#fff;border-radius:14px;padding:15px 17px;margin-bottom:14px;border-left:5px solid #0d9488}
+.vfy h3{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.vfy h3 .cc{font-size:11px;font-weight:800;color:#fff;background:#0d9488;border-radius:20px;padding:1px 9px}
+.vfy h3 .stamp{font-size:10.5px;color:#9a96b5;font-weight:600;margin-left:auto}
+.vfy .sumline{margin:9px 0 4px;background:#f0fdfa;border:1.5px solid #99f6e4;border-radius:11px;
+  padding:10px 12px;font-size:13px;font-weight:800;color:#0f766e;line-height:1.5;word-break:keep-all}
+.vfy .sumline .flt{color:#b45309}
+.vfy .flow4{display:flex;gap:6px;margin:8px 0 2px}
+.vfy .fq{flex:1;background:#f8fafc;border-radius:9px;padding:7px 4px;text-align:center;min-width:0}
+.vfy .fq b{display:block;font-size:17px;font-weight:800;color:#0f766e;line-height:1.2}
+.vfy .fq span{font-size:10px;color:#64748b;font-weight:700}
+.vfy .fq.bad b{color:#dc2626}
+.vfy details.vs{margin-top:9px;padding-top:8px;border-top:1.5px solid #eef2f2}
+.vfy details.vs:first-of-type{border-top:none}
+.vfy details.vs>summary{list-style:none;cursor:pointer;padding:6px 0;display:flex;gap:7px;align-items:center;flex-wrap:wrap}
+.vfy details.vs>summary::-webkit-details-marker{display:none}
+.vfy details.vs>summary .chev{color:#94a3b8;font-size:10px;flex:none;transition:transform .15s}
+.vfy details.vs[open]>summary .chev{transform:rotate(90deg)}
+.vfy .vt{font-size:12.5px;font-weight:800;color:#334155}
+.vfy .vh{font-size:11.3px;color:#64748b;font-weight:700;margin-left:auto;text-align:right;word-break:keep-all}
+.vfy .vh.ok{color:#0f766e}
+.vfy .vh.bad{color:#dc2626}
+.vfy .vbody{padding:3px 0 6px 14px;border-left:2px solid #eef2f2;margin-left:5px}
+.vfy .vr{display:flex;gap:7px;align-items:baseline;font-size:11.6px;line-height:1.55;padding:3px 0;color:#475569}
+.vfy .vr .tm{flex:none;color:#94a3b8;font-weight:700;font-variant-numeric:tabular-nums}
+.vfy .vr .bd{flex:none;font-size:9.5px;font-weight:800;border-radius:6px;padding:1px 6px}
+.vfy .vr .bd.p{background:#ccfbf1;color:#0f766e}
+.vfy .vr .bd.f{background:#fee2e2;color:#dc2626}
+.vfy .vr .bd.n{background:#f1f5f9;color:#64748b}
+.vfy .vr .lb{flex:1;min-width:0;word-break:keep-all}
+.vfy .vr .lb i{font-style:normal;color:#94a3b8;font-size:10.5px}
+.vfy .vr .rs{flex:1 1 100%;color:#b45309;font-size:11px;padding-left:2px;word-break:keep-all}
+.vfy .vnone{font-size:11.5px;color:#94a3b8;padding:3px 0}
+@media(max-width:780px){
+ .vfy{padding:13px 13px}
+ .vfy .sumline{font-size:12.3px}
+ .vfy .flow4{flex-wrap:wrap}.vfy .fq{flex:1 1 44%}
+ .vfy details.vs>summary{gap:5px}
+ .vfy .vh{flex:1 1 100%;margin-left:0;text-align:left;font-size:11px}
+ .vfy .vbody{padding-left:8px}
+ .vfy .vr{flex-wrap:wrap;gap:5px}
+}
 /* ⚠️ 확인 필요 — 문제 없으면 이 블록은 아예 그려지지 않는다 */
 .autop .warnbx{background:#fff5f5;border:1.5px solid #fecaca;border-radius:11px;padding:10px 12px;margin:10px 0 4px}
 .autop .warnbx h4{font-size:12px;font-weight:800;color:#b91c1c;margin-bottom:6px}
@@ -596,7 +639,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-26 22:30",
+    "asof": "07-26 22:45",
     "ago": "18일 전",
     "ok": false,
     "date": "2026-07-08 20:43",
@@ -664,7 +707,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 22:30",
+    "asof": "07-26 22:45",
     "ago": "어제",
     "ok": false,
     "date": "2026-07-25 05:20",
@@ -738,7 +781,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 22:30",
+    "asof": "07-26 22:45",
     "ago": "5시간 전",
     "ok": true,
     "date": "2026-07-26 17:22",
@@ -825,7 +868,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 22:30",
+    "asof": "07-26 22:45",
     "ago": "3시간 전",
     "ok": true,
     "date": "2026-07-26 19:26",
@@ -874,7 +917,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-26 22:30",
+    "asof": "07-26 22:45",
     "ago": "어제",
     "ok": false,
     "date": "2026-07-25 12:00",
@@ -922,7 +965,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 22:30",
+    "asof": "07-26 22:45",
     "ago": "19일 전",
     "ok": false,
     "date": "2026-07-07 13:05",
@@ -962,8 +1005,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 22:30",
-    "ago": "27분 전",
+    "asof": "07-26 22:45",
+    "ago": "42분 전",
     "ok": true,
     "date": "2026-07-26 22:03",
     "stale_days": 0,
@@ -1000,7 +1043,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 22:30",
+    "asof": "07-26 22:45",
     "ago": "2시간 전",
     "ok": true,
     "date": "2026-07-26 20:01",
@@ -1038,8 +1081,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-26 22:30",
-    "ago": "26분 전",
+    "asof": "07-26 22:45",
+    "ago": "41분 전",
     "ok": true,
     "date": "2026-07-26 22:04",
     "stale_days": 0,
@@ -1602,7 +1645,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-07-26 22:30",
+ "_autosync": "2026-07-26 22:45",
  "perf": {
   "overseas_total": 11,
   "by_country": [
@@ -1615,7 +1658,7 @@ body{background:#eef0f7;color:var(--ink)}
  },
  "_detail_updated": "2026-07-26T08:41:14"
 };window.__AUTO__={
- "built": "07-26 22:30",
+ "built": "07-26 22:45",
  "snapshot": "07-26 18:42",
  "total": 73,
  "on_total": 66,
@@ -2319,7 +2362,7 @@ body{background:#eef0f7;color:var(--ink)}
   }
  ]
 };window.__PERF__={
- "built": "2026-07-26 22:30",
+ "built": "2026-07-26 22:45",
  "team": "해외팀 (직원10 수집 · 직원11 발송 · 직원12 사이언숯)",
  "month": "2026-07",
  "prev_month": "2026-06",
@@ -2810,7 +2853,118 @@ body{background:#eef0f7;color:var(--ink)}
   ],
   "dup_canon": []
  }
-};window.__BACKEND__=false;window.__SYNC__="2026-07-26 22:31";</script>
+};window.__VERIFY__={
+ "built": "07-26 22:45",
+ "date": "2026-07-26",
+ "summary": "제작 4 → 게이트 통과 4 → 발송 0, 걸러진 것 1건",
+ "counts": {
+  "made": 4,
+  "passed": 4,
+  "sent": 0,
+  "filtered": 1
+ },
+ "sections": [
+  {
+   "key": "content",
+   "icon": "🎬",
+   "title": "콘텐츠 게이트",
+   "head": "제작 4건 → 통과 4 / 탈락 0",
+   "made": 4,
+   "ok": 4,
+   "bad": 0,
+   "rows": [
+    {
+     "t": "17:38",
+     "label": "생활노트 쓰레드",
+     "sub": "thread_휴가전체크.txt",
+     "verdict": "통과",
+     "reason": ""
+    },
+    {
+     "t": "17:38",
+     "label": "경제지원단 쓰레드",
+     "sub": "thread_문의처정리.txt",
+     "verdict": "통과",
+     "reason": ""
+    },
+    {
+     "t": "17:41",
+     "label": "생활노트 릴스",
+     "sub": "reel_전선정리_20260726.mp4",
+     "verdict": "통과",
+     "reason": ""
+    },
+    {
+     "t": "18:43",
+     "label": "경제지원단 릴스",
+     "sub": "reel_econ_E7_노란우산.mp4",
+     "verdict": "통과",
+     "reason": ""
+    }
+   ]
+  },
+  {
+   "key": "review",
+   "icon": "🔍",
+   "title": "검수봇 배치",
+   "head": "오늘 결과 파일 없음 (배치 10:40 / 17:40)",
+   "rows": [],
+   "ok": 0,
+   "bad": 0,
+   "made": 0
+  },
+  {
+   "key": "gateway",
+   "icon": "📮",
+   "title": "발송 관문",
+   "head": "발송 0건 (없음) / 거부 1건",
+   "made": 1,
+   "ok": 0,
+   "bad": 1,
+   "rows": [
+    {
+     "t": "22:27",
+     "label": "콘텐츠 배달 · 글",
+     "sub": "회로시험 - 발송되면 안 됨",
+     "verdict": "거부",
+     "reason": "야간차단"
+    }
+   ]
+  },
+  {
+   "key": "alert",
+   "icon": "🚨",
+   "title": "산출 경보",
+   "head": "경보 3건 발화",
+   "made": 3,
+   "ok": 0,
+   "bad": 3,
+   "rows": [
+    {
+     "t": "08:20",
+     "label": "배달검증 am",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "생활노트 릴스, 생활노트 쓰레드, 경제지원단 릴스, 경제지원단 쓰레드"
+    },
+    {
+     "t": "11:31",
+     "label": "플래그",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "대시보드_PUSH실패_20260726"
+    },
+    {
+     "t": "22:45",
+     "label": "아침 배달검증",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 배달 검증 07/26 — am 제작0/4 · 배달 미계측(관문 대장 신설 전) | 확정 스펙=슬롯당 채널별 릴스1+쓰레드1(4칸) 제작 + 관문 배달 4건. 조치: 누락은 제작·재배달(관문 tg_send.py content)  관문 실패는 원인 1줄 확인"
+    }
+   ]
+  }
+ ]
+};window.__BACKEND__=false;window.__SYNC__="2026-07-26 22:45";</script>
 </head><body><div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
   <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
   <div style="color:#9fb3d1;font-size:13px">접속 비밀번호를 입력하세요</div>
@@ -2917,6 +3071,34 @@ return '<div class="iv6"><div class="ih"><div><h2>🔍 직원6 · AI시장조사
  +'<div class="chips">'+chips+'</div><div class="srcline">'+sl+'</div>'+rows+'</div>'}
 function goItems(){cur='items6';cl();[].forEach.call(document.querySelectorAll('.nav button'),function(x){x.classList.remove('on')});render();window.scrollTo(0,0)}
 function goItems6Back(){cur='all';[].forEach.call(document.querySelectorAll('.nav button'),function(x){x.classList.toggle('on',x.dataset.k=='all')});render();window.scrollTo(0,0)}
+/* ── 오늘의 검증 현황 — verify_panel.json 만 렌더한다. 손으로 안 씀 ── */
+function esc(s){return String(s==null?'':s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function verifyPanel(){var V=window.__VERIFY__;if(!V||!V.sections)return '';
+var C=V.counts||{};
+var h='<div class="vfy"><h3>🧪 오늘의 검증 현황 <span class="cc">'+esc(V.date||'')+'</span>'
+ +'<span class="stamp">🕒 집계 '+esc(V.built||'-')+'</span></h3>';
+/* 요약 1줄 — 이것만 보고도 하루가 파악되게 */
+var s=esc(V.summary||'');
+h+='<div class="sumline">'+s.replace(/걸러진 것 (\d+)건/,'<span class="flt">걸러진 것 $1건</span>')+'</div>';
+h+='<div class="flow4">'
+ +'<div class="fq"><b>'+(C.made||0)+'</b><span>제작</span></div>'
+ +'<div class="fq"><b>'+(C.passed||0)+'</b><span>게이트 통과</span></div>'
+ +'<div class="fq"><b>'+(C.sent||0)+'</b><span>폰 도착</span></div>'
+ +'<div class="fq'+(C.filtered?' bad':'')+'"><b>'+(C.filtered||0)+'</b><span>걸러짐</span></div></div>';
+V.sections.forEach(function(sec){
+ var cls=sec.bad?'bad':(sec.ok?'ok':'');
+ h+='<details class="vs"><summary><span class="chev">▶</span>'
+   +'<span class="vt">'+esc(sec.icon||'')+' '+esc(sec.title||'')+'</span>'
+   +'<span class="vh '+cls+'">'+esc(sec.head||'')+'</span></summary><div class="vbody">';
+ if(!(sec.rows||[]).length){h+='<div class="vnone">기록 없음 — 상세 없음</div>'}
+ else{sec.rows.forEach(function(r){
+  var v=r.verdict||'', k=(v=='통과'||v=='발송')?'p':(v=='탈락'||v=='반려'||v=='거부'||v=='발화')?'f':'n';
+  h+='<div class="vr"><span class="tm">'+esc(r.t||'')+'</span>'
+    +'<span class="bd '+k+'">'+esc(v)+'</span>'
+    +'<span class="lb">'+esc(r.label||'')+(r.sub?' <i>'+esc(r.sub)+'</i>':'')+'</span>'
+    +(r.reason?'<span class="rs">↳ '+esc(r.reason)+'</span>':'')+'</div>'})}
+ h+='</div></details>'});
+return h+'</div>'}
 function autoPanel(){var A=window.__AUTO__;if(!A||!A.groups)return '';
 var h='<div class="autop"><h3>⚙️ 직원별 자동화 현황 <span class="cc">'+A.total+'</span><span class="stamp">🕒 마지막 동기화 '+(A.built||'-')+'</span></h3>';
 /* ⚠️ 확인 필요 — 접지 않고 맨 위에. 문제 없으면 블록 자체가 안 보인다 */
@@ -2995,6 +3177,7 @@ main+=actBand();
 main+='<div class="tsec" style="margin-top:6px">🖥️ 데스크탑 직원 <span class="ct">DESKTOP-MS75689</span></div>'+grid('데탑');
 main+='<div class="tsec">💻 노트북 직원 <span class="ct">BOOK-7HRV1V3LVH</span></div>'+grid('노트북');
 main+='<div class="bf tspace"><h3>💳 AI 사용료 · 결제일 <span style="font-weight:500;color:#9a96b5;font-size:11px">(환율 1,550원)</span></h3>'+BILLING.map(function(b){return '<div class="it" style="cursor:default"><span class="ttl"><a href="'+b.u+'" target="_blank" style="color:var(--p1);text-decoration:none;font-weight:700">'+b.n+'</a> · '+b.c+'</span><span class="w">'+b.d+'</span></div>'}).join('')+'<div style="text-align:right;font-weight:800;color:var(--p1);margin-top:9px;font-size:14px">월 총 사용료 ≈ '+BILLTOTAL+'</div></div>';
+side+=verifyPanel();
 side+=perfCard();
 side+=autoPanel();
 side+='<div class="bf hero"><h3>🐱 T봇 오늘 브리핑 <span class="cc">'+BRIEF.length+'</span><span class="sc">🕒 '+(SYNC||'-')+'</span></h3>'+briefRows(BRIEF)+'</div>';
