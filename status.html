@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="T봇 현황판">
 <link rel="apple-touch-icon" href="icon180.png">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260727180100">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260727180209">
 <script>(function(){var B=(document.querySelector('meta[name=app-build]')||{}).content;function c(){fetch(location.pathname+'?_c='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/name="app-build" content="([^"]+)"/);if(m&&m[1]&&m[1]!=B){location.replace(location.pathname+'?v='+encodeURIComponent(m[1]))}}).catch(function(){})}setTimeout(c,700);document.addEventListener('visibilitychange',function(){if(!document.hidden)c()})})();</script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon512.png">
@@ -58,13 +58,13 @@ body{background:#eef0f7;color:var(--ink)}
  .autop .row{flex-wrap:wrap;gap:4px 8px}
  .autop .row .cy{min-width:0;font-size:11px;order:1}
  .autop .row .st{order:2}
- .autop .row .tk{flex:1 1 100%;order:3;word-break:break-word;overflow-wrap:anywhere}
+ .autop .row .tk{flex:1 1 100%;order:3;word-break:keep-all;overflow-wrap:break-word}
  .autop .wrow{flex-wrap:wrap;gap:3px 7px}
  .autop .wrow .wno{order:1;flex:none}
- .autop .wrow .wt{order:2;flex:1 1 auto;min-width:0;overflow-wrap:anywhere}
- .autop .wrow .wd{order:3;flex:1 1 100%;font-size:10.5px;line-height:1.5;overflow-wrap:anywhere;word-break:break-word}
+ .autop .wrow .wt{order:2;flex:1 1 auto;min-width:0;overflow-wrap:break-word}
+ .autop .wrow .wd{order:3;flex:1 1 100%;font-size:10.5px;line-height:1.5;overflow-wrap:break-word;word-break:keep-all}
  .autop details summary{flex-wrap:wrap;gap:4px 6px}
- .autop details summary .sname{min-width:0;overflow-wrap:anywhere}
+ .autop details summary .sname{min-width:0;overflow-wrap:break-word}
  .autop details summary .smeta{flex:1 1 100%;order:9;font-size:10.5px}
  .autop,.autop *{max-width:100%;min-width:0}
 }
@@ -124,8 +124,8 @@ body{background:#eef0f7;color:var(--ink)}
 .vfy .vnone{font-size:11.5px;color:#94a3b8;padding:3px 0}
 /* 긴 사유 문장이 오른쪽으로 삐져나가지 않게 (폰 세로 390px 실측 후 교정) */
 .vfy,.vfy .vbody{overflow:hidden}
-/* ★2026-07-27 수리 — 여기 있던 overflow-wrap:anywhere 가 세로 낙하를 '보이게' 만든 증폭기였다.
-   anywhere 는 글자 사이 어디서든 끊으므로, 칸이 좁아지는 순간 한글이 한 자씩 떨어진다.
+/* ★2026-07-27 수리 — 여기 있던 "overflow-wrap: anywhere" 가 세로 낙하를 '보이게' 만든 증폭기였다.
+   그 값은 글자 사이 어디서든 끊으므로, 칸이 좁아지는 순간 한글이 한 자씩 떨어진다.
    근본 원인(.vr 줄바꿈 누락)은 위에서 고쳤고, 여기서는 규칙을 '단어 단위'로 되돌린다.
    break-word 는 정말 안 들어갈 때만 최후수단으로 끊으므로 넘침도 막고 낙하도 안 만든다. */
 .vfy .vr .lb,.vfy .vr .rs,.vfy .vh,.vfy .sumline{overflow-wrap:break-word;word-break:keep-all;min-width:0}
@@ -195,7 +195,7 @@ body{background:#eef0f7;color:var(--ink)}
 /* ★2026-07-27 ■3 — 퍼널 불변식이 깨졌을 때 숫자 대신 나가는 블록 */
 .perfw .pblock{background:#fef2f2;border:1.5px solid #fecaca;border-radius:13px;padding:14px 16px;margin-top:12px}
 .perfw .pbh{font-size:14px;font-weight:800;color:#b91c1c;margin-bottom:7px}
-.perfw .pbr{font-size:13px;font-weight:700;color:#7f1d1d;margin-bottom:6px;overflow-wrap:anywhere}
+.perfw .pbr{font-size:13px;font-weight:700;color:#7f1d1d;margin-bottom:6px;overflow-wrap:break-word}
 .perfw .pbd{font-size:12px;color:#6b5b5b;line-height:1.6;margin-bottom:8px}
 .perfw .nocmp{color:#8a83b0;font-size:10.5px}
 /* ★2026-07-27 ■2 — 국가별 발굴 · 일별 발송 · 회신 3종 */
@@ -216,7 +216,7 @@ body{background:#eef0f7;color:var(--ink)}
 .perfw .r3 .rc .v{font-size:18px;font-weight:800;color:#4b40c4}
 .perfw .r3 .rc .l{font-size:10px;color:#8a83b0;font-weight:700}
 .perfw .r3 .rc.bad .v{color:#dc2626}
-@media(max-width:780px){.perfw .p4{grid-template-columns:repeat(2,1fr)}.perfw .pc .v{font-size:20px}.perfw .fr .fk{width:48px}.perfw .pc .s{overflow-wrap:anywhere}.perfw .r3{grid-template-columns:repeat(2,1fr)}.perfw .cr .ck{width:60px}}
+@media(max-width:780px){.perfw .p4{grid-template-columns:repeat(2,1fr)}.perfw .pc .v{font-size:20px}.perfw .fr .fk{width:48px}.perfw .pc .s{overflow-wrap:break-word}.perfw .r3{grid-template-columns:repeat(2,1fr)}.perfw .cr .ck{width:60px}}
 /* ── SNS성장팀 패널 (2026-07-27 ■3) ── */
 .snsp{background:#fff;border-radius:14px;padding:15px 17px;margin-bottom:16px;border-left:5px solid #ec4899}
 .snsp h3{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:#2f2b45}
@@ -229,12 +229,12 @@ body{background:#eef0f7;color:var(--ink)}
 .snsp .cc2{background:#f8f8fd;border-radius:11px;padding:10px 11px;min-width:0}
 .snsp .cc2 .t{font-size:12px;font-weight:800;color:#3f3a5c;display:flex;align-items:center;gap:5px}
 .snsp .cc2 .m{font-size:10.5px;color:#8a83b0;font-weight:700;margin-top:4px}
-.snsp .cc2 .d{font-size:10.5px;color:#4c4862;margin-top:5px;line-height:1.5;overflow-wrap:anywhere}
+.snsp .cc2 .d{font-size:10.5px;color:#4c4862;margin-top:5px;line-height:1.5;overflow-wrap:break-word}
 .snsp .cc2 .ok{color:#16a34a;font-weight:800}
 .snsp .cc2 .no{color:#dc2626;font-weight:800}
 .snsp .bl{margin-top:12px}
 .snsp .br{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:4px 0;flex-wrap:wrap}
-.snsp .br .bn{font-weight:800;color:#3f3a5c;overflow-wrap:anywhere}
+.snsp .br .bn{font-weight:800;color:#3f3a5c;overflow-wrap:break-word}
 .snsp .br .bt{font-size:10px;color:#a5a1bb;font-weight:700}
 .snsp .br.stale{opacity:.45}
 .snsp .br .tag{font-size:9.5px;font-weight:800;border-radius:20px;padding:1px 7px;background:#eceaf6;color:#8a83b0}
@@ -390,7 +390,7 @@ body{background:#eef0f7;color:var(--ink)}
 .act .pulse{width:9px;height:9px;border-radius:50%;background:#f87171;animation:pu 1.3s infinite}
 @keyframes pu{0%,100%{opacity:1}50%{opacity:.25}}
   .it{align-items:center}
-  .it .ttl{flex:1;min-width:0;overflow-wrap:anywhere}
+  .it .ttl{flex:1;min-width:0;overflow-wrap:break-word}
   .ibtns{display:inline-flex;gap:5px;margin-left:8px;flex:none}
   .ibx{border:none;border-radius:8px;padding:5px 11px;font-size:11.5px;font-weight:800;cursor:pointer;line-height:1}
   .ibx.hold{background:#fef3c7;color:#b45309}
@@ -421,7 +421,7 @@ body{background:#eef0f7;color:var(--ink)}
 /* 그리드/플렉스 아이템의 기본 min-width:auto 가 '가장 긴 자식' 만큼 칸을 벌린다.
    전부 0 으로 끊어야 폰에서 페이지가 옆으로 밀리지 않는다. */
 .ovgrid>*,.ovgrid>*>*,.gr>*,.r2>*{min-width:0}
-.act,.act *{min-width:0;overflow-wrap:anywhere}
+.act,.act *{min-width:0;overflow-wrap:break-word}
 .act .chips{flex-wrap:wrap}
 .kpis{grid-template-columns:repeat(3,1fr)}.r2{grid-template-columns:1fr}.gr{grid-template-columns:1fr}.tvgr{grid-template-columns:1fr}.tgoal{grid-template-columns:1fr}.monm{grid-template-columns:repeat(2,1fr)}.msrc{grid-template-columns:1fr}}
 /* 상단 최신화 바 + 동기화 시각 */
@@ -746,7 +746,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-27 18:00",
+    "asof": "07-27 18:02",
     "ago": "18일 전",
     "ok": false,
     "date": "2026-07-08 20:43",
@@ -814,7 +814,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:00",
+    "asof": "07-27 18:02",
     "ago": "2일 전",
     "ok": false,
     "date": "2026-07-25 05:20",
@@ -888,7 +888,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:00",
+    "asof": "07-27 18:02",
     "ago": "어제",
     "ok": false,
     "date": "2026-07-26 17:22",
@@ -974,7 +974,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:00",
+    "asof": "07-27 18:02",
     "ago": "2시간 전",
     "ok": true,
     "date": "2026-07-27 15:02",
@@ -1023,7 +1023,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-27 18:00",
+    "asof": "07-27 18:02",
     "ago": "2일 전",
     "ok": false,
     "date": "2026-07-25 12:00",
@@ -1071,7 +1071,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:00",
+    "asof": "07-27 18:02",
     "ago": "20일 전",
     "ok": false,
     "date": "2026-07-07 13:05",
@@ -1111,7 +1111,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:00",
+    "asof": "07-27 18:02",
     "ago": "19시간 전",
     "ok": false,
     "date": "2026-07-26 22:03",
@@ -1148,10 +1148,10 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:00",
+    "asof": "07-27 18:02",
     "ago": "방금",
     "ok": true,
-    "date": "2026-07-27 18:00",
+    "date": "2026-07-27 18:01",
     "stale_days": 0,
     "state": "가동",
     "headline": "오늘 발송 40통"
@@ -1186,7 +1186,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:00",
+    "asof": "07-27 18:02",
     "ago": "10시간 전",
     "ok": true,
     "date": "2026-07-27 07:37",
@@ -1749,7 +1749,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-07-27 18:00",
+ "_autosync": "2026-07-27 18:02",
  "perf": {
   "overseas_total": 11,
   "by_country": [
@@ -1762,7 +1762,7 @@ body{background:#eef0f7;color:var(--ink)}
  },
  "_detail_updated": "2026-07-27T08:41:11"
 };window.__AUTO__={
- "built": "07-27 18:00",
+ "built": "07-27 18:02",
  "snapshot": "07-27 10:45",
  "total": 75,
  "on_total": 71,
@@ -2486,7 +2486,7 @@ body{background:#eef0f7;color:var(--ink)}
   }
  ]
 };window.__PERF__={
- "built": "2026-07-27 18:01",
+ "built": "2026-07-27 18:02",
  "country": {
   "top": [
    {
@@ -3204,7 +3204,7 @@ body{background:#eef0f7;color:var(--ink)}
   "dup_canon": []
  }
 };window.__VERIFY__={
- "built": "07-27 18:01",
+ "built": "07-27 18:02",
  "date": "2026-07-27",
  "summary": "제작 2 → 게이트 통과 1 → 발송 2, 걸러진 것 1건",
  "counts": {
@@ -3316,7 +3316,7 @@ body{background:#eef0f7;color:var(--ink)}
   }
  ]
 };window.__SNS__={
- "built": "2026-07-27 18:01",
+ "built": "2026-07-27 18:02",
  "channels": [
   {
    "key": "econ_threads",
@@ -3410,7 +3410,7 @@ body{background:#eef0f7;color:var(--ink)}
   {
    "f": "brief_20260726.md",
    "at": "2026-07-26 17:16",
-   "age_h": 24.7,
+   "age_h": 24.8,
    "stale": true
   },
   {
@@ -3427,7 +3427,7 @@ body{background:#eef0f7;color:var(--ink)}
   }
  ],
  "note": "배달 성립 기준 = 관문 대장(tg_send_log.csv)의 mid. 파일만 있고 mid 가 없으면 '제작됨 · 폰 미도착'이다. 팔로워는 자동 측정 수단이 없어 사장님 입력값만 쓴다."
-};window.__BACKEND__=false;window.__SYNC__="2026-07-27 18:01";</script>
+};window.__BACKEND__=false;window.__SYNC__="2026-07-27 18:02";</script>
 </head><body><div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
   <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
   <div style="color:#9fb3d1;font-size:13px">접속 비밀번호를 입력하세요</div>
