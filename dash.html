@@ -131,7 +131,8 @@ function stOf(p){
   return (p.reg&&p.reg.status==='완료')?'DONE':'GO';
 }
 function setState(pid,to){
-  var now=new Date().toISOString().slice(0,16).replace('T',' ');
+  var d=new Date(), z=function(n){return (n<10?'0':'')+n;};   /* 한국 시각 기준 */
+  var now=d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())+' '+z(d.getHours())+':'+z(d.getMinutes());
   var body={status:to,at:now,by:'대행자'};
   fetch(DB+'/shared/wholesale/regstate/'+encodeURIComponent(pid)+'.json',
         {method:'PUT',body:JSON.stringify(body)})
