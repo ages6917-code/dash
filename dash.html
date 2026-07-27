@@ -57,6 +57,21 @@
   .rcst{margin-left:auto;font-size:12px;font-weight:800;padding:5px 11px;border-radius:20px}
   .rcst.wait{background:#fff2dd;color:#b06a00}.rcst.done{background:#1b8f5a;color:#fff}
   .foot{margin:15px 0 30px;font-size:12.5px;color:var(--sub);text-align:center;line-height:1.7}
+  /* ── 상태 3단 탭 ── */
+  .tabs{display:flex;gap:7px;margin-bottom:11px;flex-wrap:wrap}
+  .tab{border:1.5px solid var(--line);background:#fff;border-radius:22px;padding:9px 15px;font-size:13px;
+       font-weight:800;cursor:pointer;font-family:inherit;color:#374151}
+  .tab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .tab b{font-weight:900}
+  .onecol{display:grid;grid-template-columns:1fr 1fr;gap:11px}
+  @media(max-width:820px){.onecol{grid-template-columns:1fr}}
+  .jb.todo{background:#e7f4e8;color:#1b7a35}.jb.wip{background:#ffedd5;color:#c2410c}
+  .jb.done{background:#1b8f5a;color:#fff}
+  .rcst.todo{background:#e7f4e8;color:#1b7a35}.rcst.wip{background:#ffedd5;color:#c2410c}
+  .rcst.done{background:#1b8f5a;color:#fff}
+  .regcard.st-wip{border-color:#fdba74;background:#fffaf5}
+  .regcard.st-done{border-color:#7fc99a;background:#f7fdf9}
+  .rcbtn.wip{background:#ea7317;border-color:#ea7317;color:#fff}
 </style>
 </head>
 <body>
@@ -95,52 +110,104 @@ function boot(){
     '<li>완성물은 <b>[⬆ 작업물 올리기]</b>, 등록이 끝나면 <b>[✅ 등록 완료 보고]</b>.</li></ol>'+
     '<div class="ban">🚫 금지어: 유기농·무농약·친환경·불검출·항염·면역·해독·다이어트·질병·치료·예방·100%·무조건<br>'+
     '🚫 타 쇼핑몰 상세 캡처·연예인/캐릭터 이미지·타사 로고 사용 금지<br>🚫 가격 임의 변경 금지 — 이상하면 물어봐 주세요.</div></details>'+
+    '<div class="tabs" id="tabs"></div>'+
     '<input class="search" id="search" placeholder="🔍 제품·거래처 검색" oninput="render()">'+
     '<div id="view"></div><div class="foot" id="foot"></div>';
-  fetch(DB+'/shared/wholesale/public.json').then(function(r){return r.json();}).then(function(v){
-    D=(v||[]).filter(Boolean);
+  Promise.all([
+    fetch(DB+'/shared/wholesale/public.json').then(function(r){return r.json();}),
+    fetch(DB+'/shared/wholesale/regstate.json').then(function(r){return r.json();},function(){return {};})
+  ]).then(function(a){
+    D=(a[0]||[]).filter(Boolean); ST=a[1]||{};
     document.getElementById('date').textContent='🤖 '+D.length+'개 품목 · 실시간';
     render();
   },function(e){ document.getElementById('view').innerHTML='<div class="regempty">데이터를 불러오지 못했습니다: '+esc(e.message)+'</div>'; });
 }
 
+/* ── 등록 상태 3단 (🟢 등록하세요 / 🟠 작업 중 / ✅ 등록 완료) ── */
+var ST={}, TAB='todo';
+function stOf(p){
+  var s=(ST[p.pid]||{}).status;
+  if(s) return s;
+  return (p.reg&&p.reg.status==='완료')?'DONE':'GO';
+}
+function setState(pid,to){
+  var now=new Date().toISOString().slice(0,16).replace('T',' ');
+  var body={status:to,at:now,by:'대행자'};
+  fetch(DB+'/shared/wholesale/regstate/'+encodeURIComponent(pid)+'.json',
+        {method:'PUT',body:JSON.stringify(body)})
+   .then(function(){
+     return fetch(DB+'/shared/wholesale/reglog.json',{method:'POST',
+       body:JSON.stringify({pid:pid,to:to,ts:now,by:'대행자'})});   /* 이력 로그 */
+   }).then(function(){
+     ST[pid]=body; render();
+     if(to==='DONE'){
+       var p=byPid(pid)||{};
+       copyTxt('[등록완료] '+pid+' · '+(p.name||'')+' · '+now.slice(0,10));
+       alert('✅ 등록 완료로 바꿨습니다.\n한 줄이 복사됐으니 사장님께 보내주시면 더 좋습니다.');
+     }
+   },function(e){ alert('상태 저장 실패: '+e.message); });
+}
+
 function img(p){ return p.img? '<span class="rimg"><img src="'+p.img+'" alt=""></span>' : '<span class="rimg">📦</span>'; }
 function nm(p){ return '<div class="rnm">'+esc(p.name)+'<small>'+esc(p.vendor)+(p.spec?' · '+esc(p.spec):'')+'</small></div>'; }
+
+function setTab(t){ TAB=t; render(); }
+
+function card(p){
+  var s=stOf(p);
+  var head={GO:['todo','🟢 등록하세요'],WIP:['wip','🟠 작업 중'],DONE:['done','✅ 등록 완료']}[s];
+  var why='💡 <b>'+won(p.price)+'</b> 로 등록'+(p.why?'<br>'+esc(p.why):'')+
+    (p.price&&p.price<LIMIT?'<br><span class="warn">⚠️ 19,800원 이상으로 올리지 마세요 — 무료배송으로 바뀌어 조건이 달라집니다.</span>':'');
+  var sell=(p.selling&&p.selling.length)
+    ? '<ul class="rcsell">'+p.selling.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>'
+    : '<ul class="rcsell"><li class="na">셀링포인트 준비중 — 사장님께 요청하세요.</li></ul>';
+  var opt=(p.options&&p.options.length)
+    ? '<div class="opts">📋 옵션 '+p.options.length+'종: '+esc(p.options.slice(0,10).join(' · '))+(p.options.length>10?' …':'')+'</div>':'';
+  var btn='';
+  if(s==='GO')  btn='<button class="rcbtn wip" onclick="setState(\''+p.pid+'\',\'WIP\')">▶ 작업 시작</button>'+
+                    '<button class="rcbtn pri" onclick="setState(\''+p.pid+'\',\'DONE\')">✅ 등록 완료</button>';
+  if(s==='WIP') btn='<button class="rcbtn pri" onclick="setState(\''+p.pid+'\',\'DONE\')">✅ 등록 완료</button>'+
+                    '<button class="rcbtn" onclick="setState(\''+p.pid+'\',\'GO\')">↩ 되돌리기</button>';
+  if(s==='DONE')btn='<button class="rcbtn" onclick="setState(\''+p.pid+'\',\'WIP\')">↩ 되돌리기</button>';
+  var when=(ST[p.pid]||{}).at;
+  return '<div class="regcard st-'+head[0]+'">'+
+    '<div class="rctop">'+img(p)+nm(p)+'<div class="rrt"><div class="rpx">'+won(p.price)+'</div>'+
+    '<div class="jb '+head[0]+'">'+head[1]+'</div></div></div>'+
+    '<div class="rcwhy">'+why+'</div>'+sell+opt+
+    '<div class="rcbtm"><button class="rcbtn" onclick="openFiles(\''+p.pid+'\')">📁 제품 자료 받기</button>'+
+    '<button class="rcbtn" onclick="pickWork(\''+p.pid+'\')">⬆ 작업물 올리기</button>'+btn+
+    '<span class="rcst '+head[0]+'">'+head[1]+(when?' · '+esc(when):'')+'</span></div></div>';
+}
 
 function render(){
   var q=(document.getElementById('search').value||'').toLowerCase();
   function hit(p){return ((p.name||'')+(p.vendor||'')+(p.spec||'')).toLowerCase().indexOf(q)>=0;}
   var fit=D.filter(function(p){return p.badge==='GO'&&hit(p);});
-  var unfit=D.filter(function(p){return (p.badge==='NOGO'||p.badge==='HOLD')&&hit(p);});
-  var wait=D.filter(function(p){return p.badge==='WAIT'&&hit(p);}).length;
-  var L=fit.map(function(p){
-    var done=(p.reg&&p.reg.status==='완료');
-    var why='💡 <b>'+won(p.price)+'</b> 로 등록'+(p.why?'<br>'+esc(p.why):'')+
-      (p.price&&p.price<LIMIT?'<br><span class="warn">⚠️ 19,800원 이상으로 올리지 마세요 — 무료배송으로 바뀌어 조건이 달라집니다.</span>':'');
-    var sell=(p.selling&&p.selling.length)
-      ? '<ul class="rcsell">'+p.selling.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>'
-      : '<ul class="rcsell"><li class="na">셀링포인트 준비중 — 사장님께 요청하세요.</li></ul>';
-    var opt=(p.options&&p.options.length)? '<div class="opts">📋 옵션 '+p.options.length+'종: '+esc(p.options.slice(0,8).join(' · '))+(p.options.length>8?' …':'')+'</div>':'';
-    return '<div class="regcard'+(done?' done':'')+'">'+
-      '<div class="rctop">'+img(p)+nm(p)+'<div class="rrt"><div class="rpx">'+won(p.price)+'</div>'+
-      '<div class="jb go">🟢 등록 GO</div></div></div>'+
-      '<div class="rcwhy">'+why+'</div>'+sell+opt+
-      '<div class="rcbtm"><button class="rcbtn" onclick="openFiles(\''+p.pid+'\')">📁 제품 자료 받기</button>'+
-      '<button class="rcbtn" onclick="pickWork(\''+p.pid+'\')">⬆ 작업물 올리기</button>'+
-      (done?'':'<button class="rcbtn pri" onclick="regDone(\''+p.pid+'\')">✅ 등록 완료 보고</button>')+
-      '<span class="rcst '+(done?'done':'wait')+'">'+(done?'등록 완료'+(p.reg.done_at?' · '+esc(p.reg.done_at):''):'등록 대기')+'</span>'+
-      '</div></div>';
-  }).join('')||'<div class="regempty">등록 GO 제품이 아직 없습니다.</div>';
-  var R=unfit.map(function(p){
-    var b=p.badge==='HOLD'?'<span class="jb hold">🟡 보류</span>':'<span class="jb no">🔴 부적합</span>';
-    return '<div class="regrow">'+img(p)+nm(p)+'<div class="rrs">'+b+'<br>'+esc(p.reason||'')+'</div></div>';
-  }).join('')||'<div class="regempty">해당 없음.</div>';
-  document.getElementById('view').innerHTML=
-    '<div class="regwrap"><div class="regcol fit"><div class="regh"><div class="t">🟢 적합 · 등록 대상 '+fit.length+'</div>'+
-    '<div class="act">← 여기 제품만 작업</div></div>'+L+'</div>'+
-    '<div class="regcol unfit"><div class="regh"><div class="t">🔴 제외 '+unfit.length+'</div><div class="act">등록 안 함</div></div>'+R+'</div></div>';
-  var dn=fit.filter(function(p){return p.reg&&p.reg.status==='완료';}).length;
-  document.getElementById('foot').textContent='등록 '+dn+' / 대기 '+(fit.length-dn)+'건 · 조사 대기 '+wait+'건은 판정 후 나타납니다.';
+  var unfit=D.filter(function(p){return (p.badge==='NOGO'||p.badge==='HOLD'||p.badge==='WAIT')&&hit(p);});
+  var todo=fit.filter(function(p){return stOf(p)==='GO';});
+  var wip=fit.filter(function(p){return stOf(p)==='WIP';});
+  var done=fit.filter(function(p){return stOf(p)==='DONE';});
+  var T=[['todo','🟢 지금 등록할 것',todo.length],['wip','🟠 작업 중',wip.length],
+         ['done','✅ 등록 완료',done.length],['out','🔴 제외',unfit.length]];
+  document.getElementById('tabs').innerHTML=T.map(function(t){
+    return '<button class="tab'+(TAB===t[0]?' on':'')+'" onclick="setTab(\''+t[0]+'\')">'+t[1]+' <b>'+t[2]+'</b></button>';
+  }).join('');
+  var html;
+  if(TAB==='out'){
+    html=unfit.map(function(p){
+      var b=p.badge==='NOGO'?'<span class="jb no">🔴 부적합</span>':'<span class="jb hold">🟡 보류</span>';
+      return '<div class="regrow">'+img(p)+nm(p)+'<div class="rrs">'+b+'<br>'+esc(p.reason||'')+'</div></div>';
+    }).join('')||'<div class="regempty">해당 없음.</div>';
+  } else {
+    var list={todo:todo,wip:wip,done:done}[TAB];
+    html=list.map(card).join('')||'<div class="regempty">'+
+      {todo:'지금 등록할 품목이 없습니다. 완료하신 것은 ✅ 탭에서 확인하세요.',
+       wip:'작업 중인 품목이 없습니다. 🟢 탭에서 [▶ 작업 시작]을 눌러 주세요.',
+       done:'아직 등록 완료된 품목이 없습니다.'}[TAB]+'</div>';
+  }
+  document.getElementById('view').innerHTML='<div class="onecol">'+html+'</div>';
+  document.getElementById('foot').textContent=
+    '등록 완료 '+done.length+' / 작업 중 '+wip.length+' / 대기 '+todo.length+'건 (전체 등록대상 '+fit.length+')';
 }
 
 function byPid(pid){return D.filter(function(x){return x.pid===pid;})[0];}
