@@ -235,6 +235,8 @@
 
 
 
+
+
 <!--V3PATCH-->
 ﻿/* ===== 위탁 대시보드 v3 (2026-07-27) — 판정 배지 · GO 필터 · 자료실 2종 ===== */
 .jbadge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;border-radius:20px;padding:3px 9px;margin-top:7px}
@@ -1370,6 +1372,8 @@ function dashForceRefresh(){
 
 
 
+
+
 <!--V3PATCH-->
 <script>
 ﻿/* ============================================================
@@ -1505,12 +1509,26 @@ function dashForceRefresh(){
       '<div class="thumb sq"><img src="' + p.imgData + '" alt=""></div>');
   }
 
+  /* ── 카드 위쪽 숫자를 새 배송비 정책 값으로 교체 ──
+     원본(v1) 계산은 거래처 택배원가를 안 넣어서 손익분기·마진이 낙관적으로 나온다.
+     한 카드에 서로 다른 숫자가 두 개 뜨면 안 되므로 정책 계산값 하나로 통일한다. */
+  function fixNums(h, p) {
+    var j = p.judge || {};
+    if (j.bep != null) h = h.replace(/(<span class="lbl">손익분기<\/span><span>)[^<]*(<\/span>)/, '$1' + won(j.bep) + '$2');
+    if (j.price_reco != null) {
+      h = h.replace(/(<span class="lbl">추천 판매가\s*)<b[^>]*>[^<]*<\/b>/,
+        '$1<b style="color:#1b8f5a">·마진' + (j.margin_pct != null ? j.margin_pct + '%' : '–') + '</b>');
+      h = h.replace(/(<span class="sell">)[^<]*(<\/span>)/, '$1' + won(j.price_reco) + '$2');
+    }
+    return h;
+  }
+
   var _prev = window.pcardHtml;
   if (typeof _prev === 'function') {
     window.pcardHtml = function (p) {
       var h = _prev(p);
       if (!p) return h;
-      h = withImg(h, p);
+      h = fixNums(withImg(h, p), p);
       var i = h.lastIndexOf('</div></div>');            /* pbody 닫기 직전 */
       return i < 0 ? h : h.slice(0, i) + optHtml(p) + badgeHtml(p) + h.slice(i);
     };
