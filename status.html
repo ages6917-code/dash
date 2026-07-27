@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="T봇 현황판">
 <link rel="apple-touch-icon" href="icon180.png">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260727133059">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260727133218">
 <script>(function(){var B=(document.querySelector('meta[name=app-build]')||{}).content;function c(){fetch(location.pathname+'?_c='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/name="app-build" content="([^"]+)"/);if(m&&m[1]&&m[1]!=B){location.replace(location.pathname+'?v='+encodeURIComponent(m[1]))}}).catch(function(){})}setTimeout(c,700);document.addEventListener('visibilitychange',function(){if(!document.hidden)c()})})();</script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon512.png">
@@ -178,7 +178,49 @@ body{background:#eef0f7;color:var(--ink)}
 .perfw .pbr{font-size:13px;font-weight:700;color:#7f1d1d;margin-bottom:6px;overflow-wrap:anywhere}
 .perfw .pbd{font-size:12px;color:#6b5b5b;line-height:1.6;margin-bottom:8px}
 .perfw .nocmp{color:#8a83b0;font-size:10.5px}
-@media(max-width:780px){.perfw .p4{grid-template-columns:repeat(2,1fr)}.perfw .pc .v{font-size:20px}.perfw .fr .fk{width:48px}.perfw .pc .s{overflow-wrap:anywhere}}
+/* ★2026-07-27 ■2 — 국가별 발굴 · 일별 발송 · 회신 3종 */
+.perfw .ctry{background:#f8f8fd;border-radius:11px;padding:9px 11px}
+.perfw .cr{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3px 0}
+.perfw .cr .ck{flex:none;width:72px;font-weight:800;color:#5a5477;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.perfw .cr .cb{flex:1;height:9px;background:#eceaf6;border-radius:5px;overflow:hidden;min-width:0}
+.perfw .cr .cb span{display:block;height:100%;background:linear-gradient(90deg,#0ea5e9,#22d3ee);border-radius:5px}
+.perfw .cr .cn{flex:none;width:40px;text-align:right;font-weight:800;color:#3f3a5c}
+.perfw .cr .ce{flex:none;font-size:9px;color:#a5a1bb;font-weight:700}
+.perfw .d14{display:flex;gap:3px;align-items:flex-end;height:62px;margin-top:4px;overflow-x:auto}
+.perfw .d14 .dc{flex:1;min-width:17px;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:3px}
+.perfw .d14 .db{width:100%;background:#38bdf8;border-radius:3px 3px 0 0;min-height:2px}
+.perfw .d14 .dv{font-size:8.5px;font-weight:800;color:#3f3a5c}
+.perfw .d14 .dl2{font-size:8px;color:#a5a1bb;font-weight:700;white-space:nowrap}
+.perfw .r3{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin-top:6px}
+.perfw .r3 .rc{background:#f8f8fd;border-radius:10px;padding:8px 6px;text-align:center}
+.perfw .r3 .rc .v{font-size:18px;font-weight:800;color:#4b40c4}
+.perfw .r3 .rc .l{font-size:10px;color:#8a83b0;font-weight:700}
+.perfw .r3 .rc.bad .v{color:#dc2626}
+@media(max-width:780px){.perfw .p4{grid-template-columns:repeat(2,1fr)}.perfw .pc .v{font-size:20px}.perfw .fr .fk{width:48px}.perfw .pc .s{overflow-wrap:anywhere}.perfw .r3{grid-template-columns:repeat(2,1fr)}.perfw .cr .ck{width:60px}}
+/* ── SNS성장팀 패널 (2026-07-27 ■3) ── */
+.snsp{background:#fff;border-radius:14px;padding:15px 17px;margin-bottom:16px;border-left:5px solid #ec4899}
+.snsp h3{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:#2f2b45}
+.snsp .stamp{font-size:10.5px;color:#9a96b5;font-weight:600;margin-left:auto}
+.snsp .go{display:flex;gap:7px;flex-wrap:wrap;margin-top:11px}
+.snsp .go a,.snsp .go span{font-size:11.5px;font-weight:800;border-radius:20px;padding:6px 12px;text-decoration:none;display:inline-block}
+.snsp .go a{background:#ec4899;color:#fff}
+.snsp .go span{background:#f3f0fa;color:#9a96b5;border:1px dashed #d6d1e8}
+.snsp .cards{display:grid;grid-template-columns:repeat(2,1fr);gap:9px;margin-top:12px}
+.snsp .cc2{background:#f8f8fd;border-radius:11px;padding:10px 11px;min-width:0}
+.snsp .cc2 .t{font-size:12px;font-weight:800;color:#3f3a5c;display:flex;align-items:center;gap:5px}
+.snsp .cc2 .m{font-size:10.5px;color:#8a83b0;font-weight:700;margin-top:4px}
+.snsp .cc2 .d{font-size:10.5px;color:#4c4862;margin-top:5px;line-height:1.5;overflow-wrap:anywhere}
+.snsp .cc2 .ok{color:#16a34a;font-weight:800}
+.snsp .cc2 .no{color:#dc2626;font-weight:800}
+.snsp .bl{margin-top:12px}
+.snsp .br{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:4px 0;flex-wrap:wrap}
+.snsp .br .bn{font-weight:800;color:#3f3a5c;overflow-wrap:anywhere}
+.snsp .br .bt{font-size:10px;color:#a5a1bb;font-weight:700}
+.snsp .br.stale{opacity:.45}
+.snsp .br .tag{font-size:9.5px;font-weight:800;border-radius:20px;padding:1px 7px;background:#eceaf6;color:#8a83b0}
+.snsp .nurl{margin-top:10px;font-size:11px;line-height:1.55;color:#92400e;background:#fffbeb;border:1px solid #fde68a;border-radius:9px;padding:7px 9px;word-break:keep-all}
+.snsp .src{margin-top:9px;font-size:10px;color:#a5a1bb;line-height:1.5;word-break:keep-all}
+@media(max-width:780px){.snsp .cards{grid-template-columns:1fr}.snsp,.snsp *{min-width:0;max-width:100%}}
 /* ── 시스템 맵 (아키텍처) ── */
 .arch{background:#fff;border-radius:14px;padding:15px 17px;margin-bottom:14px;border-left:5px solid #0f766e}
 .arch h3{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:#2f2b45}
@@ -684,7 +726,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-27 13:30",
+    "asof": "07-27 13:32",
     "ago": "18일 전",
     "ok": false,
     "date": "2026-07-08 20:43",
@@ -752,7 +794,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 13:30",
+    "asof": "07-27 13:32",
     "ago": "2일 전",
     "ok": false,
     "date": "2026-07-25 05:20",
@@ -826,7 +868,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 13:30",
+    "asof": "07-27 13:32",
     "ago": "20시간 전",
     "ok": false,
     "date": "2026-07-26 17:22",
@@ -912,8 +954,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 13:30",
-    "ago": "28분 전",
+    "asof": "07-27 13:32",
+    "ago": "29분 전",
     "ok": true,
     "date": "2026-07-27 13:02",
     "stale_days": 0,
@@ -961,7 +1003,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-27 13:30",
+    "asof": "07-27 13:32",
     "ago": "2일 전",
     "ok": false,
     "date": "2026-07-25 12:00",
@@ -1009,7 +1051,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 13:30",
+    "asof": "07-27 13:32",
     "ago": "20일 전",
     "ok": false,
     "date": "2026-07-07 13:05",
@@ -1049,7 +1091,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 13:30",
+    "asof": "07-27 13:32",
     "ago": "15시간 전",
     "ok": false,
     "date": "2026-07-26 22:03",
@@ -1086,8 +1128,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 13:30",
-    "ago": "3분 전",
+    "asof": "07-27 13:32",
+    "ago": "4분 전",
     "ok": true,
     "date": "2026-07-27 13:27",
     "stale_days": 0,
@@ -1124,7 +1166,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 13:30",
+    "asof": "07-27 13:32",
     "ago": "5시간 전",
     "ok": true,
     "date": "2026-07-27 07:37",
@@ -1687,7 +1729,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-07-27 13:30",
+ "_autosync": "2026-07-27 13:32",
  "perf": {
   "overseas_total": 11,
   "by_country": [
@@ -1700,7 +1742,7 @@ body{background:#eef0f7;color:var(--ink)}
  },
  "_detail_updated": "2026-07-27T08:41:11"
 };window.__AUTO__={
- "built": "07-27 13:30",
+ "built": "07-27 13:32",
  "snapshot": "07-27 10:45",
  "total": 75,
  "on_total": 71,
@@ -2430,7 +2472,7 @@ body{background:#eef0f7;color:var(--ink)}
   }
  ]
 };window.__PERF__={
- "built": "2026-07-27 13:30",
+ "built": "2026-07-27 13:32",
  "country": {
   "top": [
    {
@@ -3148,7 +3190,7 @@ body{background:#eef0f7;color:var(--ink)}
   "dup_canon": []
  }
 };window.__VERIFY__={
- "built": "07-27 13:30",
+ "built": "07-27 13:32",
  "date": "2026-07-27",
  "summary": "제작 2 → 게이트 통과 1 → 발송 2, 걸러진 것 1건",
  "counts": {
@@ -3252,7 +3294,119 @@ body{background:#eef0f7;color:var(--ink)}
    ]
   }
  ]
-};window.__BACKEND__=false;window.__SYNC__="2026-07-27 13:30";</script>
+};window.__SNS__={
+ "built": "2026-07-27 13:32",
+ "channels": [
+  {
+   "key": "econ_threads",
+   "label": "경제지원단 쓰레드",
+   "emoji": "🧵",
+   "brand": "경제지원단",
+   "platform": "threads",
+   "url": null,
+   "url_src": "미확인 — 사장님 확인 필요",
+   "followers": null,
+   "followers_at": null,
+   "today_reel": 1,
+   "today_thread": 0,
+   "delivered": [
+    {
+     "mid": "702",
+     "t": "시작할 때만 지원이 있는 줄 아셨다면  이 공고 한 번 보셔야 합니다."
+    }
+   ]
+  },
+  {
+   "key": "life_threads",
+   "label": "생활노트 쓰레드",
+   "emoji": "🧵",
+   "brand": "생활노트",
+   "platform": "threads",
+   "url": null,
+   "url_src": "미확인 — 사장님 확인 필요",
+   "followers": null,
+   "followers_at": null,
+   "today_reel": 1,
+   "today_thread": 0,
+   "delivered": [
+    {
+     "mid": "701",
+     "t": "변기 안쪽 그 링 자국  문질러서 지우려고 하면 계속 남아."
+    }
+   ]
+  },
+  {
+   "key": "econ_insta",
+   "label": "경제지원단 인스타",
+   "emoji": "📸",
+   "brand": "경제지원단",
+   "platform": "instagram",
+   "url": null,
+   "url_src": "미확인 — 사장님 확인 필요",
+   "followers": null,
+   "followers_at": null,
+   "today_reel": 1,
+   "today_thread": 0,
+   "delivered": [
+    {
+     "mid": "702",
+     "t": "시작할 때만 지원이 있는 줄 아셨다면  이 공고 한 번 보셔야 합니다."
+    }
+   ]
+  },
+  {
+   "key": "life_insta",
+   "label": "생활노트 인스타",
+   "emoji": "📸",
+   "brand": "생활노트",
+   "platform": "instagram",
+   "url": "https://www.instagram.com/useful.life.note",
+   "url_src": "우리 등록부(직원16 정체성 기록 'useful.life.note') — 사장님 확인 권장",
+   "followers": null,
+   "followers_at": null,
+   "today_reel": 1,
+   "today_thread": 0,
+   "delivered": [
+    {
+     "mid": "701",
+     "t": "변기 안쪽 그 링 자국  문질러서 지우려고 하면 계속 남아."
+    }
+   ]
+  }
+ ],
+ "need_url": [
+  "경제지원단 쓰레드",
+  "생활노트 쓰레드",
+  "경제지원단 인스타"
+ ],
+ "briefs": [
+  {
+   "f": "쓰레드_벤치마킹_20260724.md",
+   "at": "2026-07-24 17:18",
+   "age_h": 68.2,
+   "stale": true
+  },
+  {
+   "f": "brief_20260726.md",
+   "at": "2026-07-26 17:16",
+   "age_h": 20.3,
+   "stale": false
+  },
+  {
+   "f": "brief_20260719.md",
+   "at": "2026-07-19 19:47",
+   "age_h": 185.7,
+   "stale": true
+  },
+  {
+   "f": "2026-W28.md",
+   "at": "2026-07-13 21:47",
+   "age_h": 327.7,
+   "stale": true
+  }
+ ],
+ "note": "배달 성립 기준 = 관문 대장(tg_send_log.csv)의 mid. 파일만 있고 mid 가 없으면 '제작됨 · 폰 미도착'이다. 팔로워는 자동 측정 수단이 없어 사장님 입력값만 쓴다."
+};window.__BACKEND__=false;window.__SYNC__="2026-07-27 13:32";</script>
 </head><body><div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
   <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
   <div style="color:#9fb3d1;font-size:13px">접속 비밀번호를 입력하세요</div>
@@ -3577,8 +3731,57 @@ h+='</div>';
 var a=(P.wk||{}).this||{},b=(P.wk||{}).last||{};
 h+='<div class="pwk">이번 주 수집 <b>'+(a.collect||0)+'</b> · 발송 <b>'+(a.sent||0)+'</b> · 회신 <b>'+(a.reply||0)+'</b>'
  +' <span class="vs">지난주 '+(b.collect||0)+' / '+(b.sent||0)+' / '+(b.reply||0)+'</span></div>';
+/* ★2026-07-27 ■2 — 국가별 발굴 현황 (누적) */
+var CT=P.country||{};
+if(CT.top&&CT.top.length){var cmx=CT.top[0].n||1;
+ h+='<div class="phd"><b>국가별 발굴</b><span class="lg" style="color:#9a96b5">누적 '+(CT.total||0)+'건 · 미상 '+(CT.unknown||0)+'</span></div><div class="ctry">';
+ CT.top.forEach(function(c){h+='<div class="cr"><span class="ck">'+c.c+'</span><span class="cb"><span style="width:'+Math.max(4,Math.round(c.n*100/cmx))+'%"></span></span><span class="cn">'+c.n+'</span><span class="ce">'+(c.est?'추정':'')+'</span></div>'});
+ h+='</div><div class="psrc">'+(CT.note||'')+'</div>'}
+/* 일별 발송 (최근 14일) + 누적 */
+var DD=P.days14||[];
+if(DD.length){var dmx=1;DD.forEach(function(d){dmx=Math.max(dmx,d.n)});
+ h+='<div class="phd"><b>일별 발송 (최근 14일)</b><span class="lg" style="color:#9a96b5">누적 '+(P.sent_all||0)+'통</span></div><div class="d14">';
+ DD.forEach(function(d){h+='<div class="dc"><div class="dv">'+(d.n||'')+'</div><div class="db" style="height:'+Math.round((d.n/dmx)*38)+'px;'+(d.n?'':'background:#eceaf6')+'"></div><div class="dl2">'+d.d+'</div></div>'});
+ h+='</div>'}
+/* 회신 3종 분류 (받은편지함 실측) */
+var RC=P.reply_class;
+if(RC){h+='<div class="phd"><b>회신 분류</b><span class="lg" style="color:#9a96b5">받은편지함 '+RC.inbox_total+'통 실측 · '+(RC.built||'')+'</span></div>'
+ +'<div class="r3">'
+ +'<div class="rc"><div class="v">'+RC.real+'</div><div class="l">진짜 회신</div></div>'
+ +'<div class="rc"><div class="v">'+RC.auto+'</div><div class="l">자동응답</div></div>'
+ +'<div class="rc'+(RC.bounce_alarm?' bad':'')+'"><div class="v">'+RC.bounce+'</div><div class="l">반송</div></div>'
+ +'<div class="rc"><div class="v">'+(RC.delay||0)+'</div><div class="l">지연(실패X)</div></div></div>';
+ if(RC.bounce_alarm)h+='<div class="pnote">반송률 '+RC.bounce_rate+'% (반송 '+RC.bounce+' / 발송 '+RC.sent_total+') — 기준 10% 초과. 이메일 수집 품질 문제로 판정. 반송 주소 '+RC.bounce_addr_n+'개는 발송풀에서 영구 제외 적용됨.</div>';
+ h+='<div class="psrc">✉️ 답방 알림은 <b>진짜 회신</b>만 나간다. 자동응답·반송·지연은 대장에만 기록. '+(RC.note||'')+'</div>'}
 (P.notes||[]).forEach(function(n){h+='<div class="pnote">⚠️ '+n+'</div>'});
 h+='<div class="psrc">데이터 수집 시작일 — 수집 '+(S.collect||'기록없음')+' · 검수 '+(S.pass||'기록없음')+' · 발송 '+(S.sent||'기록없음')+' · 회신 '+(S.reply||'기록없음')+' | 출처: 실측 대장(마스터 CSV·발송로그·회신감시 로그)</div>';
+return h+'</div>'}
+/* ── SNS성장팀 패널 (2026-07-27 ■3) ──────────────────────────────
+   주소는 _state\sns_channels.json 정본에서만 온다. 없으면 버튼을 만들지 않고
+   "사장님 URL 필요"로 표시한다 — 그럴듯한 주소를 지어내지 않는다. */
+function snsPanel(k){if(k!='sns')return '';var S=window.__SNS__;if(!S||!S.channels)return '';
+var h='<div class="snsp"><h3>📱 내 채널 <span class="stamp">🕒 '+(S.built||'-')+'</span></h3><div class="go">';
+S.channels.forEach(function(c){
+ if(c.url)h+='<a href="'+c.url+'" target="_blank" rel="noopener">'+c.emoji+' '+c.label+'</a>';
+ else h+='<span title="주소 미확인">'+c.emoji+' '+c.label+' · URL 필요</span>'});
+h+='</div>';
+if(S.need_url&&S.need_url.length)h+='<div class="nurl">🔗 사장님 확인 필요 — 계정 주소를 몰라 버튼을 만들지 못한 채널: <b>'+S.need_url.join(' · ')+'</b>. 주소를 알려주시면 즉시 연결합니다(추측 주소는 넣지 않았습니다).</div>';
+h+='<div class="cards">';
+S.channels.forEach(function(c){
+ var mid=(c.delivered||[]);
+ h+='<div class="cc2"><div class="t">'+c.emoji+' '+c.label+'</div>'
+  +'<div class="m">오늘 제작 — 릴스 '+c.today_reel+' · 쓰레드 '+c.today_thread+'</div>'
+  +'<div class="d">'+(mid.length
+     ? '<span class="ok">✓ 폰 도착</span> '+mid.map(function(m){return m.t}).join(' / ')
+     : (c.today_reel||c.today_thread ? '<span class="no">제작됨 · 폰 미도착</span>' : '오늘 배달 없음'))+'</div>'
+  +'<div class="m">팔로워 — '+(c.followers!=null?(c.followers+' <span class="bt">('+(c.followers_at||'입력일 미상')+' 사장님 입력)</span>'):'미측정 (자동 측정 수단 없음)')+'</div>'
+  +'</div>'});
+h+='</div>';
+var B=S.briefs||[];
+if(B.length){h+='<div class="bl"><div class="phd" style="margin:6px 0 2px"><b>팀 브리핑 신선도</b></div>';
+ B.forEach(function(b){h+='<div class="br'+(b.stale?' stale':'')+'"><span class="bn">'+b.f+'</span><span class="bt">'+b.at+'</span><span class="tag">'+(b.stale?'지난 브리핑':'최신')+'</span></div>'});
+ h+='</div>'}
+h+='<div class="src">'+(S.note||'')+'</div>';
 return h+'</div>'}
 function teamView(k){var t=TEAMS.filter(function(x){return x.k==k})[0];var es=E.filter(function(e){return e.tm===k}).sort(function(a,b){return a.no-b.no});
 var tg=(D.teams&&D.teams[k])||{goal:'-',strat:'-'};
@@ -3592,7 +3795,7 @@ var tk='<div class="tkpis"><div class="tk"><div class="kdonut" style="background
 +'<div class="tk"><div class="v">'+todayN+'건</div><div class="l">오늘 일정</div></div>'
 +'<div class="tk'+(iv2?' warn':'')+'"><div class="v">'+iv2+'</div><div class="l">개입 대기</div></div></div>';
 return '<div class="thead"><span class="te">'+t.e+'</span><div><h2>'+t.l+' <span style="font-size:12px;opacity:.85">'+es.length+'명</span></h2></div></div>'
-+tk+perfTeam(k)+teamFlow(k)+teamBrief(k)
++tk+perfTeam(k)+snsPanel(k)+teamFlow(k)+teamBrief(k)
 +'<div class="tgoal"><div class="box g"><h4>🎯 팀 목표</h4><p>'+tg.goal+'</p></div><div class="box s"><h4>🧭 팀 전략</h4><p>'+tg.strat+'</p></div></div>'
 +'<div class="gr tvgr">'+es.map(card).join('')+'</div>'}
 function op(e){document.getElementById('mt').textContent='직원'+e.no+' · '+e.n;document.getElementById('mr').textContent=e.bg+' · '+((e.auto&&e.auto.ago)?e.auto.ago:e.ago);document.getElementById('mbg').textContent='목표 · '+(e.goal||'');document.getElementById('mb').innerHTML=detail(e);document.getElementById('ov').classList.add('show')}
