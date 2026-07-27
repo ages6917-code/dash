@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="T봇 현황판">
 <link rel="apple-touch-icon" href="icon180.png">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260727180209">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260727180544">
 <script>(function(){var B=(document.querySelector('meta[name=app-build]')||{}).content;function c(){fetch(location.pathname+'?_c='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/name="app-build" content="([^"]+)"/);if(m&&m[1]&&m[1]!=B){location.replace(location.pathname+'?v='+encodeURIComponent(m[1]))}}).catch(function(){})}setTimeout(c,700);document.addEventListener('visibilitychange',function(){if(!document.hidden)c()})})();</script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon512.png">
@@ -179,8 +179,10 @@ body{background:#eef0f7;color:var(--ink)}
 .perfw .phd .lg{font-size:10.5px;color:#8a83b0;font-weight:700;display:flex;align-items:center;gap:4px;margin-left:auto}
 .perfw .phd .lg i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-left:6px}
 .perfw .barwrap{overflow-x:auto}
-/* 높이를 고정하면 균등 축소가 다시 깨진다 — 세로는 viewBox 비율에 맡긴다 */
-.perfw .bars{width:100%;min-width:290px;height:auto;display:block}
+/* 높이를 고정하면 균등 축소가 다시 깨진다 — 세로는 viewBox 비율에 맡긴다.
+   다만 PC 처럼 칸이 넓으면 그대로 두었을 때 차트가 600px 높이로 부풀어 화면을 잡아먹는다.
+   그래서 폭 상한만 두고 가운데 정렬한다(라벨 겹침 방지는 '크기 축소'로 통일 — 회전 안 씀). */
+.perfw .bars{width:100%;min-width:290px;max-width:520px;height:auto;display:block;margin:0 auto}
 .perfw .fnl{background:#f8f8fd;border-radius:11px;padding:9px 11px}
 .perfw .fr{display:flex;align-items:center;gap:8px;font-size:11.5px;padding:3.5px 0}
 .perfw .fr .fk{flex:none;width:56px;font-weight:800;color:#5a5477}
@@ -746,7 +748,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-27 18:02",
+    "asof": "07-27 18:05",
     "ago": "18일 전",
     "ok": false,
     "date": "2026-07-08 20:43",
@@ -814,7 +816,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:02",
+    "asof": "07-27 18:05",
     "ago": "2일 전",
     "ok": false,
     "date": "2026-07-25 05:20",
@@ -888,7 +890,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:02",
+    "asof": "07-27 18:05",
     "ago": "어제",
     "ok": false,
     "date": "2026-07-26 17:22",
@@ -974,8 +976,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:02",
-    "ago": "2시간 전",
+    "asof": "07-27 18:05",
+    "ago": "3시간 전",
     "ok": true,
     "date": "2026-07-27 15:02",
     "stale_days": 0,
@@ -1023,7 +1025,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-27 18:02",
+    "asof": "07-27 18:05",
     "ago": "2일 전",
     "ok": false,
     "date": "2026-07-25 12:00",
@@ -1071,7 +1073,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:02",
+    "asof": "07-27 18:05",
     "ago": "20일 전",
     "ok": false,
     "date": "2026-07-07 13:05",
@@ -1111,8 +1113,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:02",
-    "ago": "19시간 전",
+    "asof": "07-27 18:05",
+    "ago": "20시간 전",
     "ok": false,
     "date": "2026-07-26 22:03",
     "stale_days": 1,
@@ -1148,8 +1150,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:02",
-    "ago": "방금",
+    "asof": "07-27 18:05",
+    "ago": "4분 전",
     "ok": true,
     "date": "2026-07-27 18:01",
     "stale_days": 0,
@@ -1186,7 +1188,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 18:02",
+    "asof": "07-27 18:05",
     "ago": "10시간 전",
     "ok": true,
     "date": "2026-07-27 07:37",
@@ -1749,7 +1751,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-07-27 18:02",
+ "_autosync": "2026-07-27 18:05",
  "perf": {
   "overseas_total": 11,
   "by_country": [
@@ -1762,7 +1764,7 @@ body{background:#eef0f7;color:var(--ink)}
  },
  "_detail_updated": "2026-07-27T08:41:11"
 };window.__AUTO__={
- "built": "07-27 18:02",
+ "built": "07-27 18:05",
  "snapshot": "07-27 10:45",
  "total": 75,
  "on_total": 71,
@@ -2486,7 +2488,7 @@ body{background:#eef0f7;color:var(--ink)}
   }
  ]
 };window.__PERF__={
- "built": "2026-07-27 18:02",
+ "built": "2026-07-27 18:05",
  "country": {
   "top": [
    {
@@ -3204,7 +3206,7 @@ body{background:#eef0f7;color:var(--ink)}
   "dup_canon": []
  }
 };window.__VERIFY__={
- "built": "07-27 18:02",
+ "built": "07-27 18:05",
  "date": "2026-07-27",
  "summary": "제작 2 → 게이트 통과 1 → 발송 2, 걸러진 것 1건",
  "counts": {
@@ -3316,7 +3318,7 @@ body{background:#eef0f7;color:var(--ink)}
   }
  ]
 };window.__SNS__={
- "built": "2026-07-27 18:02",
+ "built": "2026-07-27 18:05",
  "channels": [
   {
    "key": "econ_threads",
@@ -3404,7 +3406,7 @@ body{background:#eef0f7;color:var(--ink)}
   {
    "f": "쓰레드_벤치마킹_20260724.md",
    "at": "2026-07-24 17:18",
-   "age_h": 72.7,
+   "age_h": 72.8,
    "stale": true
   },
   {
@@ -3416,18 +3418,18 @@ body{background:#eef0f7;color:var(--ink)}
   {
    "f": "brief_20260719.md",
    "at": "2026-07-19 19:47",
-   "age_h": 190.2,
+   "age_h": 190.3,
    "stale": true
   },
   {
    "f": "2026-W28.md",
    "at": "2026-07-13 21:47",
-   "age_h": 332.2,
+   "age_h": 332.3,
    "stale": true
   }
  ],
  "note": "배달 성립 기준 = 관문 대장(tg_send_log.csv)의 mid. 파일만 있고 mid 가 없으면 '제작됨 · 폰 미도착'이다. 팔로워는 자동 측정 수단이 없어 사장님 입력값만 쓴다."
-};window.__BACKEND__=false;window.__SYNC__="2026-07-27 18:02";</script>
+};window.__BACKEND__=false;window.__SYNC__="2026-07-27 18:05";</script>
 </head><body><div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
   <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
   <div style="color:#9fb3d1;font-size:13px">접속 비밀번호를 입력하세요</div>
