@@ -19,6 +19,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<!-- ★2026-07-27 A안 — 진단서 1장 PNG 저장(카톡 전송용). 실패해도 화면은 정상 동작(버튼만 안내) -->
 <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent}
@@ -206,6 +207,41 @@ select.iedit{cursor:pointer}
   .dg .dg-hd{flex-direction:column;gap:10px}
   .dg .dg-hd-r{text-align:left}
 }
+/* ★2026-07-27 — 썸네일·전체보기·PNG캡처는 '900px 고정폭 판'이라 위 모바일 규칙을 받으면 안 된다.
+   (안 막으면 폰에서 저장한 이미지가 KPI 2칸·헤더 세로로 깨진 채 찍힌다) */
+.dgt-scale .dg-kpis,.dgv-page .dg-kpis,#dgShot .dg-kpis{grid-template-columns:repeat(4,1fr)!important}
+.dgt-scale .dg-2,.dgv-page .dg-2,#dgShot .dg-2{grid-template-columns:1fr 1fr!important}
+.dgt-scale .dg-hd,.dgv-page .dg-hd,#dgShot .dg-hd{flex-direction:row!important;align-items:flex-start!important}
+.dgt-scale .dg-hd-r,.dgv-page .dg-hd-r,#dgShot .dg-hd-r{text-align:right!important}
+/* ===== 진단서 썸네일 + 뷰어 (2026-07-27 A안) =====
+   요구: 재무 요약 자리에 "진단서 썸네일 + 크게보기 + 이미지/ PDF 다운로드".
+   썸네일은 저장된 이미지가 아니라 '실제 진단서 DOM을 축소'해서 만든다.
+   → 저장공간 0 · 항상 최신본 자동반영(재생성 시 교체가 자동으로 됨). */
+.dgt-wrap{border:1px solid var(--line);border-radius:14px;overflow:hidden;background:#f8fafc;margin-bottom:10px}
+.dgt-head{display:flex;align-items:center;gap:8px;padding:9px 12px;background:#1e3a5f;color:#fff}
+.dgt-head b{font-size:12.5px;font-weight:800}
+.dgt-head .ts{margin-left:auto;font-size:10.5px;color:#a9bdd6;font-weight:600}
+.dgt-clip{position:relative;height:230px;overflow:hidden;cursor:zoom-in;background:#fff}
+.dgt-scale{position:absolute;top:0;left:0;width:900px;transform:scale(.42);transform-origin:0 0;padding:14px;pointer-events:none}
+.dgt-fade{position:absolute;left:0;right:0;bottom:0;height:70px;background:linear-gradient(180deg,rgba(255,255,255,0),#fff);pointer-events:none}
+.dgt-clip:hover .dgt-zoom{opacity:1}
+.dgt-zoom{position:absolute;right:10px;bottom:10px;background:rgba(15,23,42,.8);color:#fff;font-size:11px;font-weight:800;padding:5px 11px;border-radius:99px;opacity:.75;transition:opacity .15s}
+.dgt-btns{display:flex;gap:7px;padding:10px 12px;background:#fff;border-top:1px solid var(--line);flex-wrap:wrap}
+.dgt-btns .btn{flex:1;min-width:96px;padding:9px 8px;font-size:12.5px;font-weight:800}
+.dgt-badge{background:#fffbeb;color:#b45309;border:1px solid #fde68a;border-radius:10px;padding:8px 11px;font-size:11.5px;font-weight:800;margin-bottom:9px;display:flex;align-items:center;gap:7px}
+.dgt-more{margin-top:4px}
+.dgt-more>summary{cursor:pointer;font-size:11.5px;color:#64748b;font-weight:700;padding:7px 2px;list-style:none;user-select:none}
+.dgt-more>summary::-webkit-details-marker{display:none}
+.dgt-more>summary:before{content:'▸ ';color:#94a3b8}
+.dgt-more[open]>summary:before{content:'▾ '}
+/* 전체보기 모달 — 진단서를 900px 고정폭으로 원본 그대로 */
+.dgv{position:fixed;inset:0;background:rgba(15,23,42,.62);z-index:60;display:flex;flex-direction:column;padding:14px}
+.dgv-bar{display:flex;gap:7px;align-items:center;margin-bottom:10px;flex-wrap:wrap}
+.dgv-bar .ttl{color:#fff;font-size:13.5px;font-weight:800;margin-right:auto}
+.dgv-body{flex:1;overflow:auto;background:#e2e8f0;border-radius:14px;padding:14px}
+.dgv-page{width:900px;margin:0 auto;background:#f4f6fa;border-radius:14px;padding:18px;box-shadow:0 6px 26px rgba(0,0,0,.22)}
+/* 캡처용 오프스크린 컨테이너 — 화면 밖(가려짐), 폭 고정이라 모바일에서도 PC와 같은 1장이 나온다 */
+#dgShot{position:fixed;left:-99999px;top:0;width:900px;background:#f4f6fa;padding:18px;z-index:-1}
 .spin{width:30px;height:30px;border:3px solid #e2e8f0;border-top-color:var(--brand);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto 16px}
 @keyframes spin{to{transform:rotate(360deg)}}
 .jsonarea{width:100%;min-height:230px;font-family:ui-monospace,Consolas,monospace;font-size:12px;padding:12px;border:1.6px solid var(--brand);border-radius:12px;outline:none;background:#0f172a;color:#cbd5e1;resize:vertical}
@@ -461,17 +497,6 @@ select.iedit{cursor:pointer}
 .rptWarn ul{margin:0;padding-left:17px;line-height:1.75}
 .rptWarn li{color:#a16207}
 @media(max-width:640px){ .rptTiles{grid-template-columns:repeat(2,1fr)} .rptTV{font-size:22px} }
-/* 진단서 이미지 표시 (2026-07-27 A안) */
-.diag-img-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px}
-.diag-img-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
-.diag-img-hd b{font-size:15px;font-weight:800}
-.diag-img-actions{display:flex;gap:8px}
-.diag-img-thumb{width:100%;border:1px solid #eef1f6;border-radius:12px;overflow:hidden;cursor:pointer;transition:.15s}
-.diag-img-thumb:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.1)}
-.diag-img-thumb img{width:100%;display:block}
-.diag-img-info{margin-top:10px;font-size:12px;color:#94a3b8;text-align:center}
-.diag-img-generating{text-align:center;padding:40px 20px;color:#94a3b8}
-.diag-canvas-holder{position:fixed;left:-9999px;top:-9999px;z-index:-1}
 </style>
 </head>
 <body>
@@ -1429,11 +1454,20 @@ function summaryHtml(id,c){
   if(sm.note && !(sm.sales&&sm.sales.length)){
     return `<div class="fsum"><div style="white-space:pre-wrap;font-size:13px;line-height:1.7;color:#334155">${esc(sm.note)}</div><div style="text-align:right;margin-top:10px"><span class="add" onclick="editSummary('${id}')">✏️ 요약 수정</span></div></div>`;
   }
-  /* ===== 재무 진단서 v2 — 사장님 양식(㈜나아나나) 그대로 =====
-     구버전 요약(fin 없이 asset/liab만 있는 건)도 그대로 렌더되게 폴백을 둔다. */
+  /* ★2026-07-27 (A안 승인) — 완성 진단서는 패널을 통째로 채우지 않고
+     "썸네일 + 크게보기 + 이미지 저장 + PDF"로 보여준다.
+     본문 렌더는 dgBuild()로 떼어냈다 → 썸네일·전체보기·PNG캡처 세 곳이 같은 HTML을 공유. */
+  return dgThumbHtml(id,c);
+}
+
+/* ===== 재무 진단서 v2 — 사장님 양식(㈜나아나나) 그대로 =====
+   구버전 요약(fin 없이 asset/liab만 있는 건)도 그대로 렌더되게 폴백을 둔다.
+   ※ 여기서는 '본문'만 만든다(버튼·검수배지 제외). 이 HTML이 그대로 PNG로 찍히므로
+     화면 조작용 UI가 섞이면 저장된 이미지에 버튼이 같이 나와버린다. */
+function dgBuild(id,c){
+  const sm=(c&&c.summary)||{};
   const fin=sm.fin||{};
   const A=(k,alt)=>fin[k]||alt||'';
-  const rv = sm._meta && sm._meta.reviewed===false;
   const TONE={good:'#059669',bad:'#dc2626',warn:'#ea580c','':'#1e293b'};
 
   /* ① 헤더 — 상호·업종·대표·지역 / 사업자번호·결산일 / 자격배지 / 종합진단 */
@@ -1505,14 +1539,119 @@ function summaryHtml(id,c){
   const grid3=(riskBox||dirBox)?`<div class="dg-2" style="margin-top:12px">${riskBox}${dirBox}</div>`:'';
 
   return `<div class="fsum dg">
-    ${rv?`<div class="warn" style="background:#fffbeb;color:#b45309;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">🤖 AI 자동분석 · <b>미검수</b> <button class="btn b" style="padding:4px 11px;font-size:11.5px;flex-shrink:0" onclick="markReviewed('${id}')">✅ 검수완료</button></div>`:''}
     ${header}${headline}${kpiHtml}${grid2}${loanBox}${grid3}
     ${sm.warn?`<div class="warn" style="margin-top:12px">⚠ ${esc(sm.warn)}</div>`:''}
     ${sm.credit?`<div class="credit">✓ ${esc(sm.credit)}</div>`:''}
-    <div style="text-align:right;margin-top:12px">
+    <div style="text-align:right;margin-top:10px;font-size:10px;color:#94a3b8;font-weight:600">경제지원단 재무 진단서${dgStamp(c)?' · '+dgStamp(c):''}</div></div>`;
+}
+
+/* ===== 진단서 생성일시 / 서류 증가 감지 ===== */
+function dgStamp(c){
+  const ts=((c&&c.summary&&c.summary._meta)||{}).ts;
+  if(!ts) return '';
+  try{ const d=new Date(ts); return d.toLocaleDateString('ko-KR')+' '+d.toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}); }catch(e){ return ''; }
+}
+/* 진단서를 만든 시점의 서류 건수와 지금을 비교 → 늘었으면 '갱신 권장' 배지.
+   과거 데이터엔 docN이 없다 → 그땐 배지를 띄우지 않는다(허위 경고 방지). */
+function dgDocDelta(c){
+  const m=(c&&c.summary&&c.summary._meta)||{};
+  if(typeof m.docN!=='number') return 0;
+  const now=(typeof docList==='function'?docList(c):[]).length;   /* ★c.docs 직접참조 금지 룰 준수 */
+  return Math.max(0, now-m.docN);
+}
+
+/* ===== 재무 요약 패널 = 진단서 썸네일 카드 (A안 본체) ===== */
+function dgThumbHtml(id,c){
+  const sm=c.summary||{};
+  const rv = sm._meta && sm._meta.reviewed===false;
+  const add=dgDocDelta(c);
+  const stamp=dgStamp(c);
+  const note=(sm.note||c.summaryNote||'').trim();
+  return `<div class="fsum">
+    ${rv?`<div class="warn" style="background:#fffbeb;color:#b45309;display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:10px">🤖 AI 자동분석 · <b>미검수</b> <button class="btn b" style="padding:4px 11px;font-size:11.5px;flex-shrink:0" onclick="markReviewed('${id}')">✅ 검수완료</button></div>`:''}
+    ${add?`<div class="dgt-badge">📎 서류 ${add}건 추가됨 — 진단서 갱신 권장 <button class="btn b" style="margin-left:auto;padding:4px 10px;font-size:11px;flex-shrink:0" onclick="autoSummarizeStored('${id}')">🔄 갱신</button></div>`:''}
+    <div class="dgt-wrap">
+      <div class="dgt-head"><b>📋 재무 진단서</b>${stamp?`<span class="ts">${esc(stamp)} 생성</span>`:''}</div>
+      <div class="dgt-clip" onclick="dgOpen('${id}')">
+        <div class="dgt-scale dg">${dgBuild(id,c)}</div>
+        <div class="dgt-fade"></div><div class="dgt-zoom">🔍 크게 보기</div>
+      </div>
+      <div class="dgt-btns">
+        <button class="btn b" onclick="dgOpen('${id}')">🔍 크게 보기</button>
+        <button class="btn p" onclick="dgPng('${id}')">🖼 이미지 저장</button>
+        <button class="btn g" onclick="dgPdf('${id}')">📄 PDF</button>
+      </div>
+    </div>
+    ${note?`<details class="dgt-more"><summary>📝 메모 요약 보기</summary>
+      <div style="white-space:pre-wrap;font-size:12.5px;line-height:1.7;color:#475569;padding:4px 2px 2px">${esc(note)}</div></details>`:''}
+    <div style="text-align:right;margin-top:8px">
       <span class="add" onclick="autoSummarizeStored('${id}')" style="margin-right:8px">🔄 서류로 다시 분석</span>
       <span class="add" onclick="editSummary('${id}')">✏️ 요약 수정</span></div></div>`;
 }
+
+/* ===== 전체 보기 모달 ===== */
+function dgOpen(id){
+  const c=getCust(id); if(!c) return;
+  dgClose();
+  const w=document.createElement('div'); w.className='dgv'; w.id='dgViewer';
+  w.innerHTML=`<div class="dgv-bar">
+      <span class="ttl">📋 재무 진단서 — ${esc(custBizNames(c)[0]||c.nm||'')}</span>
+      <button class="btn p" style="padding:7px 13px;font-size:12.5px" onclick="dgPng('${id}')">🖼 이미지 저장</button>
+      <button class="btn g" style="padding:7px 13px;font-size:12.5px" onclick="dgPdf('${id}')">📄 PDF</button>
+      <button class="btn g" style="padding:7px 13px;font-size:12.5px" onclick="dgClose()">✕ 닫기</button>
+    </div>
+    <div class="dgv-body"><div class="dgv-page dg">${dgBuild(id,c)}</div></div>`;
+  w.addEventListener('click',e=>{ if(e.target===w) dgClose(); });
+  document.body.appendChild(w);
+}
+function dgClose(){ const w=document.getElementById('dgViewer'); if(w) w.remove(); }
+
+/* ===== 오프스크린 900px 고정폭 렌더 → 캡처 대상 =====
+   폰에서 찍어도 PC와 똑같은 1장이 나오게 폭을 고정한다(모바일 폭으로 찍으면 세로로 길어짐). */
+function _dgShotNode(id,c){
+  let box=document.getElementById('dgShot');
+  if(!box){ box=document.createElement('div'); box.id='dgShot'; document.body.appendChild(box); }
+  box.innerHTML=`<div class="dg">${dgBuild(id,c)}</div>`;
+  return box;
+}
+function dgFileBase(c){
+  const nm=(custBizNames(c)[0]||c.nm||'고객').replace(/[\\/:*?"<>|]/g,'').slice(0,30);
+  const d=new Date(); const p=n=>(''+n).padStart(2,'0');
+  return `재무진단서_${nm}_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}`;
+}
+/* PNG 1장 저장 — 카톡으로 그대로 보낼 수 있는 형태 */
+async function dgPng(id){
+  const c=getCust(id); if(!c) return;
+  if(typeof html2canvas!=='function'){ toast('이미지 변환기를 못 불러왔습니다 — 인터넷 확인 후 새로고침'); return; }
+  toast('진단서 이미지 만드는 중…');
+  const box=_dgShotNode(id,c);
+  try{
+    const cv=await html2canvas(box,{scale:2,backgroundColor:'#f4f6fa',useCORS:true,logging:false,windowWidth:900});
+    const url=cv.toDataURL('image/png');
+    const a=document.createElement('a'); a.href=url; a.download=dgFileBase(c)+'.png';
+    document.body.appendChild(a); a.click(); a.remove();
+    toast('이미지 저장 완료 ✓');
+  }catch(e){ toast('이미지 저장 실패: '+((e&&e.message)||'')); }
+  finally{ box.innerHTML=''; }
+}
+/* PDF — 브라우저 인쇄(비용 0). 새 창에 본문 + 진단서 스타일만 복사해 A4 1장으로 뽑는다. */
+function dgPdf(id){
+  const c=getCust(id); if(!c) return;
+  const css=Array.from(document.querySelectorAll('style')).map(s=>s.innerHTML).join('\n');
+  const w=window.open('','_blank','width=1000,height=900');
+  if(!w){ toast('팝업이 차단됐습니다 — 팝업 허용 후 다시'); return; }
+  w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${dgFileBase(c)}</title>
+    <style>${css}
+      body{background:#fff;margin:0;padding:14px;font-family:-apple-system,BlinkMacSystemFont,'Malgun Gothic',sans-serif}
+      .dgp{width:900px;margin:0 auto}
+      @page{size:A4 landscape;margin:8mm}
+      @media print{ body{padding:0} .dgp{width:100%} }
+    </style></head><body><div class="dgp dg">${dgBuild(id,c)}</div>
+    <script>window.onload=function(){setTimeout(function(){window.print();},350);};<\/script>
+    </body></html>`);
+  w.document.close();
+}
+window.dgOpen=dgOpen; window.dgClose=dgClose; window.dgPng=dgPng; window.dgPdf=dgPdf;
 function editSummary(id){
   const c=getCust(id)||{};
   const box=document.getElementById('sumPanel');
@@ -2211,7 +2350,6 @@ function renderCustomer(id){
      <div class="panel" id="sumPanel"><div class="ph"><b>📊 재무 요약</b><span class="sub">서류 기반 한눈 요약</span></div>
        ${summaryHtml(id,c)}
      </div>
-     ${diagnosisImageHtml(id,c)}
      ${strategyHtml(id,c)}
    </div></div>`;
  /* ★2026-07-15 — syncDocs는 D드라이브 파일서버와 목록을 맞추던 것.
@@ -3104,6 +3242,9 @@ window.autoSummarizeStored=autoSummarizeStored;
 function applySummary(id,sm,skipped){
   const prof=sm.profile||{};
   const cur=getCust(id)||{};
+  /* ★2026-07-27 — 만든 시점의 서류 건수를 같이 박아둔다.
+     나중에 서류가 늘면 '서류 N건 추가됨 — 갱신 권장' 배지를 정확히 띄우기 위함. */
+  sm._meta=Object.assign({reviewed:false,ts:Date.now()},sm._meta||{},{docN:(typeof docList==='function'?docList(cur):[]).length});
   const patch={summary:sm, memo:(cur.memo&&cur.memo.indexOf('제미나이')<0?cur.memo+'\n':'')+'🤖 제미나이 자동요약 완료 — 검수 필요'};
   if(prof.owner && (!cur.nm||cur.nm==='(이름 미정)')) patch.nm=prof.owner;
   /* ★2026-07-20 — 상호는 bizNames(배열)가 진실이고 화면도 그걸 읽는다.
@@ -3343,7 +3484,7 @@ if('serviceWorker' in navigator){
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260720-131938';
+window.BUILD_VER='20260727-174312';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
@@ -3407,223 +3548,6 @@ window.BUILD_VER='20260720-131938';
   }
   if(document.body) add(); else document.addEventListener('DOMContentLoaded',add);
 }catch(e){} })();
-/* ===== 진단서 이미지 생성 및 표시 (2026-07-27 A안) =====
-   html2canvas → PNG → Firebase Storage → 썸네일 표시 */
-const DIAG_GEN = new Set();  // 생성 중인 고객 ID 추적
-
-async function generateDiagnosisImage(id) {
-  if (DIAG_GEN.has(id)) { toast('이미 생성 중입니다'); return; }
-  const c = getCust(id);
-  if (!c || !c.summary) { toast('재무 요약이 없어 진단서를 생성할 수 없습니다'); return; }
-
-  DIAG_GEN.add(id);
-  rerender();  // "생성 중..." 표시
-
-  try {
-    // 1. 진단서 HTML을 임시로 DOM에 추가 (화면 밖에)
-    const holder = document.createElement('div');
-    holder.className = 'diag-canvas-holder';
-    holder.style.width = '1080px';  // A4 비율에 맞춘 너비
-    holder.innerHTML = diagnosisHtml(id, c);  // 기존 진단서 렌더링 함수 활용
-    document.body.appendChild(holder);
-
-    // 2. html2canvas로 PNG 생성
-    const canvas = await html2canvas(holder.querySelector('.dg'), {
-      scale: 2,  // 고해상도
-      backgroundColor: '#f4f6fb',
-      logging: false,
-      useCORS: true
-    });
-
-    document.body.removeChild(holder);
-
-    // 3. Canvas → Blob
-    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
-
-    // 4. Firebase Storage에 업로드
-    if (!FBstore) throw new Error('Firebase Storage 미연결');
-    const storageRef = FBstore.ref('diagnosis/' + id + '_' + Date.now() + '.png');
-    const snapshot = await storageRef.put(blob);
-    const url = await snapshot.ref.getDownloadURL();
-
-    // 5. RTDB에 URL 저장
-    const diagData = {
-      url: url,
-      createdAt: new Date().toISOString(),
-      by: (window.me && window.me.name) || '자동생성'
-    };
-
-    if (offline) {
-      if (!DATA.customers[id].diagnosis) DATA.customers[id].diagnosis = {};
-      Object.assign(DATA.customers[id].diagnosis, diagData);
-      _lsave();
-    } else {
-      await dref('customers/' + id + '/diagnosis').set(diagData);
-    }
-
-    DIAG_GEN.delete(id);
-    toast('진단서 이미지 생성 완료');
-    rerender();
-  } catch (e) {
-    DIAG_GEN.delete(id);
-    console.error('진단서 생성 실패:', e);
-    toast('진단서 생성 실패: ' + (e && e.message || ''));
-    rerender();
-  }
-}
-
-function diagnosisImageHtml(id, c) {
-  const diag = (c || {}).diagnosis;
-  const generating = DIAG_GEN.has(id);
-
-  if (generating) {
-    return `<div class="diag-img-box">
-      <div class="diag-img-hd"><b>📋 재무 진단서 이미지</b></div>
-      <div class="diag-img-generating">
-        <div class="spin"></div>
-        <div>진단서 이미지 생성 중...</div>
-      </div>
-    </div>`;
-  }
-
-  if (!diag || !diag.url) {
-    return `<div class="diag-img-box">
-      <div class="diag-img-hd">
-        <b>📋 재무 진단서 이미지</b>
-        <button class="btn b" style="font-size:12px;padding:6px 12px" onclick="generateDiagnosisImage('${id}')">🖼 이미지 생성</button>
-      </div>
-      <div style="font-size:13px;color:#94a3b8;padding:20px 0;text-align:center">
-        진단서 이미지를 생성하면 카톡으로 전송할 수 있습니다
-      </div>
-    </div>`;
-  }
-
-  const createdDate = diag.createdAt ? new Date(diag.createdAt).toLocaleString('ko-KR', {
-    year: 'numeric', month: '2-digit', day: '2-digit',
-    hour: '2-digit', minute: '2-digit'
-  }) : '';
-
-  return `<div class="diag-img-box">
-    <div class="diag-img-hd">
-      <b>📋 재무 진단서 이미지</b>
-      <div class="diag-img-actions">
-        <button class="btn g" style="font-size:12px;padding:6px 12px" onclick="window.open('${esc(diag.url)}','_blank')">📥 다운로드</button>
-        <button class="btn b" style="font-size:12px;padding:6px 12px" onclick="generateDiagnosisImage('${id}')">🔄 재생성</button>
-      </div>
-    </div>
-    <div class="diag-img-thumb" onclick="window.open('${esc(diag.url)}','_blank')">
-      <img src="${esc(diag.url)}" alt="재무 진단서" loading="lazy">
-    </div>
-    <div class="diag-img-info">
-      ${createdDate ? '생성 일시: ' + createdDate : ''}
-      ${diag.by ? ' · ' + esc(diag.by) : ''}
-    </div>
-  </div>`;
-}
-
-/* diagnosisHtml 함수 — 진단서 HTML 생성 (이미지 변환용 + 기존 표시용 공통) */
-function diagnosisHtml(id, c) {
-  const s = (c || {}).summary;
-  if (!s) return '<div class="fsum"><div class="empty">제미나이 서류 요약이 없습니다.<br>서류를 올리고 "📄 서류 요청" 버튼으로 자동 요약을 만들거나<br>아래 JSON 직접 입력으로 수동 입력하세요.</div></div>';
-
-  const prof = s.profile || {};
-  const sales = s.sales || [];
-  const fin = s.fin || {};
-  const loans = s.loans || [];
-  const risks = s.risks || [];
-  const dirs = s.directions || [];
-
-  // 매출 3년 추이
-  const salesBars = sales.slice(0, 3).reverse().map(function(yr) {
-    const v = parseFloat(yr.v || 0);
-    const max = Math.max.apply(null, sales.slice(0, 3).map(function(y) { return parseFloat(y.v || 0); }));
-    const pct = max > 0 ? (v / max * 100) : 0;
-    return '<div class="bar"><div class="bb" style="height:' + pct + '%">' + (v >= 1 ? fmtMan(v) : '') + '</div><div class="yl">' + esc(yr.y || '') + '</div></div>';
-  }).join('');
-
-  // 부채비율 색상
-  const drNum = parseFloat(s.debtRatio || 0);
-  const drColor = drNum > 200 ? '#dc2626' : drNum > 100 ? '#f59e0b' : '#10b981';
-
-  // 대출 태그 색상
-  const loanTagClass = function(tag) {
-    if (!tag) return 't-b';
-    if (tag.indexOf('보증') >= 0) return 't-b';
-    if (tag.indexOf('정책') >= 0) return 't-p';
-    if (tag.indexOf('단기') >= 0) return 't-s';
-    return 't-o';
-  };
-
-  return `<div class="dg">
-    <div class="dg-hd">
-      <div style="flex:1">
-        <div class="dg-nm">${esc(prof.owner || c.nm || '(이름 미정)')} 님 재무 진단서</div>
-        <div class="dg-sub">${esc(prof.bizName || c.bizName || '')}</div>
-        <div class="dg-bdgs">
-          ${prof.bizType ? '<span class="dg-bdg">' + esc(prof.bizType) + '</span>' : ''}
-          ${prof.industry ? '<span class="dg-bdg">' + esc(prof.industry) + '</span>' : ''}
-          ${prof.employees ? '<span class="dg-bdg">직원 ' + esc(prof.employees) + '명</span>' : ''}
-        </div>
-      </div>
-      <div class="dg-hd-r">
-        <div class="dg-vt">최근 연 매출</div>
-        <div class="dg-vl">${sales[0] ? fmtMan(sales[0].v) + '원' : '-'}</div>
-        <div class="dg-vs">${sales[0] ? esc(sales[0].y) + '년 기준' : ''}</div>
-      </div>
-    </div>
-
-    ${s.warn ? '<div class="dg-line">' + esc(s.warn) + '</div>' : ''}
-
-    <div class="dg-kpis">
-      <div class="dg-kpi"><div class="dg-kv">${s.asset ? fmtMan(s.asset) : '-'}</div><div class="dg-kl">총 자산</div></div>
-      <div class="dg-kpi"><div class="dg-kv">${s.liab ? fmtMan(s.liab) : '-'}</div><div class="dg-kl">총 부채</div></div>
-      <div class="dg-kpi"><div class="dg-kv">${s.cap ? fmtMan(s.cap) : '-'}</div><div class="dg-kl">자기자본</div></div>
-      <div class="dg-kpi"><div class="dg-kv" style="color:${drColor}">${s.debtRatio ? s.debtRatio + '%' : '-'}</div><div class="dg-kl">부채비율</div></div>
-    </div>
-
-    <div class="dg-2">
-      <div class="dg-box">
-        <div class="dg-bt">📊 매출 추이 (최근 3년)</div>
-        <div class="bars">${salesBars || '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:40px 0">데이터 없음</div>'}</div>
-        ${sales.length > 1 && sales[0].v && sales[1].v ? (function() {
-          const cur = parseFloat(sales[0].v);
-          const prev = parseFloat(sales[1].v);
-          const delta = cur - prev;
-          const pct = prev > 0 ? ((delta / prev) * 100).toFixed(1) : 0;
-          return '<div class="dg-trend">' + (delta >= 0 ? '▲' : '▼') + ' ' + Math.abs(pct) + '% (' + (delta >= 0 ? '증가' : '감소') + ')</div>';
-        })() : ''}
-      </div>
-
-      <div class="dg-box">
-        <div class="dg-bt">💰 재무 구조</div>
-        <div class="dg-fr"><span class="dg-fl">총 자산</span><span class="dg-fv">${s.asset ? fmtMan(s.asset) + '원' : '-'}</span></div>
-        <div class="dg-fr"><span class="dg-fl">유동자산 (재고)</span><span class="dg-fv">${fin.inventory ? fmtMan(fin.inventory) + '원' : '-'}${fin.inventoryPct ? ' (' + esc(fin.inventoryPct) + ')' : ''}</span></div>
-        <div class="dg-fr"><span class="dg-fl">현금 및 예금</span><span class="dg-fv">${fin.cash ? fmtMan(fin.cash) + '원' : '-'}</span></div>
-        <div class="dg-fr"><span class="dg-fl">총 부채</span><span class="dg-fv">${s.liabTotal ? fmtMan(s.liabTotal) + '원' : '-'}</span></div>
-        <div class="dg-fr"><span class="dg-fl">자기자본</span><span class="dg-fv">${s.cap ? fmtMan(s.cap) + '원' : '-'}</span></div>
-      </div>
-    </div>
-
-    ${loans.length ? '<div class="dg-box" style="margin-top:12px"><div class="dg-bt">🏦 대출 현황</div><table class="dg-tb"><thead><tr><th>은행</th><th>유형</th><th>금액</th><th>특성</th></tr></thead><tbody>' +
-      loans.map(function(ln) {
-        return '<tr><td>' + esc(ln.bank || '-') + '</td><td>' + esc(ln.type || '-') + '</td><td><b>' + (ln.amt ? fmtMan(ln.amt) + '원' : '-') + '</b></td><td>' + (ln.tag ? '<span class="dg-tag ' + loanTagClass(ln.tag) + '">' + esc(ln.tag) + '</span>' : '-') + '</td></tr>';
-      }).join('') +
-      '<tr class="dg-sum"><td colspan="2">합계</td><td><b>' + (s.loanTotal ? fmtMan(s.loanTotal) + '원' : '-') + '</b></td><td>' + (s.loanInterest ? '이자 ' + esc(s.loanInterest) : '') + '</td></tr></tbody></table>' +
-      (s.loanNote ? '<div class="dg-note">📌 ' + esc(s.loanNote) + '</div>' : '') +
-    '</div>' : ''}
-
-    ${risks.length ? '<div class="dg-box" style="margin-top:12px"><div class="dg-bt">⚠️ 리스크</div><ul class="dg-ul">' +
-      risks.map(function(r) { return '<li><b>' + esc(r.title || '') + '</b> — ' + esc(r.desc || ''); }).join('</li>') +
-    '</ul></div>' : ''}
-
-    ${dirs.length ? '<div class="dg-box" style="margin-top:12px"><div class="dg-bt">✅ 개선 방향</div><ul class="dg-ul">' +
-      dirs.map(function(d) { return '<li><b>' + esc(d.title || '') + '</b> — ' + esc(d.desc || ''); }).join('</li>') +
-    '</ul></div>' : ''}
-
-    ${s.credit ? '<div class="fsum" style="margin-top:12px"><div class="credit">' + esc(s.credit) + '</div></div>' : ''}
-  </div>`;
-}
-
 (function(){
   var dp=null, btn=document.getElementById('pwaInstall');
   var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
