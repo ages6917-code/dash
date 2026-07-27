@@ -222,6 +222,47 @@
 }
 
 <!--/V2PATCH-->
+
+
+
+<!--V3PATCH-->
+/* ===== 위탁 대시보드 v3 (2026-07-27) — 판정 배지 · GO 필터 · 자료실 2종 ===== */
+.jbadge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;border-radius:20px;padding:3px 9px;margin-top:7px}
+.jbadge.go{background:#e7f4e8;color:#1b7a35}
+.jbadge.hold{background:#fff2dd;color:#b06a00}
+.jbadge.no{background:#fde8e8;color:#c02626}
+.jbadge.wait{background:#eef1f5;color:#6b7280}
+.jwhy{margin-top:5px;font-size:11px;line-height:1.5;color:#4b5563;background:#f6f8fb;border-radius:7px;padding:6px 8px}
+.jwhy b{color:#0e7a6e}
+.gofilter{display:flex;align-items:center;gap:8px;margin:10px 0 4px;flex-wrap:wrap}
+.gochip{border:1.5px solid #d5dbe3;background:#fff;border-radius:20px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#374151}
+.gochip.on{background:#1b8f5a;border-color:#1b8f5a;color:#fff}
+.gohint{font-size:11.5px;color:#8a94a3}
+/* ── 자료실 2종 ── */
+.a2wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
+@media(max-width:760px){.a2wrap{grid-template-columns:1fr}}
+.a2sec{background:#f7f9fc;border:1px solid #e5e7eb;border-radius:12px;padding:11px 12px}
+.a2sec.work{background:#fbf7ff;border-color:#e6dcf5}
+.a2h{display:flex;align-items:center;gap:6px;font-weight:700;font-size:13px;margin-bottom:8px}
+.a2h .sub{font-weight:400;color:#6b7280;font-size:11px}
+.a2h button{margin-left:auto;font-size:11px;padding:5px 10px;border:none;border-radius:7px;background:#0e9aa4;color:#fff;cursor:pointer;font-family:inherit}
+.a2sec.work .a2h button{background:#7c53c3}
+.a2drop{border:2px dashed #b8d6d9;border-radius:9px;padding:13px;text-align:center;color:#5a7a7d;font-size:12px;cursor:pointer}
+.a2sec.work .a2drop{border-color:#cbb6ea;color:#6d5a90}
+.a2drop.on{background:#e8f6f7}
+.a2list{margin-top:9px;display:flex;flex-direction:column;gap:6px}
+.a2row{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid #e5e7eb;border-radius:8px;padding:6px 8px}
+.a2row img{width:34px;height:34px;object-fit:cover;border-radius:6px;flex:none;cursor:pointer}
+.a2ico{width:34px;height:34px;border-radius:6px;background:#eef1f5;display:flex;align-items:center;justify-content:center;font-size:16px;flex:none}
+.a2nm{font-size:12px;font-weight:600;line-height:1.35;word-break:break-all;min-width:0}
+.a2nm small{display:block;color:#8a94a3;font-weight:500;font-size:10.5px;margin-top:1px}
+.a2btns{margin-left:auto;display:flex;gap:4px;flex:none}
+.a2btns button{border:none;border-radius:6px;width:26px;height:26px;font-size:12px;cursor:pointer;background:#eef1f5}
+.a2btns button.del{background:#fde8e8}
+.a2empty{color:#9aa;font-size:11.5px;padding:8px 2px}
+.a2lock{background:#fff8e6;border:1px solid #f0dca8;border-radius:10px;padding:13px;font-size:12.5px;color:#8a6d1f;line-height:1.6;margin:12px 0}
+
+<!--/V3PATCH-->
 </style>
 </head>
 <body>
@@ -1275,5 +1316,291 @@ function dashForceRefresh(){
 })();
 </script>
 <!--/V2POLL-->
+
+
+
+<!--V3PATCH-->
+<script>
+/* ============================================================
+   위탁 대시보드 v3 패치 (2026-07-27, 사장님 지시 ■2·■3)
+   2) 품목 카드 '등록 판정' 배지 + 근거 1줄 + [GO만 보기] 필터
+   3) 자료실 2종 — ① 제품 자료(사장님 원본) ② 상세 이미지(작업물)
+      업로드(드래그앤드롭) · 개별 다운로드 · 전체 ZIP · 삭제
+      접근키(?k=) 없으면 자료실 숨김 · 확장자/용량 제한
+
+   설계: 기존 코드를 고치지 않고 override 로 얹는다(v2와 동일 원칙).
+   저장소: RTDB shared/wholesale/files/<거래처키>/{src,work}
+      ※ Firebase Storage 는 이 프로젝트에 아직 버킷이 없다(2026-07-27 실측 404).
+        Storage 가 열리면 a2Store 만 교체하면 되도록 입출력을 함수로 격리해 둠.
+   ============================================================ */
+(function () {
+  'use strict';
+  /* RTDB 는 REST 로 직접 읽고 쓴다 — 웹소켓 SDK 가 막힌 환경에서도 자료실이 살아 있게. */
+  var DB = 'https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var R = 'shared/wholesale/';
+  function api(path, opt) { return fetch(DB + '/' + path + '.json', opt).then(function (r) { return r.json(); }); }
+  var esc = function (s) { return String(s == null ? '' : s).replace(/[<>&"]/g, function (c) { return ({ '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' })[c]; }); };
+  var won = function (n) { return n == null ? '–' : Number(n).toLocaleString() + '원'; };
+  function toast(m) { if (window.v2toast) window.v2toast(m); else console.log(m); }
+
+  /* ========== ■2 판정 배지 ================================== */
+  var VD = { GO: ['go', '🟢 등록 GO'], HOLD: ['hold', '🟡 보류'], NOGO: ['no', '🔴 부적합'] };
+
+  function marginOf(p) {                      /* 대시보드 공식 그대로 사용 */
+    if (!window.__NET || p.buy == null) return null;
+    var price = (p.judge && p.judge.price_reco) != null ? p.judge.price_reco : p.sell;
+    if (price == null) return null;
+    var net = window.__NET(price, p.buy + (p.ship || 0));
+    return net == null ? null : { price: price, pct: Math.round(net / price * 100) };
+  }
+
+  /* 근거 1줄 — 실측값만. 없으면 만들어내지 않는다. */
+  function whyLine(p) {
+    var t = (p.temu_top3 && p.temu_top3.length) ? p.temu_top3[0] : null;
+    var m = marginOf(p);
+    var out = [];
+    if (t) out.push('테무 1위 <b>' + won(t.price) + '</b>' + (t.qty_g ? '(' + t.qty_g + 'g)' : '') +
+      (t.sales != null ? '·판매 ' + Number(t.sales).toLocaleString() : ''));
+    if (m) out.push('우리 추천가 <b>' + won(m.price) + '</b>, 마진 ' + m.pct + '%');
+    if (!out.length) return '';
+    var d = (p.judge && p.judge.researched_at) || (t && t.researched_at);
+    return out.join(' — ') + (d ? ' <span style="color:#9aa">(' + esc(d) + ' 조사)</span>' : '');
+  }
+
+  function badgeHtml(p) {
+    var v = p.judge && VD[p.judge.verdict];
+    if (!v) return '<div class="jbadge wait">⚪ 조사 대기</div>' +
+      '<div class="jwhy">아직 테무 조사를 하지 않은 품목입니다. (지어낸 값 없음)</div>';
+    var why = whyLine(p);
+    var rs = (p.judge.reason || '').replace(/\s+/g, ' ');
+    if (p.judge.verdict !== 'GO' && rs) why = (why ? why + '<br>' : '') + esc(rs.length > 120 ? rs.slice(0, 120) + '…' : rs);
+    return '<div class="jbadge ' + v[0] + '">' + v[1] + '</div>' + (why ? '<div class="jwhy">' + why + '</div>' : '');
+  }
+
+  var _prev = window.pcardHtml;
+  if (typeof _prev === 'function') {
+    window.pcardHtml = function (p) {
+      var h = _prev(p);
+      if (!p) return h;
+      var i = h.lastIndexOf('</div></div>');            /* pbody 닫기 직전 */
+      return i < 0 ? h : h.slice(0, i) + badgeHtml(p) + h.slice(i);
+    };
+  }
+
+  /* ── [GO만 보기] 필터 ── */
+  window.__goOnly = false;
+  var _grid = window.gridFor;
+  if (typeof _grid === 'function') {
+    window.gridFor = function (arr) {
+      arr = arr || [];
+      if (window.__goOnly) {
+        var f = arr.filter(function (p) { return p.judge && p.judge.verdict === 'GO'; });
+        if (!f.length) return '<div class="a2empty" style="grid-column:1/-1">🟢 등록 GO 품목이 없습니다. (필터를 끄면 전체가 보입니다)</div>';
+        return _grid(f);
+      }
+      return _grid(arr);
+    };
+  }
+  window.toggleGoOnly = function () {
+    window.__goOnly = !window.__goOnly;
+    if (window.__reopenSup) window.__reopenSup();
+  };
+
+  /* ========== ■3 자료실 2종 ================================= */
+  var KEY = 'hd15';                                  /* 접근키: ?k=hd15 */
+  function hasKey() {
+    try { return (new URLSearchParams(location.search)).get('k') === KEY; } catch (e) { return false; }
+  }
+  var MAXB = 8 * 1024 * 1024;                        /* 파일 8MB (RTDB 한계 — Storage 열리면 50MB) */
+  var OKEXT = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'xlsx', 'xls', 'csv', 'pdf', 'zip'];
+  var ICON = { xlsx: '📊', xls: '📊', csv: '📊', pdf: '📕', zip: '🗜️' };
+  var KIND = { src: ['제품 자료', '사장님이 넣는 원본 · 엑셀·이미지·PDF'], work: ['상세 이미지(작업물)', '대행자가 만든 썸네일·상세페이지'] };
+  var _cache = {};                                   /* {vk_kind:{id:item}} */
+
+  function ext(n) { return String(n || '').split('.').pop().toLowerCase(); }
+  function fpath(vk, kind) { return R + 'files/' + vk + '/' + kind; }
+  function fmtSize(b) { return b == null ? '' : (b > 1048576 ? (b / 1048576).toFixed(1) + 'MB' : Math.max(1, Math.round(b / 1024)) + 'KB'); }
+
+  window.a2Load = function (vk, kind) {
+    var host = document.getElementById('a2list_' + kind); if (!host) return;
+    host.innerHTML = '<div class="a2empty">불러오는 중…</div>';
+    api(fpath(vk, kind)).then(function (val) {
+      var v = val || {}; _cache[vk + '_' + kind] = v;
+      var ids = Object.keys(v).sort(function (a, b) { return (v[a].ts || 0) - (v[b].ts || 0); });
+      if (!ids.length) { host.innerHTML = '<div class="a2empty">아직 파일이 없습니다. 위에 끌어다 놓으세요.</div>'; return; }
+      host.innerHTML = ids.map(function (id) {
+        var it = v[id], e = ext(it.name);
+        var th = /^(jpg|jpeg|png|webp|gif)$/.test(e)
+          ? '<img src="' + it.data + '" onclick="window.open(this.src)">'
+          : '<div class="a2ico">' + (ICON[e] || '📄') + '</div>';
+        return '<div class="a2row">' + th +
+          '<div class="a2nm">' + esc(it.name) + '<small>' + fmtSize(it.size) + (it.from ? ' · ' + esc(it.from) : '') + '</small></div>' +
+          '<div class="a2btns"><button title="다운로드" onclick="a2Dl(\'' + vk + '\',\'' + kind + '\',\'' + id + '\')">⬇</button>' +
+          '<button class="del" title="삭제" onclick="a2Del(\'' + vk + '\',\'' + kind + '\',\'' + id + '\')">🗑</button></div></div>';
+      }).join('');
+    }).catch(function (e) { host.innerHTML = '<div class="a2empty">불러오기 실패: ' + esc(e.message) + '</div>'; });
+  };
+
+  function put(vk, kind, obj, cb) {                    /* RTDB push = POST */
+    api(fpath(vk, kind), { method: 'POST', body: JSON.stringify(obj) })
+      .then(function (r) { cb(r && r.error ? r.error : null); }, function (e) { cb(e.message || '실패'); });
+  }
+
+  window.a2Up = function (vk, kind, files) {
+    files = Array.prototype.slice.call(files || []);
+    if (!files.length) return;
+    var bad = files.filter(function (f) { return OKEXT.indexOf(ext(f.name)) < 0; });
+    if (bad.length) { toast('❌ 허용되지 않는 형식: ' + bad.map(function (f) { return f.name; }).join(', ')); }
+    files = files.filter(function (f) { return OKEXT.indexOf(ext(f.name)) >= 0; });
+    var big = files.filter(function (f) { return f.size > MAXB; });
+    if (big.length) { toast('❌ 8MB 초과라 못 올립니다: ' + big[0].name); }
+    files = files.filter(function (f) { return f.size <= MAXB; });
+    if (!files.length) return;
+    var done = 0;
+    files.forEach(function (f) {
+      var fr = new FileReader();
+      fr.onload = function () {
+        var raw = fr.result;
+        function save(data, size) {
+          put(vk, kind, { name: f.name, data: data, size: size, ts: Date.now(), from: kind === 'src' ? '사장님' : '대행자' }, function (err) {
+            done++;
+            if (err) toast('❌ 업로드 실패: ' + err);
+            if (done === files.length) { window.a2Load(vk, kind); toast('✅ ' + done + '개 업로드'); }
+          });
+        }
+        if (/^(jpg|jpeg|png|webp)$/.test(ext(f.name)) && f.size > 1.2 * 1024 * 1024) {
+          var im = new Image();
+          im.onload = function () {                      /* 큰 사진만 1600px 로 줄여 저장 */
+            var mx = 1600, w = im.width, h = im.height;
+            if (w > mx || h > mx) { var sc = mx / Math.max(w, h); w = Math.round(w * sc); h = Math.round(h * sc); }
+            var cv = document.createElement('canvas'); cv.width = w; cv.height = h;
+            cv.getContext('2d').drawImage(im, 0, 0, w, h);
+            var d = cv.toDataURL('image/jpeg', 0.85);
+            save(d, Math.round(d.length * 0.75));
+          };
+          im.onerror = function () { save(raw, f.size); };
+          im.src = raw;
+        } else save(raw, f.size);
+      };
+      fr.readAsDataURL(f);
+    });
+  };
+
+  window.a2Del = function (vk, kind, id) {
+    var it = (_cache[vk + '_' + kind] || {})[id] || {};
+    if (!confirm('“' + (it.name || '이 파일') + '” 을(를) 삭제할까요?')) return;
+    api(fpath(vk, kind) + '/' + id, { method: 'DELETE' }).then(function () { window.a2Load(vk, kind); toast('🗑 삭제됨'); });
+  };
+
+  window.a2Dl = function (vk, kind, id) {
+    var it = (_cache[vk + '_' + kind] || {})[id]; if (!it) return;
+    var a = document.createElement('a'); a.href = it.data; a.download = it.name || (id);
+    document.body.appendChild(a); a.click(); a.remove();
+  };
+
+  window.a2Zip = function (vk, kind) {
+    if (!window.JSZip) { toast('ZIP 라이브러리 로드 실패'); return; }
+    var v = _cache[vk + '_' + kind] || {}, ids = Object.keys(v);
+    if (!ids.length) { toast('받을 파일이 없습니다'); return; }
+    var z = new JSZip(), used = {};
+    ids.forEach(function (id) {
+      var it = v[id], nm = it.name || (id + '.bin');
+      while (used[nm]) nm = nm.replace(/(\.[^.]+)?$/, '_1$1');
+      used[nm] = 1;
+      var b64 = String(it.data || '').split(',')[1] || '';
+      z.file(nm, b64, { base64: true });
+    });
+    z.generateAsync({ type: 'blob' }).then(function (b) {
+      var a = document.createElement('a'); a.href = URL.createObjectURL(b);
+      a.download = vk + '_' + kind + '.zip'; document.body.appendChild(a); a.click(); a.remove();
+      toast('⬇ ZIP ' + ids.length + '개');
+    });
+  };
+
+  function secHtml(vk, kind) {
+    var k = KIND[kind];
+    return '<div class="a2sec' + (kind === 'work' ? ' work' : '') + '">' +
+      '<div class="a2h">' + (kind === 'src' ? '📦' : '🎨') + ' ' + k[0] +
+      '<span class="sub">· ' + k[1] + '</span>' +
+      '<button onclick="a2Zip(\'' + vk + '\',\'' + kind + '\')">⬇ 전체 ZIP</button></div>' +
+      '<div class="a2drop" ondragover="event.preventDefault();this.classList.add(\'on\')" ondragleave="this.classList.remove(\'on\')" ' +
+      'ondrop="event.preventDefault();this.classList.remove(\'on\');a2Up(\'' + vk + '\',\'' + kind + '\',event.dataTransfer.files)" ' +
+      'onclick="this.querySelector(\'input\').click()">여기로 <b>끌어다 놓거나</b> 클릭해서 추가' +
+      '<div style="font-size:10.5px;color:#93a0a8;margin-top:3px">이미지·엑셀·PDF·ZIP · 1개 8MB 이내</div>' +
+      '<input type="file" multiple accept=".jpg,.jpeg,.png,.webp,.gif,.xlsx,.xls,.csv,.pdf,.zip" style="display:none" ' +
+      'onchange="a2Up(\'' + vk + '\',\'' + kind + '\',this.files);this.value=\'\'"></div>' +
+      '<div class="a2list" id="a2list_' + kind + '"></div>' +
+      (kind === 'src' ? '<div id="vimggrid" style="display:grid;grid-template-columns:repeat(auto-fill,minmax(84px,1fr));gap:8px;margin-top:9px"></div>' : '') +
+      '</div>';
+  }
+
+  /* ── openSup 뒤처리: 이미지 블록 → 자료실 2종 / GO 필터 칩 ── */
+  var _open = window.openSup, _lastIdx = null;
+  if (typeof _open === 'function') {
+    window.openSup = function (i) {
+      _lastIdx = i; _open(i);
+      try { decorate(i); } catch (e) { console.log('[v3] decorate 실패', e); }
+    };
+    window.__reopenSup = function () { if (_lastIdx != null) window.openSup(_lastIdx); };
+  }
+
+  function decorate(i) {
+    var modal = document.getElementById('modal'); if (!modal) return;
+    var s = (window.DASH && window.DASH.suppliers) ? window.DASH.suppliers[i] : null; if (!s) return;
+    var vk = window.wholeKey ? window.wholeKey(s.name) : String(s.name || '').replace(/\s/g, '_');
+    window._a2vk = vk;
+
+    var grid = modal.querySelector('#vimggrid');
+    var host = grid ? grid.parentNode : null;
+    if (host) {
+      if (hasKey()) {
+        host.outerHTML = '<div class="a2wrap">' + secHtml(vk, 'src') + secHtml(vk, 'work') + '</div>';
+        window.a2Load(vk, 'src'); window.a2Load(vk, 'work');
+        if (window.loadVimg) window.loadVimg(vk);              /* 예전에 올린 이미지도 계속 보이게 */
+      } else {
+        host.outerHTML = '<div class="a2lock">🔒 자료실은 <b>접근 키가 들어간 링크</b>에서만 열립니다.<br>' +
+          '사장님/대행자 링크: <b>' + location.pathname + '?k=…</b> 형태로 받으신 주소로 들어오세요.</div>';
+      }
+    }
+    var pg = modal.querySelector('#pgrid');
+    if (pg) {
+      var n = (s.products || []).filter(function (p) { return p.judge && p.judge.verdict === 'GO'; }).length;
+      var bar = document.createElement('div');
+      bar.className = 'gofilter';
+      bar.innerHTML = '<button class="gochip' + (window.__goOnly ? ' on' : '') + '" onclick="toggleGoOnly()">🟢 GO만 보기 (' + n + ')</button>' +
+        '<span class="gohint">등록 대행자는 GO 품목만 작업합니다.</span>';
+      pg.parentNode.insertBefore(bar, pg);
+    }
+  }
+  /* ── 조사값 백필 ──
+     v2 의 웹소켓(SDK) 로드가 늦거나 막혀도 판정 배지는 보이게 하는 안전장치.
+     REST 로 RTDB products 를 읽어 judge/selling 등 '조사 필드'만 얹는다.
+     이미 들어와 있으면 아무것도 하지 않는다(덮어쓰기 없음). */
+  function backfill() {
+    if (!window.DASH || !window.DASH.suppliers) return;
+    api(R + 'products').then(function (list) {
+      if (!list) return;
+      var by = {};
+      list.forEach(function (p) { if (p && p.pid) by[p.pid] = p; });
+      var n = 0;
+      window.DASH.suppliers.forEach(function (s) {
+        (s.products || []).forEach(function (p) {
+          var r = by[p.pid]; if (!r) return;
+          ['judge', 'temu_top3', 'unit_g', 'selling', 'assets', 'reg'].forEach(function (k) {
+            if (r[k] != null && p[k] == null) { p[k] = r[k]; n++; }
+          });
+        });
+      });
+      if (n && typeof window.render === 'function') { try { window.render(); } catch (e) { } }
+      console.log('[v3] 조사값 백필 ' + n + '건');
+    }, function () { });
+  }
+  setTimeout(backfill, 1200); setTimeout(backfill, 6000);
+
+  console.log('[v3] 판정 배지 · GO 필터 · 자료실 2종 로드됨 (key=' + (hasKey() ? 'ON' : 'OFF') + ')');
+})();
+
+</script>
+<!--/V3PATCH-->
 </body>
 </html>

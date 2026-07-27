@@ -3,3 +3,7 @@ _serviceAccount.json
 *-firebase-adminsdk-*.json
 _preview.html
 _mockup*.html
+
+_backup_v3/
+_v3shot*.png
+_tmp_*.html
