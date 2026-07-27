@@ -117,9 +117,13 @@ function boot(){
     fetch(DB+'/shared/wholesale/public.json').then(function(r){return r.json();}),
     fetch(DB+'/shared/wholesale/regstate.json').then(function(r){return r.json();},function(){return {};}),
     /* ★사장님 확정값 — 이것이 최종. 시스템 조사 판정만으로는 작업 대상이 되지 않는다. */
-    fetch(DB+'/shared/wholesale/confirm.json').then(function(r){return r.json();},function(){return {};})
+    fetch(DB+'/shared/wholesale/confirm.json').then(function(r){return r.json();},function(){return {};}),
+    /* ★사장님이 카드에서 직접 정한 판매가 — 있으면 이 값이 등록가다(추천가보다 우선) */
+    fetch(DB+'/shared/wholesale/price.json').then(function(r){return r.json();},function(){return {};})
   ]).then(function(a){
     D=(a[0]||[]).filter(Boolean); ST=a[1]||{}; CF=a[2]||{};
+    var PR=a[3]||{};
+    D.forEach(function(p){ var r=PR[p.pid]; if(r&&r.sell!=null) p.price=r.sell; });
     document.getElementById('date').textContent='🤖 '+D.length+'개 품목 · 실시간';
     render();
   },function(e){ document.getElementById('view').innerHTML='<div class="regempty">데이터를 불러오지 못했습니다: '+esc(e.message)+'</div>'; });

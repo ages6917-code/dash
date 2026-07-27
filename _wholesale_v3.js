@@ -69,30 +69,209 @@
     });
   };
 
-  /* 근거 1줄 — 실측·계산값만. 없으면 만들어내지 않는다. */
-  function whyLine(p) {
-    var j = p.judge || {}, t = (p.temu_top3 && p.temu_top3.length) ? p.temu_top3[0] : null, out = [];
-    if (t) out.push('테무 1위 <b>' + won(t.price) + '</b>' + (t.qty_g ? '(' + t.qty_g + 'g)' : '') +
-      (t.sales != null ? '·판매 ' + Number(t.sales).toLocaleString() : ''));
-    if (j.price_reco != null) out.push('우리 추천가 <b>' + won(j.price_reco) + '</b>' +
-      (j.margin_pct != null ? ', 마진 ' + j.margin_pct + '%' : '') +
-      (j.bep != null ? ' (손익분기 ' + won(j.bep) + ')' : ''));
-    if (!out.length) return '';
-    var d = j.researched_at || (t && t.researched_at);
-    var s = out.join(' — ') + (d ? ' <span style="color:#9aa">(' + esc(d) + ' 조사)</span>' : '');
-    /* ■2 배송비 표기 — 실질 부담을 숨기지 않는다 */
-    if (j.ship_real != null) {
-      s += '<div class="shipline">🚚 실질 배송 부담 <b>' + (j.ship_real < 0
-        ? '없음 (+' + won(-j.ship_real) + ' 남음)' : won(j.ship_real)) + '</b>' +
-        ' — 택배원가 ' + won(j.courier) +
-        (j.price_reco != null && j.price_reco < 19800 ? ' · 고객 3,000원 수취' : ' · 무료배송(수취 없음)') + '</div>';
+  /* ================= V2-A 명세 리스트형 카드 (2026-07-27 사장님 확정 디자인) =====
+     ① 제안 배지 + 확정 버튼 ② 테무 상위3 vs 우리 표 ③ 비교 요약 1줄
+     ④ 배송비 3박스 ⑤ 판매가⇄마진율 양방향 ⑥ 건당 정산 명세 + 순수익 밴드
+     상수는 화면에 박지 않는다 — RTDB shared/wholesale/policy (원본 _데이터소스\policy.json). */
+  var POL = null;          /* 정본 상수 */
+  var PRICE = {};          /* {pid:{sell,margin_pct,at,by}} 사장님이 정한 판매가 */
+  var PMAP = {};           /* {pid:product} 계산할 때 원본을 찾기 위한 색인 */
+
+  function polOK() { return !!(POL && POL.fee_rate != null); }
+  function nowStr() {
+    var d = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
+    return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
+  }
+  function courOf(p) {
+    var j = p.judge || {};
+    return j.courier != null ? j.courier : (polOK() ? POL.courier_cost_default : null);
+  }
+  function priceOf(p) {
+    var r = PRICE[p.pid];
+    if (r && r.sell != null) return r.sell;
+    var j = p.judge || {};
+    return j.price_reco != null ? j.price_reco : (p.sell != null ? p.sell : null);
+  }
+  function u100(price, g) { return (price == null || !g) ? null : Math.round(price * 100 / g); }
+
+  /* 정산: 순수익 = 판매가 − 매입원가 + 고객배송비 − 거래처택배비 − 수수료(판매가×요율) */
+  function settle(price, buy, cour) {
+    if (!polOK() || price == null || buy == null || cour == null || !price) return null;
+    var fee = Math.round(price * POL.fee_rate);
+    var cred = price < POL.free_ship_threshold ? POL.customer_ship_credit : 0;
+    var net = price - buy + cred - cour - fee;
+    return { price: price, buy: buy, cour: cour, fee: fee, cred: cred, net: net, pct: Math.round(net / price * 100) };
+  }
+  /* 마진율(%) → 판매가 역산 (100원 단위 반올림). 19,800 경계를 넘으면 수취 없이 다시 푼다. */
+  function solvePrice(m, buy, cour) {
+    if (!polOK() || buy == null || cour == null || !isFinite(m)) return null;
+    var f = POL.fee_rate, C = POL.customer_ship_credit, L = POL.free_ship_threshold, t = m / 100;
+    if (1 - f - t <= 0.02) return null;                      /* 수학적으로 불가능한 마진 */
+    var p = Math.round(((buy + cour - C) / (1 - f - t)) / 100) * 100;
+    if (p >= L) p = Math.round(((buy + cour) / (1 - f - t)) / 100) * 100;
+    return p > 0 ? p : null;
+  }
+
+  /* ── ② 비교표 ── */
+  function cmpTable(p, price) {
+    var t3 = (p.temu_top3 || []).slice(0, 3), g = p.unit_g || null, rows = '';
+    t3.forEach(function (t, i) {
+      var uu = (t.price != null && t.qty_g) ? u100(t.price, t.qty_g) : null;
+      rows += '<tr><td class="rk">' + (t.rank || i + 1) + '위' +
+        (t.url ? '<a class="tt" href="' + esc(t.url) + '" target="_blank" title="' + esc(t.title) + '">' + esc(t.title || '') + '</a>'
+          : '<span class="tt" title="' + esc(t.title) + '">' + esc(t.title || '') + '</span>') + '</td>' +
+        '<td>' + won(t.price) + '</td>' +
+        '<td>' + (t.qty_g ? Number(t.qty_g).toLocaleString() + 'g' : '<span class="na">미기록</span>') + '</td>' +
+        '<td>' + (uu != null ? uu.toLocaleString() + '원' : '<span class="na">–</span>') + '</td>' +
+        '<td>' + (t.sales != null ? Number(t.sales).toLocaleString() : '–') + '</td></tr>';
+    });
+    var mu = u100(price, g);
+    rows += '<tr class="ours"><td class="rk">우리<span class="tt">' + esc(p.name || '') + '</span></td>' +
+      '<td id="v2op_' + p.pid + '">' + won(price) + '</td>' +
+      '<td>' + (g ? Number(g).toLocaleString() + 'g' : '<span class="na">미기록</span>') + '</td>' +
+      '<td id="v2ou_' + p.pid + '">' + (mu != null ? mu.toLocaleString() + '원' : '<span class="na">–</span>') + '</td>' +
+      '<td>–</td></tr>';
+    if (!t3.length) return '<div class="cmpwrap"><table class="cmp"><tbody>' + rows + '</tbody></table></div>';
+    return '<div class="cmpwrap"><table class="cmp"><thead><tr><th>상품</th><th>판매가</th><th>중량</th>' +
+      '<th>100g당</th><th>판매량</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+  }
+
+  /* ── ③ 요약 1줄 (지어내지 않는다 — 값이 없으면 없다고 쓴다) ── */
+  function cmpSum(p, price) {
+    var t3 = p.temu_top3 || [], out = [];
+    if (!t3.length || price == null) return '';
+    var t1 = t3[0];
+    if (t1.price != null) {
+      var d = t1.price - price;
+      out.push(d > 0 ? '1위 대비 <b>' + won(d) + ' 저렴</b>' : (d < 0 ? '1위 대비 <b class="up">' + won(-d) + ' 비쌈</b>' : '1위와 같은 가격'));
     }
-    var b = j.boundary;
-    if (b) {
-      s += '<div class="bdline">⚖️ <b>19,800원 ' + (b.better === 'A' ? '미만' : '이상') + ' 책정이 유리 (+' + b.diff_pp + '%p)</b>' +
-        ' — ' + won(b.a_price) + ' → 마진 ' + b.a_pct + '% vs ' + won(b.b_price) + ' → ' + b.b_pct + '%</div>';
+    var g = p.unit_g, have = t3.filter(function (t) { return t.qty_g && t.price != null; });
+    if (g && have.length) {
+      var mine = u100(price, g), lo = Math.min.apply(null, have.map(function (t) { return u100(t.price, t.qty_g); }));
+      out.push(mine <= lo ? '<b>100g당 최저가</b> (' + mine.toLocaleString() + '원)'
+        : '100g당 ' + mine.toLocaleString() + '원 <span class="na">(테무 최저 ' + lo.toLocaleString() + '원)</span>');
+    } else out.push('<span class="na">중량 미기록 — 100g당 비교 불가</span>');
+    return '<div class="cmpsum" id="v2sum_' + p.pid + '">' + out.join(' · ') + '</div>';
+  }
+
+  /* ■5 동일상품 미발견 처리 */
+  function cmpNote(p) {
+    var j = p.judge || {};
+    if (j.similar) return '<div class="cmpnote">※ 동일상품 없음 — <b>유사상품(' + esc(j.similar) + ') 기준</b> 비교</div>';
+    if (!(p.temu_top3 && p.temu_top3.length))
+      return '<div class="cmpnote none">※ <b>비교 불가</b> — 테무에서 동종 상품 미발견(검색은 실시함). ' +
+        '유사상품도 아직 못 찾아 값을 지어내지 않습니다. <b>다음 조사 회차에 보강</b>합니다.</div>';
+    return '';
+  }
+
+  /* ── ④ 배송비 3박스 / ⑥ 명세·순수익 ── */
+  function shipHtml(s) {
+    var real = s.cour - s.cred;
+    return '<div class="sbx minus"><div class="k">거래처에 냄</div><div class="v">−' + won(s.cour) + '</div></div>' +
+      '<div class="sbx plus"><div class="k">고객에게 받음</div><div class="v">' + (s.cred ? '+' + won(s.cred) : '없음') + '</div></div>' +
+      '<div class="sbx net"><div class="k">실질 부담</div><div class="v">' +
+      (real > 0 ? '−' + won(real) : (real < 0 ? '+' + won(-real) : '0원')) + '</div></div>';
+  }
+  function lrow(sign, name, v) {
+    return '<div class="ldr ' + (sign === '+' ? 'p' : (sign === '-' ? 'm' : '')) + '"><span class="n">' + name + '</span>' +
+      '<span class="v">' + (sign === '0' ? '0원' : sign + won(v)) + '</span></div>';
+  }
+  function ledHtml(s) {
+    return lrow('+', '판매가', s.price) +
+      (s.cred ? lrow('+', '고객 배송비 <small>(19,800원 미만)</small>', s.cred)
+        : lrow('0', '고객 배송비 <small>(무료배송 구간)</small>', 0)) +
+      lrow('-', '매입원가', s.buy) +
+      lrow('-', '거래처 택배비', s.cour) +
+      lrow('-', '테무 수수료 <small>(' + Math.round(POL.fee_rate * 1000) / 10 + '%)</small>', s.fee);
+  }
+  function netHtml(s) {
+    return '<span>건당 순수익 ' + (s.net > 0 ? won(s.net) : '<b>' + won(s.net) + '</b>') + '</span>' +
+      '<small>마진 ' + s.pct + '%</small>';
+  }
+  function warnHtml(s) {
+    if (!polOK()) return '';
+    var L = POL.free_ship_threshold;
+    if (s.price >= L) return '<div class="cvwarn">⚠️ <b>' + won(L) + ' 이상 = 무료배송</b> — 고객 배송비 수취가 사라져 택배비 ' +
+      won(s.cour) + '을 전액 우리가 냅니다.</div>';
+    if (s.price >= L - 1500) return '<div class="cvwarn ok">ℹ️ ' + won(L) + '까지 <b>' + won(L - s.price) + '</b> 남았습니다. 넘기면 배송비 ' +
+      won(POL.customer_ship_credit) + ' 수취가 사라집니다.</div>';
+    return '';
+  }
+
+  /* ── ⑤ 입력칸 (사장님 키에서만 수정 가능) ── */
+  function calcRow(p, s) {
+    var ro = hasKey() ? '' : ' readonly';
+    return '<div class="calcrow">' +
+      '<div class="cfield"><label>판매가 (등록가)</label><div class="inw">' +
+      '<input id="v2pi_' + p.pid + '" type="number" step="100" inputmode="numeric" value="' + s.price + '"' + ro +
+      ' oninput="v2Calc(\'' + p.pid + '\',\'p\')" onchange="v2Save(\'' + p.pid + '\')"><span class="u">원</span></div></div>' +
+      '<div class="cfield"><label>마진율</label><div class="inw">' +
+      '<input id="v2mi_' + p.pid + '" type="number" step="1" inputmode="numeric" value="' + s.pct + '"' + ro +
+      ' oninput="v2Calc(\'' + p.pid + '\',\'m\')" onchange="v2Save(\'' + p.pid + '\')"><span class="u">%</span></div></div>' +
+      '</div>' + (hasKey() ? '' : '<div class="rolock">🔒 열람 전용 — 판매가 수정은 사장님 화면에서만 됩니다.</div>');
+  }
+
+  /* 값이 바뀌면 표·배송·명세·밴드를 즉시 다시 그린다 */
+  window.v2Calc = function (pid, src) {
+    var p = PMAP[pid]; if (!p) return;
+    var pe = document.getElementById('v2pi_' + pid), me = document.getElementById('v2mi_' + pid);
+    if (!pe || !me) return;
+    var buy = p.buy, cour = courOf(p), price;
+    if (src === 'm') {
+      price = solvePrice(parseFloat(me.value), buy, cour);
+      if (price == null) return;
+      pe.value = price;
+    } else {
+      price = parseInt(String(pe.value).replace(/[^\d]/g, ''), 10);
+      if (!price) return;
     }
-    return s;
+    var s = settle(price, buy, cour); if (!s) return;
+    if (src !== 'm') me.value = s.pct;
+    var set = function (id, html) { var e = document.getElementById(id); if (e) e.innerHTML = html; };
+    set('v2op_' + pid, won(price));
+    var mu = u100(price, p.unit_g);
+    set('v2ou_' + pid, mu != null ? mu.toLocaleString() + '원' : '<span class="na">–</span>');
+    var sm = document.getElementById('v2sum_' + pid);
+    if (sm) sm.outerHTML = cmpSum(p, price) || '<div class="cmpsum" id="v2sum_' + pid + '"></div>';
+    set('v2ship_' + pid, shipHtml(s));
+    set('v2led_' + pid, ledHtml(s));
+    set('v2warn_' + pid, warnHtml(s));
+    var nb = document.getElementById('v2net_' + pid);
+    if (nb) { nb.className = 'netband' + (s.net <= 0 ? ' bad' : ''); nb.innerHTML = netHtml(s); }
+  };
+
+  /* 사장님이 정한 값은 이력과 함께 남긴다 (지시 ■3) */
+  window.v2Save = function (pid) {
+    if (!hasKey()) return;
+    var p = PMAP[pid], pe = document.getElementById('v2pi_' + pid); if (!p || !pe) return;
+    var price = parseInt(String(pe.value).replace(/[^\d]/g, ''), 10); if (!price) return;
+    var s = settle(price, p.buy, courOf(p));
+    var body = { sell: price, margin_pct: s ? s.pct : null, at: nowStr(), by: '사장님' };
+    api(R + 'price/' + encodeURIComponent(pid), { method: 'PUT', body: JSON.stringify(body) })
+      .then(function () { return api(R + 'pricelog', { method: 'POST', body: JSON.stringify({ pid: pid, sell: price, margin_pct: body.margin_pct, ts: body.at, by: '사장님' }) }); })
+      .then(function () {
+        PRICE[pid] = body;
+        toast('💾 ' + pid + ' 판매가 ' + won(price) + ' 저장 (마진 ' + body.margin_pct + '%) — 대행자 화면에도 이 값이 나갑니다');
+      }, function () { toast('❌ 판매가 저장 실패 — 다시 눌러 주세요'); });
+  };
+
+  function v2aHtml(p) {
+    var price = priceOf(p), buy = p.buy, cour = courOf(p);
+    if (!polOK()) return '<div class="cmpnote none">※ 정책 상수를 불러오지 못했습니다 — 숫자를 지어내지 않습니다. 새로고침해 주세요.</div>';
+    var s = settle(price, buy, cour);
+    var head = cmpNote(p) + cmpTable(p, price) + cmpSum(p, price);
+    if (!s) return head + '<div class="cmpnote none">※ 매입가가 없어 정산을 계산할 수 없습니다. (지어낸 값 없음)</div>';
+    var pr = PRICE[p.pid];
+    var b = (p.judge || {}).boundary;
+    return head +
+      '<div class="shipbox" id="v2ship_' + p.pid + '">' + shipHtml(s) + '</div>' +
+      calcRow(p, s) +
+      '<div id="v2warn_' + p.pid + '">' + warnHtml(s) + '</div>' +
+      '<div class="ledger" id="v2led_' + p.pid + '">' + ledHtml(s) + '</div>' +
+      '<div class="netband' + (s.net <= 0 ? ' bad' : '') + '" id="v2net_' + p.pid + '">' + netHtml(s) + '</div>' +
+      (pr ? '<div class="pricelog">✏️ 사장님이 정한 값 · ' + esc(pr.at || '') + '</div>' : '') +
+      (b ? '<div class="bdline">⚖️ <b>19,800원 ' + (b.better === 'A' ? '미만' : '이상') + ' 책정이 유리 (+' + b.diff_pp + '%p)</b>' +
+        ' — ' + won(b.a_price) + ' → 마진 ' + b.a_pct + '% vs ' + won(b.b_price) + ' → ' + b.b_pct + '%</div>' : '');
   }
 
   function cfHtml(p) {                             /* 확정 줄 + 버튼 */
@@ -110,14 +289,18 @@
   }
 
   function badgeHtml(p) {
-    var v = p.judge && VD[p.judge.verdict];
-    if (!v) return '<div class="jbadge wait">⚪ 조사 대기</div>' +
-      '<div class="jwhy">아직 테무 조사를 하지 않은 품목입니다. (지어낸 값 없음)</div>' + cfHtml(p);
-    var why = whyLine(p);
-    var rs = (p.judge.reason || '').replace(/\s+/g, ' ');
-    if (p.judge.verdict !== 'GO' && rs) why = (why ? why + '<br>' : '') + esc(rs.length > 140 ? rs.slice(0, 140) + '…' : rs);
-    return '<div class="jbadge ' + v[0] + '">🤖 제안: ' + v[1] + '</div>' +
-      (why ? '<div class="jwhy">' + why + '</div>' : '') + cfHtml(p);
+    var j = p.judge || {}, v = VD[j.verdict];
+    PMAP[p.pid] = p;
+    if (!v) return '<div class="v2a"><div class="jbadge wait">⚪ 조사 대기</div>' +
+      '<div class="jwhy">아직 테무 조사를 하지 않은 품목입니다. (지어낸 값 없음)</div>' + cfHtml(p) +
+      v2aHtml(p) + '</div>';
+    var rs = (j.reason || '').replace(/\s+/g, ' ');
+    var why = (j.verdict !== 'GO' && rs) ? esc(rs.length > 150 ? rs.slice(0, 150) + '…' : rs) : '';
+    var d = j.researched_at;
+    return '<div class="v2a">' +
+      '<div class="jbadge ' + v[0] + '">🤖 제안: ' + v[1] + (d ? '<span class="jdate">' + esc(d) + ' 조사</span>' : '') + '</div>' +
+      (why ? '<div class="jwhy">' + why + '</div>' : '') +
+      cfHtml(p) + v2aHtml(p) + '</div>';
   }
 
   /* ── 옵션 목록 (엑셀에서 온 다행 옵션 상품) ── */
@@ -143,17 +326,14 @@
       '<div class="thumb sq"><img src="' + p.imgData + '" alt=""></div>');
   }
 
-  /* ── 카드 위쪽 숫자를 새 배송비 정책 값으로 교체 ──
-     원본(v1) 계산은 거래처 택배원가를 안 넣어서 손익분기·마진이 낙관적으로 나온다.
-     한 카드에 서로 다른 숫자가 두 개 뜨면 안 되므로 정책 계산값 하나로 통일한다. */
+  /* ── 카드 위쪽의 옛 계산 줄 제거 ──
+     v1 의 손익분기·추천 판매가는 거래처 택배원가를 안 넣은 값이라 V2-A 명세와 숫자가 어긋난다.
+     한 카드에 서로 다른 숫자가 두 벌 뜨면 안 되므로, 정산은 V2-A 한 곳만 남긴다.
+     (매입가 줄은 원가 정보라 그대로 둔다) */
   function fixNums(h, p) {
-    var j = p.judge || {};
-    if (j.bep != null) h = h.replace(/(<span class="lbl">손익분기<\/span><span>)[^<]*(<\/span>)/, '$1' + won(j.bep) + '$2');
-    if (j.price_reco != null) {
-      h = h.replace(/(<span class="lbl">추천 판매가\s*)<b[^>]*>[^<]*<\/b>/,
-        '$1<b style="color:#1b8f5a">·마진' + (j.margin_pct != null ? j.margin_pct + '%' : '–') + '</b>');
-      h = h.replace(/(<span class="sell">)[^<]*(<\/span>)/, '$1' + won(j.price_reco) + '$2');
-    }
+    if (!p.judge) return h;
+    h = h.replace(/<div class="prow"><span class="lbl">손익분기<\/span><span>[^<]*<\/span><\/div>/, '');
+    h = h.replace(/<div class="prow"[^>]*><span class="lbl">추천 판매가[\s\S]*?<\/div>/, '');
     return h;
   }
 
@@ -387,6 +567,12 @@
   }
   setTimeout(backfill, 1200); setTimeout(backfill, 6000);
   loadConfirm(false); setTimeout(function () { loadConfirm(false); }, 2500);
+
+  /* 정본 상수·사장님 판매가 — 둘 다 들어와야 카드 숫자가 완성된다 */
+  var _need = 2;
+  function ready() { if (--_need <= 0 && window.__reopenSup) window.__reopenSup(); }
+  api(R + 'policy').then(function (v) { POL = v || null; ready(); }, function () { ready(); });
+  api(R + 'price').then(function (v) { PRICE = v || {}; ready(); }, function () { ready(); });
 
   console.log('[v3] 제안/확정 2단 · 배송비 정책 · 자료실 2종 로드됨 (key=' + (hasKey() ? 'ON' : 'OFF') + ')');
 })();
