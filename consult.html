@@ -19,6 +19,7 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-storage-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
 <style>
 *{margin:0;padding:0;box-sizing:border-box;font-family:'Pretendard','Malgun Gothic',-apple-system,BlinkMacSystemFont,sans-serif;-webkit-tap-highlight-color:transparent}
 :root{--bg:#f4f6fb;--card:#fff;--ink:#0f172a;--sub:#64748b;--line:#eef1f6;--brand:#3b82f6;--dark:#101a36}
@@ -460,6 +461,17 @@ select.iedit{cursor:pointer}
 .rptWarn ul{margin:0;padding-left:17px;line-height:1.75}
 .rptWarn li{color:#a16207}
 @media(max-width:640px){ .rptTiles{grid-template-columns:repeat(2,1fr)} .rptTV{font-size:22px} }
+/* 진단서 이미지 표시 (2026-07-27 A안) */
+.diag-img-box{background:#fff;border:1px solid var(--line);border-radius:16px;padding:18px;margin-top:16px}
+.diag-img-hd{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px}
+.diag-img-hd b{font-size:15px;font-weight:800}
+.diag-img-actions{display:flex;gap:8px}
+.diag-img-thumb{width:100%;border:1px solid #eef1f6;border-radius:12px;overflow:hidden;cursor:pointer;transition:.15s}
+.diag-img-thumb:hover{transform:translateY(-2px);box-shadow:0 8px 20px rgba(0,0,0,.1)}
+.diag-img-thumb img{width:100%;display:block}
+.diag-img-info{margin-top:10px;font-size:12px;color:#94a3b8;text-align:center}
+.diag-img-generating{text-align:center;padding:40px 20px;color:#94a3b8}
+.diag-canvas-holder{position:fixed;left:-9999px;top:-9999px;z-index:-1}
 </style>
 </head>
 <body>
@@ -2199,6 +2211,7 @@ function renderCustomer(id){
      <div class="panel" id="sumPanel"><div class="ph"><b>📊 재무 요약</b><span class="sub">서류 기반 한눈 요약</span></div>
        ${summaryHtml(id,c)}
      </div>
+     ${diagnosisImageHtml(id,c)}
      ${strategyHtml(id,c)}
    </div></div>`;
  /* ★2026-07-15 — syncDocs는 D드라이브 파일서버와 목록을 맞추던 것.
@@ -3394,6 +3407,223 @@ window.BUILD_VER='20260720-131938';
   }
   if(document.body) add(); else document.addEventListener('DOMContentLoaded',add);
 }catch(e){} })();
+/* ===== 진단서 이미지 생성 및 표시 (2026-07-27 A안) =====
+   html2canvas → PNG → Firebase Storage → 썸네일 표시 */
+const DIAG_GEN = new Set();  // 생성 중인 고객 ID 추적
+
+async function generateDiagnosisImage(id) {
+  if (DIAG_GEN.has(id)) { toast('이미 생성 중입니다'); return; }
+  const c = getCust(id);
+  if (!c || !c.summary) { toast('재무 요약이 없어 진단서를 생성할 수 없습니다'); return; }
+
+  DIAG_GEN.add(id);
+  rerender();  // "생성 중..." 표시
+
+  try {
+    // 1. 진단서 HTML을 임시로 DOM에 추가 (화면 밖에)
+    const holder = document.createElement('div');
+    holder.className = 'diag-canvas-holder';
+    holder.style.width = '1080px';  // A4 비율에 맞춘 너비
+    holder.innerHTML = diagnosisHtml(id, c);  // 기존 진단서 렌더링 함수 활용
+    document.body.appendChild(holder);
+
+    // 2. html2canvas로 PNG 생성
+    const canvas = await html2canvas(holder.querySelector('.dg'), {
+      scale: 2,  // 고해상도
+      backgroundColor: '#f4f6fb',
+      logging: false,
+      useCORS: true
+    });
+
+    document.body.removeChild(holder);
+
+    // 3. Canvas → Blob
+    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+
+    // 4. Firebase Storage에 업로드
+    if (!FBstore) throw new Error('Firebase Storage 미연결');
+    const storageRef = FBstore.ref('diagnosis/' + id + '_' + Date.now() + '.png');
+    const snapshot = await storageRef.put(blob);
+    const url = await snapshot.ref.getDownloadURL();
+
+    // 5. RTDB에 URL 저장
+    const diagData = {
+      url: url,
+      createdAt: new Date().toISOString(),
+      by: (window.me && window.me.name) || '자동생성'
+    };
+
+    if (offline) {
+      if (!DATA.customers[id].diagnosis) DATA.customers[id].diagnosis = {};
+      Object.assign(DATA.customers[id].diagnosis, diagData);
+      _lsave();
+    } else {
+      await dref('customers/' + id + '/diagnosis').set(diagData);
+    }
+
+    DIAG_GEN.delete(id);
+    toast('진단서 이미지 생성 완료');
+    rerender();
+  } catch (e) {
+    DIAG_GEN.delete(id);
+    console.error('진단서 생성 실패:', e);
+    toast('진단서 생성 실패: ' + (e && e.message || ''));
+    rerender();
+  }
+}
+
+function diagnosisImageHtml(id, c) {
+  const diag = (c || {}).diagnosis;
+  const generating = DIAG_GEN.has(id);
+
+  if (generating) {
+    return `<div class="diag-img-box">
+      <div class="diag-img-hd"><b>📋 재무 진단서 이미지</b></div>
+      <div class="diag-img-generating">
+        <div class="spin"></div>
+        <div>진단서 이미지 생성 중...</div>
+      </div>
+    </div>`;
+  }
+
+  if (!diag || !diag.url) {
+    return `<div class="diag-img-box">
+      <div class="diag-img-hd">
+        <b>📋 재무 진단서 이미지</b>
+        <button class="btn b" style="font-size:12px;padding:6px 12px" onclick="generateDiagnosisImage('${id}')">🖼 이미지 생성</button>
+      </div>
+      <div style="font-size:13px;color:#94a3b8;padding:20px 0;text-align:center">
+        진단서 이미지를 생성하면 카톡으로 전송할 수 있습니다
+      </div>
+    </div>`;
+  }
+
+  const createdDate = diag.createdAt ? new Date(diag.createdAt).toLocaleString('ko-KR', {
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit'
+  }) : '';
+
+  return `<div class="diag-img-box">
+    <div class="diag-img-hd">
+      <b>📋 재무 진단서 이미지</b>
+      <div class="diag-img-actions">
+        <button class="btn g" style="font-size:12px;padding:6px 12px" onclick="window.open('${esc(diag.url)}','_blank')">📥 다운로드</button>
+        <button class="btn b" style="font-size:12px;padding:6px 12px" onclick="generateDiagnosisImage('${id}')">🔄 재생성</button>
+      </div>
+    </div>
+    <div class="diag-img-thumb" onclick="window.open('${esc(diag.url)}','_blank')">
+      <img src="${esc(diag.url)}" alt="재무 진단서" loading="lazy">
+    </div>
+    <div class="diag-img-info">
+      ${createdDate ? '생성 일시: ' + createdDate : ''}
+      ${diag.by ? ' · ' + esc(diag.by) : ''}
+    </div>
+  </div>`;
+}
+
+/* diagnosisHtml 함수 — 진단서 HTML 생성 (이미지 변환용 + 기존 표시용 공통) */
+function diagnosisHtml(id, c) {
+  const s = (c || {}).summary;
+  if (!s) return '<div class="fsum"><div class="empty">제미나이 서류 요약이 없습니다.<br>서류를 올리고 "📄 서류 요청" 버튼으로 자동 요약을 만들거나<br>아래 JSON 직접 입력으로 수동 입력하세요.</div></div>';
+
+  const prof = s.profile || {};
+  const sales = s.sales || [];
+  const fin = s.fin || {};
+  const loans = s.loans || [];
+  const risks = s.risks || [];
+  const dirs = s.directions || [];
+
+  // 매출 3년 추이
+  const salesBars = sales.slice(0, 3).reverse().map(function(yr) {
+    const v = parseFloat(yr.v || 0);
+    const max = Math.max.apply(null, sales.slice(0, 3).map(function(y) { return parseFloat(y.v || 0); }));
+    const pct = max > 0 ? (v / max * 100) : 0;
+    return '<div class="bar"><div class="bb" style="height:' + pct + '%">' + (v >= 1 ? fmtMan(v) : '') + '</div><div class="yl">' + esc(yr.y || '') + '</div></div>';
+  }).join('');
+
+  // 부채비율 색상
+  const drNum = parseFloat(s.debtRatio || 0);
+  const drColor = drNum > 200 ? '#dc2626' : drNum > 100 ? '#f59e0b' : '#10b981';
+
+  // 대출 태그 색상
+  const loanTagClass = function(tag) {
+    if (!tag) return 't-b';
+    if (tag.indexOf('보증') >= 0) return 't-b';
+    if (tag.indexOf('정책') >= 0) return 't-p';
+    if (tag.indexOf('단기') >= 0) return 't-s';
+    return 't-o';
+  };
+
+  return `<div class="dg">
+    <div class="dg-hd">
+      <div style="flex:1">
+        <div class="dg-nm">${esc(prof.owner || c.nm || '(이름 미정)')} 님 재무 진단서</div>
+        <div class="dg-sub">${esc(prof.bizName || c.bizName || '')}</div>
+        <div class="dg-bdgs">
+          ${prof.bizType ? '<span class="dg-bdg">' + esc(prof.bizType) + '</span>' : ''}
+          ${prof.industry ? '<span class="dg-bdg">' + esc(prof.industry) + '</span>' : ''}
+          ${prof.employees ? '<span class="dg-bdg">직원 ' + esc(prof.employees) + '명</span>' : ''}
+        </div>
+      </div>
+      <div class="dg-hd-r">
+        <div class="dg-vt">최근 연 매출</div>
+        <div class="dg-vl">${sales[0] ? fmtMan(sales[0].v) + '원' : '-'}</div>
+        <div class="dg-vs">${sales[0] ? esc(sales[0].y) + '년 기준' : ''}</div>
+      </div>
+    </div>
+
+    ${s.warn ? '<div class="dg-line">' + esc(s.warn) + '</div>' : ''}
+
+    <div class="dg-kpis">
+      <div class="dg-kpi"><div class="dg-kv">${s.asset ? fmtMan(s.asset) : '-'}</div><div class="dg-kl">총 자산</div></div>
+      <div class="dg-kpi"><div class="dg-kv">${s.liab ? fmtMan(s.liab) : '-'}</div><div class="dg-kl">총 부채</div></div>
+      <div class="dg-kpi"><div class="dg-kv">${s.cap ? fmtMan(s.cap) : '-'}</div><div class="dg-kl">자기자본</div></div>
+      <div class="dg-kpi"><div class="dg-kv" style="color:${drColor}">${s.debtRatio ? s.debtRatio + '%' : '-'}</div><div class="dg-kl">부채비율</div></div>
+    </div>
+
+    <div class="dg-2">
+      <div class="dg-box">
+        <div class="dg-bt">📊 매출 추이 (최근 3년)</div>
+        <div class="bars">${salesBars || '<div style="color:#94a3b8;font-size:12px;text-align:center;padding:40px 0">데이터 없음</div>'}</div>
+        ${sales.length > 1 && sales[0].v && sales[1].v ? (function() {
+          const cur = parseFloat(sales[0].v);
+          const prev = parseFloat(sales[1].v);
+          const delta = cur - prev;
+          const pct = prev > 0 ? ((delta / prev) * 100).toFixed(1) : 0;
+          return '<div class="dg-trend">' + (delta >= 0 ? '▲' : '▼') + ' ' + Math.abs(pct) + '% (' + (delta >= 0 ? '증가' : '감소') + ')</div>';
+        })() : ''}
+      </div>
+
+      <div class="dg-box">
+        <div class="dg-bt">💰 재무 구조</div>
+        <div class="dg-fr"><span class="dg-fl">총 자산</span><span class="dg-fv">${s.asset ? fmtMan(s.asset) + '원' : '-'}</span></div>
+        <div class="dg-fr"><span class="dg-fl">유동자산 (재고)</span><span class="dg-fv">${fin.inventory ? fmtMan(fin.inventory) + '원' : '-'}${fin.inventoryPct ? ' (' + esc(fin.inventoryPct) + ')' : ''}</span></div>
+        <div class="dg-fr"><span class="dg-fl">현금 및 예금</span><span class="dg-fv">${fin.cash ? fmtMan(fin.cash) + '원' : '-'}</span></div>
+        <div class="dg-fr"><span class="dg-fl">총 부채</span><span class="dg-fv">${s.liabTotal ? fmtMan(s.liabTotal) + '원' : '-'}</span></div>
+        <div class="dg-fr"><span class="dg-fl">자기자본</span><span class="dg-fv">${s.cap ? fmtMan(s.cap) + '원' : '-'}</span></div>
+      </div>
+    </div>
+
+    ${loans.length ? '<div class="dg-box" style="margin-top:12px"><div class="dg-bt">🏦 대출 현황</div><table class="dg-tb"><thead><tr><th>은행</th><th>유형</th><th>금액</th><th>특성</th></tr></thead><tbody>' +
+      loans.map(function(ln) {
+        return '<tr><td>' + esc(ln.bank || '-') + '</td><td>' + esc(ln.type || '-') + '</td><td><b>' + (ln.amt ? fmtMan(ln.amt) + '원' : '-') + '</b></td><td>' + (ln.tag ? '<span class="dg-tag ' + loanTagClass(ln.tag) + '">' + esc(ln.tag) + '</span>' : '-') + '</td></tr>';
+      }).join('') +
+      '<tr class="dg-sum"><td colspan="2">합계</td><td><b>' + (s.loanTotal ? fmtMan(s.loanTotal) + '원' : '-') + '</b></td><td>' + (s.loanInterest ? '이자 ' + esc(s.loanInterest) : '') + '</td></tr></tbody></table>' +
+      (s.loanNote ? '<div class="dg-note">📌 ' + esc(s.loanNote) + '</div>' : '') +
+    '</div>' : ''}
+
+    ${risks.length ? '<div class="dg-box" style="margin-top:12px"><div class="dg-bt">⚠️ 리스크</div><ul class="dg-ul">' +
+      risks.map(function(r) { return '<li><b>' + esc(r.title || '') + '</b> — ' + esc(r.desc || ''); }).join('</li>') +
+    '</ul></div>' : ''}
+
+    ${dirs.length ? '<div class="dg-box" style="margin-top:12px"><div class="dg-bt">✅ 개선 방향</div><ul class="dg-ul">' +
+      dirs.map(function(d) { return '<li><b>' + esc(d.title || '') + '</b> — ' + esc(d.desc || ''); }).join('</li>') +
+    '</ul></div>' : ''}
+
+    ${s.credit ? '<div class="fsum" style="margin-top:12px"><div class="credit">' + esc(s.credit) + '</div></div>' : ''}
+  </div>`;
+}
+
 (function(){
   var dp=null, btn=document.getElementById('pwaInstall');
   var standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone;
