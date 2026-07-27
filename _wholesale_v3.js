@@ -113,6 +113,8 @@
   }
 
   /* ── ② 비교표 ── */
+  /* 숫자끼리 붙어 보이지 않게 단위(원·g)는 머리글로 빼고 칸에는 숫자만 넣는다 */
+  var numf = function (n) { return n == null ? '<span class="na">–</span>' : Number(n).toLocaleString(); };
   function cmpTable(p, price) {
     var t3 = (p.temu_top3 || []).slice(0, 3), g = p.unit_g || null, rows = '';
     t3.forEach(function (t, i) {
@@ -120,20 +122,19 @@
       rows += '<tr><td class="rk">' + (t.rank || i + 1) + '위' +
         (t.url ? '<a class="tt" href="' + esc(t.url) + '" target="_blank" title="' + esc(t.title) + '">' + esc(t.title || '') + '</a>'
           : '<span class="tt" title="' + esc(t.title) + '">' + esc(t.title || '') + '</span>') + '</td>' +
-        '<td>' + won(t.price) + '</td>' +
-        '<td>' + (t.qty_g ? Number(t.qty_g).toLocaleString() + 'g' : '<span class="na">미기록</span>') + '</td>' +
-        '<td>' + (uu != null ? uu.toLocaleString() + '원' : '<span class="na">–</span>') + '</td>' +
-        '<td>' + (t.sales != null ? Number(t.sales).toLocaleString() : '–') + '</td></tr>';
+        '<td>' + numf(t.price) + '</td>' +
+        '<td>' + (t.qty_g ? numf(t.qty_g) : '<span class="na">미기록</span>') + '</td>' +
+        '<td>' + numf(uu) + '</td>' +
+        '<td>' + numf(t.sales) + '</td></tr>';
     });
-    var mu = u100(price, g);
     rows += '<tr class="ours"><td class="rk">우리<span class="tt">' + esc(p.name || '') + '</span></td>' +
-      '<td id="v2op_' + p.pid + '">' + won(price) + '</td>' +
-      '<td>' + (g ? Number(g).toLocaleString() + 'g' : '<span class="na">미기록</span>') + '</td>' +
-      '<td id="v2ou_' + p.pid + '">' + (mu != null ? mu.toLocaleString() + '원' : '<span class="na">–</span>') + '</td>' +
+      '<td id="v2op_' + p.pid + '">' + numf(price) + '</td>' +
+      '<td>' + (g ? numf(g) : '<span class="na">미기록</span>') + '</td>' +
+      '<td id="v2ou_' + p.pid + '">' + numf(u100(price, g)) + '</td>' +
       '<td>–</td></tr>';
     if (!t3.length) return '<div class="cmpwrap"><table class="cmp"><tbody>' + rows + '</tbody></table></div>';
-    return '<div class="cmpwrap"><table class="cmp"><thead><tr><th>상품</th><th>판매가</th><th>중량</th>' +
-      '<th>100g당</th><th>판매량</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
+    return '<div class="cmpwrap"><table class="cmp"><thead><tr><th>상품</th><th>판매가<i>원</i></th><th>중량<i>g</i></th>' +
+      '<th>100g당<i>원</i></th><th>판매량</th></tr></thead><tbody>' + rows + '</tbody></table></div>';
   }
 
   /* ── ③ 요약 1줄 (지어내지 않는다 — 값이 없으면 없다고 쓴다) ── */
@@ -228,9 +229,8 @@
     var s = settle(price, buy, cour); if (!s) return;
     if (src !== 'm') me.value = s.pct;
     var set = function (id, html) { var e = document.getElementById(id); if (e) e.innerHTML = html; };
-    set('v2op_' + pid, won(price));
-    var mu = u100(price, p.unit_g);
-    set('v2ou_' + pid, mu != null ? mu.toLocaleString() + '원' : '<span class="na">–</span>');
+    set('v2op_' + pid, numf(price));
+    set('v2ou_' + pid, numf(u100(price, p.unit_g)));
     var sm = document.getElementById('v2sum_' + pid);
     if (sm) sm.outerHTML = cmpSum(p, price) || '<div class="cmpsum" id="v2sum_' + pid + '"></div>';
     set('v2ship_' + pid, shipHtml(s));
