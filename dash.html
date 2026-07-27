@@ -103,7 +103,7 @@ function boot(){
     '<h1>🧑‍💻 등록자 뷰 — 테무 등록 작업판</h1>'+
     '<p>왼쪽 🟢 초록 제품만 등록합니다. 카드에 적힌 <b>등록가 그대로</b> 넣으시고, 끝나면 [등록 완료 보고]를 눌러 복사된 한 줄만 사장님께 보내주세요.</p></div>'+
     '<details class="guide"><summary>📖 처음이신가요? — 작업 순서와 배지 읽는 법</summary>'+
-    '<ol><li><b>배지</b>: 🟢 등록 GO = 작업 / 🟡 보류·🔴 부적합 = 손대지 않음 / ⚪ 조사 대기 = 아직 시장조사 전(작업 대상 아님)</li>'+
+    '<ol><li><b>여기 뜨는 품목은 사장님이 직접 GO로 확정한 것만</b>입니다. [⏸ 대상 아님] 탭의 품목(확정 대기·보류·부적합)은 손대지 마세요.</li>'+
     '<li>큰 숫자 = <b>등록가</b>. 그대로 입력하고 <b>⚠️ 19,800원을 넘기지 않습니다.</b></li>'+
     '<li><b>[📁 제품 자료 받기]</b> 로 사진·자료를 받습니다. 대표이미지는 흰 배경 정사각 800×800px 이상.</li>'+
     '<li>상세페이지에 <b>원산지를 글자로</b> 적습니다. ("상세페이지 참조" 라고 쓰면 반려)</li>'+
@@ -115,16 +115,19 @@ function boot(){
     '<div id="view"></div><div class="foot" id="foot"></div>';
   Promise.all([
     fetch(DB+'/shared/wholesale/public.json').then(function(r){return r.json();}),
-    fetch(DB+'/shared/wholesale/regstate.json').then(function(r){return r.json();},function(){return {};})
+    fetch(DB+'/shared/wholesale/regstate.json').then(function(r){return r.json();},function(){return {};}),
+    /* ★사장님 확정값 — 이것이 최종. 시스템 조사 판정만으로는 작업 대상이 되지 않는다. */
+    fetch(DB+'/shared/wholesale/confirm.json').then(function(r){return r.json();},function(){return {};})
   ]).then(function(a){
-    D=(a[0]||[]).filter(Boolean); ST=a[1]||{};
+    D=(a[0]||[]).filter(Boolean); ST=a[1]||{}; CF=a[2]||{};
     document.getElementById('date').textContent='🤖 '+D.length+'개 품목 · 실시간';
     render();
   },function(e){ document.getElementById('view').innerHTML='<div class="regempty">데이터를 불러오지 못했습니다: '+esc(e.message)+'</div>'; });
 }
 
 /* ── 등록 상태 3단 (🟢 등록하세요 / 🟠 작업 중 / ✅ 등록 완료) ── */
-var ST={}, TAB='todo';
+var ST={}, CF={}, TAB='todo';
+function confirmed(p){ var c=CF[p.pid]; return c && c.verdict; }
 function stOf(p){
   var s=(ST[p.pid]||{}).status;
   if(s) return s;
@@ -183,26 +186,31 @@ function card(p){
 function render(){
   var q=(document.getElementById('search').value||'').toLowerCase();
   function hit(p){return ((p.name||'')+(p.vendor||'')+(p.spec||'')).toLowerCase().indexOf(q)>=0;}
-  var fit=D.filter(function(p){return p.badge==='GO'&&hit(p);});
-  var unfit=D.filter(function(p){return (p.badge==='NOGO'||p.badge==='HOLD'||p.badge==='WAIT')&&hit(p);});
+  /* ★작업 대상 = 사장님이 GO 확정한 품목만. 시스템 제안만 있는 건 작업 대상이 아니다. */
+  var fit=D.filter(function(p){return confirmed(p)==='GO'&&hit(p);});
+  var unfit=D.filter(function(p){return confirmed(p)!=='GO'&&hit(p);});
   var todo=fit.filter(function(p){return stOf(p)==='GO';});
   var wip=fit.filter(function(p){return stOf(p)==='WIP';});
   var done=fit.filter(function(p){return stOf(p)==='DONE';});
   var T=[['todo','🟢 지금 등록할 것',todo.length],['wip','🟠 작업 중',wip.length],
-         ['done','✅ 등록 완료',done.length],['out','🔴 제외',unfit.length]];
+         ['done','✅ 등록 완료',done.length],['out','⏸ 대상 아님',unfit.length]];
   document.getElementById('tabs').innerHTML=T.map(function(t){
     return '<button class="tab'+(TAB===t[0]?' on':'')+'" onclick="setTab(\''+t[0]+'\')">'+t[1]+' <b>'+t[2]+'</b></button>';
   }).join('');
   var html;
   if(TAB==='out'){
     html=unfit.map(function(p){
-      var b=p.badge==='NOGO'?'<span class="jb no">🔴 부적합</span>':'<span class="jb hold">🟡 보류</span>';
-      return '<div class="regrow">'+img(p)+nm(p)+'<div class="rrs">'+b+'<br>'+esc(p.reason||'')+'</div></div>';
+      var c=confirmed(p), b, why;
+      if(c==='NOGO'){ b='<span class="jb no">🔴 사장님 부적합</span>'; why=p.reason||''; }
+      else if(c==='HOLD'){ b='<span class="jb hold">🟡 사장님 보류</span>'; why=p.reason||''; }
+      else { b='<span class="jb wait">⏳ 사장님 확정 대기</span>';
+             why='아직 사장님이 확정하지 않았습니다 — 작업하지 마세요.'; }
+      return '<div class="regrow">'+img(p)+nm(p)+'<div class="rrs">'+b+'<br>'+esc(why)+'</div></div>';
     }).join('')||'<div class="regempty">해당 없음.</div>';
   } else {
     var list={todo:todo,wip:wip,done:done}[TAB];
     html=list.map(card).join('')||'<div class="regempty">'+
-      {todo:'지금 등록할 품목이 없습니다. 완료하신 것은 ✅ 탭에서 확인하세요.',
+      {todo:'지금 등록할 품목이 없습니다. 사장님이 GO로 확정하시면 여기에 바로 뜹니다.',
        wip:'작업 중인 품목이 없습니다. 🟢 탭에서 [▶ 작업 시작]을 눌러 주세요.',
        done:'아직 등록 완료된 품목이 없습니다.'}[TAB]+'</div>';
   }

@@ -10,6 +10,22 @@
 .gochip{border:1.5px solid #d5dbe3;background:#fff;border-radius:20px;padding:6px 13px;font-size:12px;font-weight:700;cursor:pointer;font-family:inherit;color:#374151}
 .gochip.on{background:#1b8f5a;border-color:#1b8f5a;color:#fff}
 .gohint{font-size:11.5px;color:#8a94a3}
+.gochip.pd.on{background:#b06a00;border-color:#b06a00}
+/* ── 배송비·경계 표기(■2) ── */
+.shipline{margin-top:5px;font-size:11px;color:#0f5c66;background:#eaf6f8;border-radius:6px;padding:5px 7px;line-height:1.5}
+.bdline{margin-top:4px;font-size:11px;color:#8a5a00;background:#fff6e3;border-radius:6px;padding:5px 7px;line-height:1.5}
+/* ── 사장님 확정(■1) ── */
+.cfrow{display:flex;align-items:center;gap:6px;flex-wrap:wrap;margin-top:7px;border-top:1px dashed #e5e7eb;padding-top:7px}
+.cfwait{font-size:11.5px;font-weight:800;color:#b06a00;background:#fff2dd;border-radius:20px;padding:3px 9px}
+.cfok{font-size:11.5px;font-weight:800;border-radius:20px;padding:3px 9px}
+.cfok.go{background:#1b8f5a;color:#fff}.cfok.hold{background:#fff2dd;color:#b06a00}.cfok.no{background:#fde8e8;color:#c02626}
+.cfat{font-size:10.5px;color:#8a94a3}
+.cfbtn{margin-left:auto;display:flex;gap:4px;flex-wrap:wrap}
+.cfbtn .cb{border:1.5px solid #d5dbe3;background:#fff;border-radius:8px;padding:4px 8px;font-size:11px;font-weight:800;cursor:pointer;font-family:inherit;color:#374151}
+.cfbtn .cb.go.on{background:#1b8f5a;border-color:#1b8f5a;color:#fff}
+.cfbtn .cb.hold.on{background:#e0a200;border-color:#e0a200;color:#fff}
+.cfbtn .cb.no.on{background:#c02626;border-color:#c02626;color:#fff}
+.cfbtn .cb.x{color:#8a94a3}
 /* ── 자료실 2종 ── */
 .a2wrap{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}
 @media(max-width:760px){.a2wrap{grid-template-columns:1fr}}

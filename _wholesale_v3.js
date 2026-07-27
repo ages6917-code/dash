@@ -26,38 +26,86 @@
   var won = function (n) { return n == null ? '–' : Number(n).toLocaleString() + '원'; };
   function toast(m) { if (window.v2toast) window.v2toast(m); else console.log(m); }
 
-  /* ========== ■2 판정 배지 ================================== */
-  var VD = { GO: ['go', '🟢 등록 GO'], HOLD: ['hold', '🟡 보류'], NOGO: ['no', '🔴 부적합'] };
+  /* ========== ■2 판정 배지 — 시스템 '제안' + 사장님 '확정' 2단 ==========
+     (2026-07-27 지시서 ■1) 조사 결과는 제안일 뿐이고, 최종은 사장님 확정값이다.
+     확정값 저장 위치 = RTDB shared/wholesale/confirm/<pid> · 이력 = confirmlog */
+  var VD = { GO: ['go', '🟢 GO'], HOLD: ['hold', '🟡 보류'], NOGO: ['no', '🔴 부적합'] };
+  var CF = {};                                    /* {pid:{verdict,at,by}} */
 
-  function marginOf(p) {                      /* 대시보드 공식 그대로 사용 */
-    if (!window.__NET || p.buy == null) return null;
-    var price = (p.judge && p.judge.price_reco) != null ? p.judge.price_reco : p.sell;
-    if (price == null) return null;
-    var net = window.__NET(price, p.buy + (p.ship || 0));
-    return net == null ? null : { price: price, pct: Math.round(net / price * 100) };
+  function loadConfirm(again) {
+    api(R + 'confirm').then(function (v) {
+      CF = v || {};
+      if (again && window.__reopenSup) window.__reopenSup();
+    }, function () { });
   }
+  window.jbSet = function (pid, v) {
+    var d = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
+    var now = d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
+    var body = { verdict: v, at: now, by: '사장님' };
+    api(R + 'confirm/' + encodeURIComponent(pid), { method: 'PUT', body: JSON.stringify(body) })
+      .then(function () { return api(R + 'confirmlog', { method: 'POST', body: JSON.stringify({ pid: pid, verdict: v, ts: now, by: '사장님' }) }); })
+      .then(function () {
+        CF[pid] = body;
+        toast('✅ ' + pid + ' → ' + VD[v][1] + ' 확정' + (v === 'GO' ? ' (대행자 화면에 바로 뜹니다)' : ''));
+        if (window.__reopenSup) window.__reopenSup();
+      }, function (e) { toast('❌ 확정 저장 실패: ' + (e && e.message)); });
+  };
+  window.jbClear = function (pid) {
+    api(R + 'confirm/' + encodeURIComponent(pid), { method: 'DELETE' }).then(function () {
+      delete CF[pid]; toast('↩ 확정을 지웠습니다 (다시 확정 대기)');
+      if (window.__reopenSup) window.__reopenSup();
+    });
+  };
 
-  /* 근거 1줄 — 실측값만. 없으면 만들어내지 않는다. */
+  /* 근거 1줄 — 실측·계산값만. 없으면 만들어내지 않는다. */
   function whyLine(p) {
-    var t = (p.temu_top3 && p.temu_top3.length) ? p.temu_top3[0] : null;
-    var m = marginOf(p);
-    var out = [];
+    var j = p.judge || {}, t = (p.temu_top3 && p.temu_top3.length) ? p.temu_top3[0] : null, out = [];
     if (t) out.push('테무 1위 <b>' + won(t.price) + '</b>' + (t.qty_g ? '(' + t.qty_g + 'g)' : '') +
       (t.sales != null ? '·판매 ' + Number(t.sales).toLocaleString() : ''));
-    if (m) out.push('우리 추천가 <b>' + won(m.price) + '</b>, 마진 ' + m.pct + '%');
+    if (j.price_reco != null) out.push('우리 추천가 <b>' + won(j.price_reco) + '</b>' +
+      (j.margin_pct != null ? ', 마진 ' + j.margin_pct + '%' : '') +
+      (j.bep != null ? ' (손익분기 ' + won(j.bep) + ')' : ''));
     if (!out.length) return '';
-    var d = (p.judge && p.judge.researched_at) || (t && t.researched_at);
-    return out.join(' — ') + (d ? ' <span style="color:#9aa">(' + esc(d) + ' 조사)</span>' : '');
+    var d = j.researched_at || (t && t.researched_at);
+    var s = out.join(' — ') + (d ? ' <span style="color:#9aa">(' + esc(d) + ' 조사)</span>' : '');
+    /* ■2 배송비 표기 — 실질 부담을 숨기지 않는다 */
+    if (j.ship_real != null) {
+      s += '<div class="shipline">🚚 실질 배송 부담 <b>' + (j.ship_real < 0
+        ? '없음 (+' + won(-j.ship_real) + ' 남음)' : won(j.ship_real)) + '</b>' +
+        ' — 택배원가 ' + won(j.courier) +
+        (j.price_reco != null && j.price_reco < 19800 ? ' · 고객 3,000원 수취' : ' · 무료배송(수취 없음)') + '</div>';
+    }
+    var b = j.boundary;
+    if (b) {
+      s += '<div class="bdline">⚖️ <b>19,800원 ' + (b.better === 'A' ? '미만' : '이상') + ' 책정이 유리 (+' + b.diff_pp + '%p)</b>' +
+        ' — ' + won(b.a_price) + ' → 마진 ' + b.a_pct + '% vs ' + won(b.b_price) + ' → ' + b.b_pct + '%</div>';
+    }
+    return s;
+  }
+
+  function cfHtml(p) {                             /* 확정 줄 + 버튼 */
+    var c = CF[p.pid], can = hasKey();
+    var btn = can ? '<span class="cfbtn">' +
+      ['GO', 'HOLD', 'NOGO'].map(function (v) {
+        return '<button class="cb ' + VD[v][0] + (c && c.verdict === v ? ' on' : '') +
+          '" onclick="jbSet(\'' + p.pid + '\',\'' + v + '\')">' + VD[v][1] + ' 확정</button>';
+      }).join('') + (c ? '<button class="cb x" onclick="jbClear(\'' + p.pid + '\')">↩ 취소</button>' : '') + '</span>' : '';
+    var line = c
+      ? '<span class="cfok ' + VD[c.verdict][0] + '">✅ 사장님 확정: ' + VD[c.verdict][1] + '</span>' +
+      '<span class="cfat">' + esc(c.at || '') + '</span>'
+      : '<span class="cfwait">⏳ 사장님 확정 대기</span>';
+    return '<div class="cfrow">' + line + btn + '</div>';
   }
 
   function badgeHtml(p) {
     var v = p.judge && VD[p.judge.verdict];
     if (!v) return '<div class="jbadge wait">⚪ 조사 대기</div>' +
-      '<div class="jwhy">아직 테무 조사를 하지 않은 품목입니다. (지어낸 값 없음)</div>';
+      '<div class="jwhy">아직 테무 조사를 하지 않은 품목입니다. (지어낸 값 없음)</div>' + cfHtml(p);
     var why = whyLine(p);
     var rs = (p.judge.reason || '').replace(/\s+/g, ' ');
-    if (p.judge.verdict !== 'GO' && rs) why = (why ? why + '<br>' : '') + esc(rs.length > 120 ? rs.slice(0, 120) + '…' : rs);
-    return '<div class="jbadge ' + v[0] + '">' + v[1] + '</div>' + (why ? '<div class="jwhy">' + why + '</div>' : '');
+    if (p.judge.verdict !== 'GO' && rs) why = (why ? why + '<br>' : '') + esc(rs.length > 140 ? rs.slice(0, 140) + '…' : rs);
+    return '<div class="jbadge ' + v[0] + '">🤖 제안: ' + v[1] + '</div>' +
+      (why ? '<div class="jwhy">' + why + '</div>' : '') + cfHtml(p);
   }
 
   /* ── 옵션 목록 (엑셀에서 온 다행 옵션 상품) ── */
@@ -94,22 +142,26 @@
     };
   }
 
-  /* ── [GO만 보기] 필터 ── */
-  window.__goOnly = false;
+  /* ── 필터 3종: 전체 / 확정 GO / 확정 대기 ── */
+  window.__jf = 'all';
+  function pass(p) {
+    var c = CF[p.pid];
+    if (window.__jf === 'goconf') return !!(c && c.verdict === 'GO');
+    if (window.__jf === 'pending') return !c && !!(p.judge && p.judge.verdict);
+    return true;
+  }
   var _grid = window.gridFor;
   if (typeof _grid === 'function') {
     window.gridFor = function (arr) {
       arr = arr || [];
-      if (window.__goOnly) {
-        var f = arr.filter(function (p) { return p.judge && p.judge.verdict === 'GO'; });
-        if (!f.length) return '<div class="a2empty" style="grid-column:1/-1">🟢 등록 GO 품목이 없습니다. (필터를 끄면 전체가 보입니다)</div>';
-        return _grid(f);
-      }
-      return _grid(arr);
+      if (window.__jf === 'all') return _grid(arr);
+      var f = arr.filter(pass);
+      if (!f.length) return '<div class="a2empty" style="grid-column:1/-1">해당하는 품목이 없습니다. (전체를 누르면 다 보입니다)</div>';
+      return _grid(f);
     };
   }
-  window.toggleGoOnly = function () {
-    window.__goOnly = !window.__goOnly;
+  window.setJF = function (m) {
+    window.__jf = m;
     if (window.__reopenSup) window.__reopenSup();
   };
 
@@ -271,11 +323,16 @@
     }
     var pg = modal.querySelector('#pgrid');
     if (pg) {
-      var n = (s.products || []).filter(function (p) { return p.judge && p.judge.verdict === 'GO'; }).length;
+      var ps = s.products || [];
+      var nGo = ps.filter(function (p) { return CF[p.pid] && CF[p.pid].verdict === 'GO'; }).length;
+      var nPd = ps.filter(function (p) { return !CF[p.pid] && p.judge && p.judge.verdict; }).length;
       var bar = document.createElement('div');
       bar.className = 'gofilter';
-      bar.innerHTML = '<button class="gochip' + (window.__goOnly ? ' on' : '') + '" onclick="toggleGoOnly()">🟢 GO만 보기 (' + n + ')</button>' +
-        '<span class="gohint">등록 대행자는 GO 품목만 작업합니다.</span>';
+      bar.innerHTML =
+        '<button class="gochip' + (window.__jf === 'all' ? ' on' : '') + '" onclick="setJF(\'all\')">전체 (' + ps.length + ')</button>' +
+        '<button class="gochip' + (window.__jf === 'goconf' ? ' on' : '') + '" onclick="setJF(\'goconf\')">✅ 확정 GO (' + nGo + ')</button>' +
+        '<button class="gochip pd' + (window.__jf === 'pending' ? ' on' : '') + '" onclick="setJF(\'pending\')">⏳ 확정 대기 (' + nPd + ')</button>' +
+        '<span class="gohint">대행자 화면에는 <b>사장님이 GO 확정한 품목만</b> 나갑니다.</span>';
       pg.parentNode.insertBefore(bar, pg);
     }
   }
@@ -303,8 +360,9 @@
     }, function () { });
   }
   setTimeout(backfill, 1200); setTimeout(backfill, 6000);
+  loadConfirm(false); setTimeout(function () { loadConfirm(false); }, 2500);
 
-  console.log('[v3] 판정 배지 · GO 필터 · 자료실 2종 로드됨 (key=' + (hasKey() ? 'ON' : 'OFF') + ')');
+  console.log('[v3] 제안/확정 2단 · 배송비 정책 · 자료실 2종 로드됨 (key=' + (hasKey() ? 'ON' : 'OFF') + ')');
 })();
 
 
