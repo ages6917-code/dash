@@ -102,14 +102,7 @@ function boot(){
     '<div class="hero"><span class="date" id="date">불러오는 중…</span>'+
     '<h1>🧑‍💻 등록자 뷰 — 테무 등록 작업판</h1>'+
     '<p><b>🟢 지금 등록할 것</b> 탭에 있는 제품만 등록합니다(사장님이 GO로 확정한 것). 카드에 적힌 <b>등록가 그대로</b> 넣으시고, 끝나면 [✅ 등록 완료]를 눌러 복사된 한 줄을 사장님께 보내주세요.</p></div>'+
-    '<details class="guide"><summary>📖 처음이신가요? — 작업 순서와 배지 읽는 법</summary>'+
-    '<ol><li><b>여기 뜨는 품목은 사장님이 직접 GO로 확정한 것만</b>입니다. [⏸ 대상 아님] 탭의 품목(확정 대기·보류·부적합)은 손대지 마세요.</li>'+
-    '<li>큰 숫자 = <b>등록가</b>. 그대로 입력하고 <b>⚠️ 19,800원을 넘기지 않습니다.</b></li>'+
-    '<li><b>[📁 제품 자료 받기]</b> 로 사진·자료를 받습니다. 대표이미지는 흰 배경 정사각 800×800px 이상.</li>'+
-    '<li>상세페이지에 <b>원산지를 글자로</b> 적습니다. ("상세페이지 참조" 라고 쓰면 반려)</li>'+
-    '<li>완성물은 <b>[⬆ 작업물 올리기]</b>, 등록이 끝나면 <b>[✅ 등록 완료 보고]</b>.</li></ol>'+
-    '<div class="ban">🚫 금지어: 유기농·무농약·친환경·불검출·항염·면역·해독·다이어트·질병·치료·예방·100%·무조건<br>'+
-    '🚫 타 쇼핑몰 상세 캡처·연예인/캐릭터 이미지·타사 로고 사용 금지<br>🚫 가격 임의 변경 금지 — 이상하면 물어봐 주세요.</div></details>'+
+    '<details class="guide" id="guide"><summary>📖 처음이신가요? — 작업 순서와 배지 읽는 법</summary></details>'+
     '<div class="tabs" id="tabs"></div>'+
     '<input class="search" id="search" placeholder="🔍 제품·거래처 검색" oninput="render()">'+
     '<div id="view"></div><div class="foot" id="foot"></div>';
@@ -119,12 +112,29 @@ function boot(){
     /* ★사장님 확정값 — 이것이 최종. 시스템 조사 판정만으로는 작업 대상이 되지 않는다. */
     fetch(DB+'/shared/wholesale/confirm.json').then(function(r){return r.json();},function(){return {};}),
     /* ★사장님이 카드에서 직접 정한 판매가 — 있으면 이 값이 등록가다(추천가보다 우선) */
-    fetch(DB+'/shared/wholesale/price.json').then(function(r){return r.json();},function(){return {};})
+    fetch(DB+'/shared/wholesale/price.json').then(function(r){return r.json();},function(){return {};}),
+    /* 배송비 정책 */
+    fetch(DB+'/shared/wholesale/policy.json').then(function(r){return r.json();},function(){return {};})
   ]).then(function(a){
     D=(a[0]||[]).filter(Boolean); ST=a[1]||{}; CF=a[2]||{};
-    var PR=a[3]||{};
+    var PR=a[3]||{}, POL=a[4]||{};
     D.forEach(function(p){ var r=PR[p.pid]; if(r&&r.sell!=null) p.price=r.sell; });
     document.getElementById('date').textContent='🤖 '+D.length+'개 품목 · 실시간';
+    /* ■2 배송비 정책 반영 도움말 생성 */
+    var shipHtml = '';
+    if (POL.shipUnder != null && POL.shipRate != null) {
+      shipHtml = '<li>판매가가 '+won(POL.shipUnder)+' 미만인 상품은 <b>고객 배송비 '+won(POL.shipRate)+'</b>으로 설정합니다. '+won(POL.shipUnder)+' 이상이면 무료배송.</li>';
+    }
+    document.getElementById('guide').innerHTML=
+      '<summary>📖 처음이신가요? — 작업 순서와 배지 읽는 법</summary>'+
+      '<ol><li><b>여기 뜨는 품목은 사장님이 직접 GO로 확정한 것만</b>입니다. [⏸ 대상 아님] 탭의 품목(확정 대기·보류·부적합)은 손대지 마세요.</li>'+
+      '<li>큰 숫자 = <b>등록가</b>. 그대로 입력하고 <b>⚠️ 19,800원을 넘기지 않습니다.</b></li>'+
+      shipHtml+
+      '<li><b>[📁 제품 자료 받기]</b> 로 사진·자료를 받습니다. 대표이미지는 흰 배경 정사각 800×800px 이상.</li>'+
+      '<li>상세페이지에 <b>원산지를 글자로</b> 적습니다. ("상세페이지 참조" 라고 쓰면 반려)</li>'+
+      '<li>완성물은 <b>[⬆ 작업물 올리기]</b>, 등록이 끝나면 <b>[✅ 등록 완료 보고]</b>.</li></ol>'+
+      '<div class="ban">🚫 금지어: 유기농·무농약·친환경·불검출·항염·면역·해독·다이어트·질병·치료·예방·100%·무조건<br>'+
+      '🚫 타 쇼핑몰 상세 캡처·연예인/캐릭터 이미지·타사 로고 사용 금지<br>🚫 가격 임의 변경 금지 — 이상하면 물어봐 주세요.</div>';
     render();
   },function(e){ document.getElementById('view').innerHTML='<div class="regempty">데이터를 불러오지 못했습니다: '+esc(e.message)+'</div>'; });
 }
