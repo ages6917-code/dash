@@ -225,8 +225,14 @@
 
 
 
+
+
+
+
+
+
 <!--V3PATCH-->
-/* ===== 위탁 대시보드 v3 (2026-07-27) — 판정 배지 · GO 필터 · 자료실 2종 ===== */
+﻿/* ===== 위탁 대시보드 v3 (2026-07-27) — 판정 배지 · GO 필터 · 자료실 2종 ===== */
 .jbadge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;border-radius:20px;padding:3px 9px;margin-top:7px}
 .jbadge.go{background:#e7f4e8;color:#1b7a35}
 .jbadge.hold{background:#fff2dd;color:#b06a00}
@@ -261,6 +267,20 @@
 .a2btns button.del{background:#fde8e8}
 .a2empty{color:#9aa;font-size:11.5px;padding:8px 2px}
 .a2lock{background:#fff8e6;border:1px solid #f0dca8;border-radius:10px;padding:13px;font-size:12.5px;color:#8a6d1f;line-height:1.6;margin:12px 0}
+/* ── 카드 이미지: 1:1 정사각 · 절대 자르지 않는다(contain) ── */
+.pcard .thumb img{object-fit:contain !important;background:#fff}   /* cover(잘림) → contain */
+.pcard .thumb.sq{height:auto;aspect-ratio:1/1;max-height:210px;background:#fff;overflow:hidden}
+/* ── 옵션 여러 개인 상품 ── */
+.optbox{margin-top:7px;border-top:1px dashed var(--line);padding-top:6px}
+.optsum{font-size:11.5px;font-weight:800;color:#0e7a6e;cursor:pointer;list-style:none}
+.optsum::-webkit-details-marker{display:none}
+.optlist{margin-top:5px;display:flex;flex-direction:column;gap:3px}
+.optrow{display:flex;gap:6px;font-size:11px;line-height:1.45;color:#374151}
+.optrow .o{font-weight:700;min-width:0;word-break:keep-all}
+.optrow .p{margin-left:auto;white-space:nowrap;font-weight:800}
+.optrow .ev{color:#c2410c;font-weight:800;white-space:nowrap}
+.optrow .st{color:#8a94a3;white-space:nowrap}
+
 
 <!--/V3PATCH-->
 </style>
@@ -1319,9 +1339,15 @@ function dashForceRefresh(){
 
 
 
+
+
+
+
+
+
 <!--V3PATCH-->
 <script>
-/* ============================================================
+﻿/* ============================================================
    위탁 대시보드 v3 패치 (2026-07-27, 사장님 지시 ■2·■3)
    2) 품목 카드 '등록 판정' 배지 + 근거 1줄 + [GO만 보기] 필터
    3) 자료실 2종 — ① 제품 자료(사장님 원본) ② 상세 이미지(작업물)
@@ -1377,13 +1403,37 @@ function dashForceRefresh(){
     return '<div class="jbadge ' + v[0] + '">' + v[1] + '</div>' + (why ? '<div class="jwhy">' + why + '</div>' : '');
   }
 
+  /* ── 옵션 목록 (엑셀에서 온 다행 옵션 상품) ── */
+  function optHtml(p) {
+    var o = p.options;
+    if (!o || !o.length) return '';
+    var lo = Math.min.apply(null, o.map(function (x) { return x.buy; }));
+    var hi = Math.max.apply(null, o.map(function (x) { return x.buy; }));
+    return '<details class="optbox"><summary class="optsum">▸ 옵션 ' + o.length + '종 · 공급가 ' +
+      won(lo) + (hi !== lo ? '~' + won(hi) : '') + ' (눌러서 보기)</summary><div class="optlist">' +
+      o.map(function (x) {
+        return '<div class="optrow"><span class="o">' + esc(x.opt) + '</span>' +
+          (x.stock ? '<span class="st">' + esc(x.stock) + '</span>' : '') +
+          (x.event ? '<span class="ev">행사 ' + won(x.event) + '</span>' : '') +
+          '<span class="p">' + won(x.buy) + '</span></div>';
+      }).join('') + '</div></details>';
+  }
+
+  /* ── 카드 썸네일: 엑셀에서 뽑은 정사각 이미지(imgData) 우선 ── */
+  function withImg(h, p) {
+    if (!p.imgData) return h;
+    return h.replace(/<div class="thumb">[\s\S]*?<\/div>/,
+      '<div class="thumb sq"><img src="' + p.imgData + '" alt=""></div>');
+  }
+
   var _prev = window.pcardHtml;
   if (typeof _prev === 'function') {
     window.pcardHtml = function (p) {
       var h = _prev(p);
       if (!p) return h;
+      h = withImg(h, p);
       var i = h.lastIndexOf('</div></div>');            /* pbody 닫기 직전 */
-      return i < 0 ? h : h.slice(0, i) + badgeHtml(p) + h.slice(i);
+      return i < 0 ? h : h.slice(0, i) + optHtml(p) + badgeHtml(p) + h.slice(i);
     };
   }
 
@@ -1586,7 +1636,7 @@ function dashForceRefresh(){
       window.DASH.suppliers.forEach(function (s) {
         (s.products || []).forEach(function (p) {
           var r = by[p.pid]; if (!r) return;
-          ['judge', 'temu_top3', 'unit_g', 'selling', 'assets', 'reg'].forEach(function (k) {
+          ['judge', 'temu_top3', 'unit_g', 'selling', 'assets', 'reg', 'options', 'imgData'].forEach(function (k) {
             if (r[k] != null && p[k] == null) { p[k] = r[k]; n++; }
           });
         });
@@ -1599,6 +1649,8 @@ function dashForceRefresh(){
 
   console.log('[v3] 판정 배지 · GO 필터 · 자료실 2종 로드됨 (key=' + (hasKey() ? 'ON' : 'OFF') + ')');
 })();
+
+
 
 </script>
 <!--/V3PATCH-->

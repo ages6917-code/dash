@@ -1,4 +1,4 @@
-/* ============================================================
+﻿/* ============================================================
    위탁 대시보드 v3 패치 (2026-07-27, 사장님 지시 ■2·■3)
    2) 품목 카드 '등록 판정' 배지 + 근거 1줄 + [GO만 보기] 필터
    3) 자료실 2종 — ① 제품 자료(사장님 원본) ② 상세 이미지(작업물)
@@ -54,13 +54,37 @@
     return '<div class="jbadge ' + v[0] + '">' + v[1] + '</div>' + (why ? '<div class="jwhy">' + why + '</div>' : '');
   }
 
+  /* ── 옵션 목록 (엑셀에서 온 다행 옵션 상품) ── */
+  function optHtml(p) {
+    var o = p.options;
+    if (!o || !o.length) return '';
+    var lo = Math.min.apply(null, o.map(function (x) { return x.buy; }));
+    var hi = Math.max.apply(null, o.map(function (x) { return x.buy; }));
+    return '<details class="optbox"><summary class="optsum">▸ 옵션 ' + o.length + '종 · 공급가 ' +
+      won(lo) + (hi !== lo ? '~' + won(hi) : '') + ' (눌러서 보기)</summary><div class="optlist">' +
+      o.map(function (x) {
+        return '<div class="optrow"><span class="o">' + esc(x.opt) + '</span>' +
+          (x.stock ? '<span class="st">' + esc(x.stock) + '</span>' : '') +
+          (x.event ? '<span class="ev">행사 ' + won(x.event) + '</span>' : '') +
+          '<span class="p">' + won(x.buy) + '</span></div>';
+      }).join('') + '</div></details>';
+  }
+
+  /* ── 카드 썸네일: 엑셀에서 뽑은 정사각 이미지(imgData) 우선 ── */
+  function withImg(h, p) {
+    if (!p.imgData) return h;
+    return h.replace(/<div class="thumb">[\s\S]*?<\/div>/,
+      '<div class="thumb sq"><img src="' + p.imgData + '" alt=""></div>');
+  }
+
   var _prev = window.pcardHtml;
   if (typeof _prev === 'function') {
     window.pcardHtml = function (p) {
       var h = _prev(p);
       if (!p) return h;
+      h = withImg(h, p);
       var i = h.lastIndexOf('</div></div>');            /* pbody 닫기 직전 */
-      return i < 0 ? h : h.slice(0, i) + badgeHtml(p) + h.slice(i);
+      return i < 0 ? h : h.slice(0, i) + optHtml(p) + badgeHtml(p) + h.slice(i);
     };
   }
 
@@ -263,7 +287,7 @@
       window.DASH.suppliers.forEach(function (s) {
         (s.products || []).forEach(function (p) {
           var r = by[p.pid]; if (!r) return;
-          ['judge', 'temu_top3', 'unit_g', 'selling', 'assets', 'reg'].forEach(function (k) {
+          ['judge', 'temu_top3', 'unit_g', 'selling', 'assets', 'reg', 'options', 'imgData'].forEach(function (k) {
             if (r[k] != null && p[k] == null) { p[k] = r[k]; n++; }
           });
         });
@@ -276,3 +300,5 @@
 
   console.log('[v3] 판정 배지 · GO 필터 · 자료실 2종 로드됨 (key=' + (hasKey() ? 'ON' : 'OFF') + ')');
 })();
+
+
