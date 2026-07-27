@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="T봇 현황판">
 <link rel="apple-touch-icon" href="icon180.png">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260727112222">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260727112507">
 <script>(function(){var B=(document.querySelector('meta[name=app-build]')||{}).content;function c(){fetch(location.pathname+'?_c='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/name="app-build" content="([^"]+)"/);if(m&&m[1]&&m[1]!=B){location.replace(location.pathname+'?v='+encodeURIComponent(m[1]))}}).catch(function(){})}setTimeout(c,700);document.addEventListener('visibilitychange',function(){if(!document.hidden)c()})})();</script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon512.png">
@@ -356,6 +356,11 @@ body{background:#eef0f7;color:var(--ink)}
 .main{padding-bottom:70px;min-width:0;max-width:100vw}
 .wrap{min-width:0}
 .barwrap{overflow-x:auto;-webkit-overflow-scrolling:touch}
+/* 그리드/플렉스 아이템의 기본 min-width:auto 가 '가장 긴 자식' 만큼 칸을 벌린다.
+   전부 0 으로 끊어야 폰에서 페이지가 옆으로 밀리지 않는다. */
+.ovgrid>*,.ovgrid>*>*,.gr>*,.r2>*{min-width:0}
+.act,.act *{min-width:0;overflow-wrap:anywhere}
+.act .chips{flex-wrap:wrap}
 .kpis{grid-template-columns:repeat(3,1fr)}.r2{grid-template-columns:1fr}.gr{grid-template-columns:1fr}.tvgr{grid-template-columns:1fr}.tgoal{grid-template-columns:1fr}.monm{grid-template-columns:repeat(2,1fr)}.msrc{grid-template-columns:1fr}}
 /* 상단 최신화 바 + 동기화 시각 */
 .topbar{position:sticky;top:0;z-index:7;display:flex;align-items:center;gap:10px;background:#fff;border:1px solid #e3def7;border-radius:13px;padding:10px 15px;margin-bottom:14px;box-shadow:0 2px 12px rgba(80,70,160,.07)}
@@ -679,7 +684,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-27 11:22",
+    "asof": "07-27 11:25",
     "ago": "18일 전",
     "ok": false,
     "date": "2026-07-08 20:43",
@@ -747,7 +752,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 11:22",
+    "asof": "07-27 11:25",
     "ago": "2일 전",
     "ok": false,
     "date": "2026-07-25 05:20",
@@ -821,8 +826,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 11:22",
-    "ago": "17시간 전",
+    "asof": "07-27 11:25",
+    "ago": "18시간 전",
     "ok": false,
     "date": "2026-07-26 17:22",
     "stale_days": 1,
@@ -907,8 +912,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 11:22",
-    "ago": "20분 전",
+    "asof": "07-27 11:25",
+    "ago": "23분 전",
     "ok": true,
     "date": "2026-07-27 11:01",
     "stale_days": 0,
@@ -956,7 +961,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "07-27 11:22",
+    "asof": "07-27 11:25",
     "ago": "어제",
     "ok": false,
     "date": "2026-07-25 12:00",
@@ -1004,7 +1009,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 11:22",
+    "asof": "07-27 11:25",
     "ago": "19일 전",
     "ok": false,
     "date": "2026-07-07 13:05",
@@ -1044,7 +1049,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 11:22",
+    "asof": "07-27 11:25",
     "ago": "13시간 전",
     "ok": false,
     "date": "2026-07-26 22:03",
@@ -1081,8 +1086,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 11:22",
-    "ago": "21분 전",
+    "asof": "07-27 11:25",
+    "ago": "24분 전",
     "ok": true,
     "date": "2026-07-27 11:01",
     "stale_days": 0,
@@ -1119,7 +1124,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "07-27 11:22",
+    "asof": "07-27 11:25",
     "ago": "3시간 전",
     "ok": true,
     "date": "2026-07-27 07:37",
@@ -1682,7 +1687,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-07-27 11:22",
+ "_autosync": "2026-07-27 11:25",
  "perf": {
   "overseas_total": 11,
   "by_country": [
@@ -1695,7 +1700,7 @@ body{background:#eef0f7;color:var(--ink)}
  },
  "_detail_updated": "2026-07-27T08:41:11"
 };window.__AUTO__={
- "built": "07-27 11:22",
+ "built": "07-27 11:25",
  "snapshot": "07-27 10:45",
  "total": 75,
  "on_total": 71,
@@ -2425,7 +2430,7 @@ body{background:#eef0f7;color:var(--ink)}
   }
  ]
 };window.__PERF__={
- "built": "2026-07-27 11:22",
+ "built": "2026-07-27 11:25",
  "team": "해외팀 (직원10 수집 · 직원11 발송 · 직원12 사이언숯)",
  "month": "2026-07",
  "prev_month": "2026-06",
@@ -2450,7 +2455,7 @@ body{background:#eef0f7;color:var(--ink)}
  "blocked": {
   "reason": "퍼널 불변식 위반: 검수통과(1248) > 수집(565)",
   "detail": "단계별 모수가 서로 다른 대장을 보고 있다는 뜻이다. 원인을 고치기 전까지 이 성과 숫자는 발행하지 않는다.",
-  "at": "2026-07-27 11:22"
+  "at": "2026-07-27 11:25"
  },
  "weeks": [
   {
@@ -2928,7 +2933,7 @@ body{background:#eef0f7;color:var(--ink)}
   "dup_canon": []
  }
 };window.__VERIFY__={
- "built": "07-27 11:22",
+ "built": "07-27 11:25",
  "date": "2026-07-27",
  "summary": "제작 2 → 게이트 통과 1 → 발송 2, 걸러진 것 1건",
  "counts": {
@@ -3032,7 +3037,7 @@ body{background:#eef0f7;color:var(--ink)}
    ]
   }
  ]
-};window.__BACKEND__=false;window.__SYNC__="2026-07-27 11:22";</script>
+};window.__BACKEND__=false;window.__SYNC__="2026-07-27 11:25";</script>
 </head><body><div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
   <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
   <div style="color:#9fb3d1;font-size:13px">접속 비밀번호를 입력하세요</div>
