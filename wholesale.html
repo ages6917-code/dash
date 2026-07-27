@@ -231,6 +231,8 @@
 
 
 
+
+
 <!--V3PATCH-->
 ﻿/* ===== 위탁 대시보드 v3 (2026-07-27) — 판정 배지 · GO 필터 · 자료실 2종 ===== */
 .jbadge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;border-radius:20px;padding:3px 9px;margin-top:7px}
@@ -268,6 +270,7 @@
 .a2empty{color:#9aa;font-size:11.5px;padding:8px 2px}
 .a2lock{background:#fff8e6;border:1px solid #f0dca8;border-radius:10px;padding:13px;font-size:12.5px;color:#8a6d1f;line-height:1.6;margin:12px 0}
 /* ── 카드 이미지: 1:1 정사각 · 절대 자르지 않는다(contain) ── */
+.pcard .mktrow{display:none}   /* ■4 네이버·쿠팡 시장조사 잔재 표기 제거 — 판정은 테무 기준 하나만 */
 .pcard .thumb img{object-fit:contain !important;background:#fff}   /* cover(잘림) → contain */
 .pcard .thumb.sq{height:auto;aspect-ratio:1/1;max-height:210px;background:#fff;overflow:hidden}
 /* ── 옵션 여러 개인 상품 ── */
@@ -1345,6 +1348,8 @@ function dashForceRefresh(){
 
 
 
+
+
 <!--V3PATCH-->
 <script>
 ﻿/* ============================================================
@@ -1361,6 +1366,12 @@ function dashForceRefresh(){
    ============================================================ */
 (function () {
   'use strict';
+  /* ■1 단일 진입 URL — 이 페이지(사장님 전체화면)는 dash.html 을 거쳐 들어온다.
+     via=dash 가 없으면 단일 URL 로 돌려보낸다(키 검사는 dash.html 이 한다). */
+  try {
+    var _q = new URLSearchParams(location.search);
+    if (_q.get('via') !== 'dash') { location.replace('dash.html' + location.search); return; }
+  } catch (e) { }
   /* RTDB 는 REST 로 직접 읽고 쓴다 — 웹소켓 SDK 가 막힌 환경에서도 자료실이 살아 있게. */
   var DB = 'https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app';
   var R = 'shared/wholesale/';

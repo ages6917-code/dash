@@ -12,6 +12,12 @@
    ============================================================ */
 (function () {
   'use strict';
+  /* ■1 단일 진입 URL — 이 페이지(사장님 전체화면)는 dash.html 을 거쳐 들어온다.
+     via=dash 가 없으면 단일 URL 로 돌려보낸다(키 검사는 dash.html 이 한다). */
+  try {
+    var _q = new URLSearchParams(location.search);
+    if (_q.get('via') !== 'dash') { location.replace('dash.html' + location.search); return; }
+  } catch (e) { }
   /* RTDB 는 REST 로 직접 읽고 쓴다 — 웹소켓 SDK 가 막힌 환경에서도 자료실이 살아 있게. */
   var DB = 'https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app';
   var R = 'shared/wholesale/';

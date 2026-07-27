@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>위탁 대시보드</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📦</text></svg>">
+<style>
+  :root{--bg:#eef1f6;--card:#fff;--ink:#1f2937;--sub:#6b7280;--line:#e5e7eb;--accent:#1b8f5a}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Pretendard','Malgun Gothic',-apple-system,sans-serif;background:var(--bg);color:var(--ink);padding:14px}
+  .wrap{max-width:1080px;margin:0 auto}
+  .hero{background:linear-gradient(135deg,#0e9aa4,#1b8f5a);color:#fff;border-radius:16px;padding:17px 18px;margin-bottom:13px}
+  .hero h1{font-size:19px;font-weight:800}
+  .hero p{font-size:12.5px;opacity:.92;margin-top:5px;line-height:1.6}
+  .hero .date{font-size:11.5px;opacity:.85}
+  .guide{background:#fff;border:1px solid var(--line);border-radius:13px;padding:0 14px;margin-bottom:13px}
+  .guide summary{cursor:pointer;font-weight:800;font-size:13.5px;padding:12px 0}
+  .guide ol{margin:0 0 12px 18px;font-size:12.5px;line-height:1.85}
+  .guide .ban{background:#fef2f2;border-radius:9px;padding:9px 11px;font-size:12px;color:#b91c1c;line-height:1.65;margin:0 0 13px}
+  .search{width:100%;padding:11px 13px;font-size:14px;border:1px solid var(--line);border-radius:11px;background:#fff;font-family:inherit;margin-bottom:12px;outline:none}
+  .regwrap{display:grid;grid-template-columns:1.35fr .85fr;gap:13px}
+  @media(max-width:820px){.regwrap{grid-template-columns:1fr}}
+  .regcol{border-radius:16px;padding:14px 15px 8px;border:1px solid var(--line)}
+  .regcol.fit{background:#f0fdf4;border-color:#bbf7d0}
+  .regcol.unfit{background:#fef2f2;border-color:#fecaca}
+  .regh{display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;padding:0 3px}
+  .regh .t{font-size:16px;font-weight:800}
+  .regcol.fit .t{color:#15803d}.regcol.unfit .t{color:#b91c1c}
+  .regh .act{font-size:11.5px;font-weight:700;color:var(--sub)}
+  .regrow{background:#fff;border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-bottom:9px;display:flex;align-items:center;gap:11px}
+  .rimg{width:52px;height:52px;border-radius:9px;background:#fff;flex:none;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:22px;border:1px solid var(--line)}
+  .rimg img{width:100%;height:100%;object-fit:contain;background:#fff}   /* ★자르지 않는다 */
+  .rnm{font-weight:800;font-size:14.5px;line-height:1.3;min-width:0}
+  .rnm small{display:block;color:var(--sub);font-size:11.5px;font-weight:600;margin-top:2px}
+  .rrt{margin-left:auto;text-align:right;white-space:nowrap;flex:none}
+  .rpx{font-size:16px;font-weight:900;white-space:nowrap}
+  .regrow .rrs{margin-left:auto;font-size:12px;color:#b91c1c;font-weight:700;text-align:right;max-width:230px;line-height:1.45}
+  .regempty{color:var(--sub);font-size:13px;padding:18px 6px;text-align:center}
+  .regcard{background:#fff;border:1px solid var(--line);border-radius:13px;padding:13px 14px 11px;margin-bottom:10px}
+  .regcard.done{border-color:#7fc99a;background:#f7fdf9}
+  .rctop{display:flex;align-items:center;gap:11px}
+  .rcwhy{margin-top:9px;background:#f4f7fb;border-radius:9px;padding:8px 11px;font-size:12px;color:#374151;line-height:1.55}
+  .rcwhy b{color:var(--accent)}
+  .rcwhy .warn{color:#b45309;font-weight:700}
+  .jb{display:inline-block;font-size:11.5px;font-weight:800;border-radius:20px;padding:3px 9px;margin-top:6px}
+  .jb.go{background:#e7f4e8;color:#1b7a35}.jb.hold{background:#fff2dd;color:#b06a00}
+  .jb.no{background:#fde8e8;color:#c02626}.jb.wait{background:#eef1f5;color:#6b7280}
+  .rcsell{margin:9px 0 0;padding-left:0;list-style:none}
+  .rcsell li{font-size:12.5px;line-height:1.6;color:#1f2937;padding-left:15px;position:relative}
+  .rcsell li:before{content:"•";position:absolute;left:3px;color:var(--accent);font-weight:900}
+  .rcsell .na{color:var(--sub);font-size:12px;padding-left:0}
+  .opts{margin-top:7px;font-size:11.5px;color:#4b5563;line-height:1.5}
+  .rcbtm{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin-top:11px;border-top:1px dashed var(--line);padding-top:10px}
+  .rcbtn{border:1.5px solid var(--line);background:#fff;border-radius:9px;padding:7px 12px;font-size:12.5px;font-weight:700;cursor:pointer;font-family:inherit;color:#374151;text-decoration:none;display:inline-block}
+  .rcbtn.pri{background:var(--accent);border-color:var(--accent);color:#fff}
+  .rcst{margin-left:auto;font-size:12px;font-weight:800;padding:5px 11px;border-radius:20px}
+  .rcst.wait{background:#fff2dd;color:#b06a00}.rcst.done{background:#1b8f5a;color:#fff}
+  .foot{margin:15px 0 30px;font-size:12.5px;color:var(--sub);text-align:center;line-height:1.7}
+</style>
+</head>
+<body>
+<div class="wrap" id="app"></div>
+<script>
+/* ============================================================
+   위탁 대시보드 — 단일 진입 URL. 접속 키로 역할이 갈린다.
+     ?k=사장키   → 전체 대시보드(wholesale.html)로 이동
+     ?k=대행자키 → 이 페이지에서 등록자 화면을 그린다
+     키 없음     → 빈 화면 (아무 데이터도 요청하지 않는다)
+   ★이 파일에는 상품 데이터가 한 줄도 들어있지 않다.
+     대행자 화면은 RTDB 의 'public' 노드만 읽으며, 그 노드에는
+     매입가·택배비·마진·연락처 필드가 애초에 존재하지 않는다.
+   ============================================================ */
+var BOSS='hd15', AGENT='ag7k2m';
+var DB='https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app';
+var K=(new URLSearchParams(location.search)).get('k')||'';
+if(K===BOSS){ location.replace('wholesale.html?k='+BOSS+'&via=dash'); }
+else if(K!==AGENT){ document.body.innerHTML=''; }
+else { boot(); }
+
+function esc(x){return String(x==null?'':x).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/"/g,'&quot;');}
+function won(n){return n==null?'–':Math.round(n).toLocaleString()+'원';}
+var LIMIT=19800, D=[], _dl={};
+
+function boot(){
+  document.getElementById('app').innerHTML=
+    '<div class="hero"><span class="date" id="date">불러오는 중…</span>'+
+    '<h1>🧑‍💻 등록자 뷰 — 테무 등록 작업판</h1>'+
+    '<p>왼쪽 🟢 초록 제품만 등록합니다. 카드에 적힌 <b>등록가 그대로</b> 넣으시고, 끝나면 [등록 완료 보고]를 눌러 복사된 한 줄만 사장님께 보내주세요.</p></div>'+
+    '<details class="guide"><summary>📖 처음이신가요? — 작업 순서와 배지 읽는 법</summary>'+
+    '<ol><li><b>배지</b>: 🟢 등록 GO = 작업 / 🟡 보류·🔴 부적합 = 손대지 않음 / ⚪ 조사 대기 = 아직 시장조사 전(작업 대상 아님)</li>'+
+    '<li>큰 숫자 = <b>등록가</b>. 그대로 입력하고 <b>⚠️ 19,800원을 넘기지 않습니다.</b></li>'+
+    '<li><b>[📁 제품 자료 받기]</b> 로 사진·자료를 받습니다. 대표이미지는 흰 배경 정사각 800×800px 이상.</li>'+
+    '<li>상세페이지에 <b>원산지를 글자로</b> 적습니다. ("상세페이지 참조" 라고 쓰면 반려)</li>'+
+    '<li>완성물은 <b>[⬆ 작업물 올리기]</b>, 등록이 끝나면 <b>[✅ 등록 완료 보고]</b>.</li></ol>'+
+    '<div class="ban">🚫 금지어: 유기농·무농약·친환경·불검출·항염·면역·해독·다이어트·질병·치료·예방·100%·무조건<br>'+
+    '🚫 타 쇼핑몰 상세 캡처·연예인/캐릭터 이미지·타사 로고 사용 금지<br>🚫 가격 임의 변경 금지 — 이상하면 물어봐 주세요.</div></details>'+
+    '<input class="search" id="search" placeholder="🔍 제품·거래처 검색" oninput="render()">'+
+    '<div id="view"></div><div class="foot" id="foot"></div>';
+  fetch(DB+'/shared/wholesale/public.json').then(function(r){return r.json();}).then(function(v){
+    D=(v||[]).filter(Boolean);
+    document.getElementById('date').textContent='🤖 '+D.length+'개 품목 · 실시간';
+    render();
+  },function(e){ document.getElementById('view').innerHTML='<div class="regempty">데이터를 불러오지 못했습니다: '+esc(e.message)+'</div>'; });
+}
+
+function img(p){ return p.img? '<span class="rimg"><img src="'+p.img+'" alt=""></span>' : '<span class="rimg">📦</span>'; }
+function nm(p){ return '<div class="rnm">'+esc(p.name)+'<small>'+esc(p.vendor)+(p.spec?' · '+esc(p.spec):'')+'</small></div>'; }
+
+function render(){
+  var q=(document.getElementById('search').value||'').toLowerCase();
+  function hit(p){return ((p.name||'')+(p.vendor||'')+(p.spec||'')).toLowerCase().indexOf(q)>=0;}
+  var fit=D.filter(function(p){return p.badge==='GO'&&hit(p);});
+  var unfit=D.filter(function(p){return (p.badge==='NOGO'||p.badge==='HOLD')&&hit(p);});
+  var wait=D.filter(function(p){return p.badge==='WAIT'&&hit(p);}).length;
+  var L=fit.map(function(p){
+    var done=(p.reg&&p.reg.status==='완료');
+    var why='💡 <b>'+won(p.price)+'</b> 로 등록'+(p.why?'<br>'+esc(p.why):'')+
+      (p.price&&p.price<LIMIT?'<br><span class="warn">⚠️ 19,800원 이상으로 올리지 마세요 — 무료배송으로 바뀌어 조건이 달라집니다.</span>':'');
+    var sell=(p.selling&&p.selling.length)
+      ? '<ul class="rcsell">'+p.selling.map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul>'
+      : '<ul class="rcsell"><li class="na">셀링포인트 준비중 — 사장님께 요청하세요.</li></ul>';
+    var opt=(p.options&&p.options.length)? '<div class="opts">📋 옵션 '+p.options.length+'종: '+esc(p.options.slice(0,8).join(' · '))+(p.options.length>8?' …':'')+'</div>':'';
+    return '<div class="regcard'+(done?' done':'')+'">'+
+      '<div class="rctop">'+img(p)+nm(p)+'<div class="rrt"><div class="rpx">'+won(p.price)+'</div>'+
+      '<div class="jb go">🟢 등록 GO</div></div></div>'+
+      '<div class="rcwhy">'+why+'</div>'+sell+opt+
+      '<div class="rcbtm"><button class="rcbtn" onclick="openFiles(\''+p.pid+'\')">📁 제품 자료 받기</button>'+
+      '<button class="rcbtn" onclick="pickWork(\''+p.pid+'\')">⬆ 작업물 올리기</button>'+
+      (done?'':'<button class="rcbtn pri" onclick="regDone(\''+p.pid+'\')">✅ 등록 완료 보고</button>')+
+      '<span class="rcst '+(done?'done':'wait')+'">'+(done?'등록 완료'+(p.reg.done_at?' · '+esc(p.reg.done_at):''):'등록 대기')+'</span>'+
+      '</div></div>';
+  }).join('')||'<div class="regempty">등록 GO 제품이 아직 없습니다.</div>';
+  var R=unfit.map(function(p){
+    var b=p.badge==='HOLD'?'<span class="jb hold">🟡 보류</span>':'<span class="jb no">🔴 부적합</span>';
+    return '<div class="regrow">'+img(p)+nm(p)+'<div class="rrs">'+b+'<br>'+esc(p.reason||'')+'</div></div>';
+  }).join('')||'<div class="regempty">해당 없음.</div>';
+  document.getElementById('view').innerHTML=
+    '<div class="regwrap"><div class="regcol fit"><div class="regh"><div class="t">🟢 적합 · 등록 대상 '+fit.length+'</div>'+
+    '<div class="act">← 여기 제품만 작업</div></div>'+L+'</div>'+
+    '<div class="regcol unfit"><div class="regh"><div class="t">🔴 제외 '+unfit.length+'</div><div class="act">등록 안 함</div></div>'+R+'</div></div>';
+  var dn=fit.filter(function(p){return p.reg&&p.reg.status==='완료';}).length;
+  document.getElementById('foot').textContent='등록 '+dn+' / 대기 '+(fit.length-dn)+'건 · 조사 대기 '+wait+'건은 판정 후 나타납니다.';
+}
+
+function byPid(pid){return D.filter(function(x){return x.pid===pid;})[0];}
+function copyTxt(t){try{var a=document.createElement('textarea');a.value=t;a.style.position='fixed';a.style.opacity='0';
+  document.body.appendChild(a);a.select();document.execCommand('copy');a.remove();}catch(e){}
+  if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(t).then(function(){},function(){});}
+function regDone(pid){var p=byPid(pid);if(!p)return;
+  var line='[등록완료] '+pid+' · '+p.name+' · '+new Date().toISOString().slice(0,10);
+  copyTxt(line); alert('✅ 아래 한 줄이 복사됐습니다.\n\n'+line+'\n\n사장님께 그대로 보내주세요.');}
+
+/* ── 자료실 (파일만 주고받는다 · 가격 정보 없음) ── */
+var MAXB=8*1024*1024, OKX=['jpg','jpeg','png','webp','gif','xlsx','xls','csv','pdf','zip'];
+function fx(n){return String(n||'').split('.').pop().toLowerCase();}
+function fapi(vk,kind,opt){return fetch(DB+'/shared/wholesale/files/'+encodeURIComponent(vk)+'/'+kind+'.json',opt).then(function(r){return r.json();});}
+function fsz(b){return b==null?'':(b>1048576?(b/1048576).toFixed(1)+'MB':Math.max(1,Math.round(b/1024))+'KB');}
+function modal(html){var m=document.getElementById('fmodal');
+  if(!m){m=document.createElement('div');m.id='fmodal';
+    m.style.cssText='position:fixed;inset:0;background:rgba(15,22,41,.55);display:flex;align-items:center;justify-content:center;z-index:9999;padding:16px';
+    m.onclick=function(e){if(e.target===m)m.style.display='none';};document.body.appendChild(m);}
+  m.innerHTML='<div style="background:#fff;border-radius:14px;max-width:520px;width:100%;max-height:80vh;overflow:auto;padding:16px">'+html+'</div>';
+  m.style.display='flex';}
+function openFiles(pid){var p=byPid(pid);if(!p)return;
+  modal('<div style="font-weight:800;margin-bottom:8px">📁 '+esc(p.name)+' — 제품 자료</div><div id="flist">불러오는 중…</div>');
+  fapi(p.vkey,'src').then(function(v){v=v||{};_dl[p.vkey]=v;var ids=Object.keys(v);
+    document.getElementById('flist').innerHTML= ids.length? ids.map(function(id){var it=v[id];
+      return '<div style="display:flex;align-items:center;gap:8px;border:1px solid #e5e7eb;border-radius:9px;padding:7px 9px;margin-bottom:6px">'+
+      (/^(jpg|jpeg|png|webp|gif)$/.test(fx(it.name))?'<img src="'+it.data+'" style="width:36px;height:36px;object-fit:contain;background:#fff;border-radius:6px">':'<span style="font-size:18px">📄</span>')+
+      '<div style="font-size:12px;font-weight:600;word-break:break-all">'+esc(it.name)+'<small style="display:block;color:#8a94a3;font-weight:500">'+fsz(it.size)+'</small></div>'+
+      '<button class="rcbtn" style="margin-left:auto" onclick="fdl(\''+p.vkey+'\',\''+id+'\')">⬇ 받기</button></div>';}).join('')
+      : '<div style="color:#6b7280;font-size:12.5px">아직 올라온 자료가 없습니다. 사장님께 요청하세요.</div>';});}
+function fdl(vk,id){var it=(_dl[vk]||{})[id];if(!it)return;var a=document.createElement('a');a.href=it.data;a.download=it.name;document.body.appendChild(a);a.click();a.remove();}
+function pickWork(pid){var p=byPid(pid);if(!p)return;var i=document.createElement('input');i.type='file';i.multiple=true;
+  i.accept='.jpg,.jpeg,.png,.webp,.gif,.xlsx,.xls,.csv,.pdf,.zip';i.onchange=function(){upWork(p,i.files);};i.click();}
+function upWork(p,files){files=Array.prototype.slice.call(files||[]).filter(function(f){
+    if(OKX.indexOf(fx(f.name))<0){alert('❌ 올릴 수 없는 형식: '+f.name);return false;}
+    if(f.size>MAXB){alert('❌ 8MB를 넘습니다: '+f.name);return false;} return true;});
+  if(!files.length)return; var done=0;
+  files.forEach(function(f){var r=new FileReader();
+    r.onload=function(){fapi(p.vkey,'work',{method:'POST',body:JSON.stringify({name:f.name,data:r.result,size:f.size,ts:Date.now(),from:'대행자'})})
+      .then(function(){done++;if(done===files.length)alert('✅ '+done+'개 올렸습니다. 사장님 화면에서 바로 보입니다.');},
+            function(e){alert('❌ 업로드 실패: '+e.message);});};
+    r.readAsDataURL(f);});}
+</script>
+</body>
+</html>
