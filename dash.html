@@ -121,9 +121,14 @@ function boot(){
     D.forEach(function(p){ var r=PR[p.pid]; if(r&&r.sell!=null) p.price=r.sell; });
     document.getElementById('date').textContent='🤖 '+D.length+'개 품목 · 실시간';
     /* ■2 배송비 정책 반영 도움말 생성 */
+    /* 2026-07-28 수리 — 정책 레코드의 실제 키는 customer_ship_credit / free_ship_threshold 다.
+       종전 코드는 shipRate / shipUnder 를 읽어 항상 undefined → 도움말 줄이 통째로 안 나왔다.
+       (커밋·push 는 정상이었고, 라이브에 안 보인 진짜 원인이 이 키 불일치다) */
+    var shipRate  = (POL.shipRate  != null) ? POL.shipRate  : POL.customer_ship_credit;
+    var shipUnder = (POL.shipUnder != null) ? POL.shipUnder : POL.free_ship_threshold;
     var shipHtml = '';
-    if (POL.shipUnder != null && POL.shipRate != null) {
-      shipHtml = '<li>판매가가 '+won(POL.shipUnder)+' 미만인 상품은 <b>고객 배송비 '+won(POL.shipRate)+'</b>으로 설정합니다. '+won(POL.shipUnder)+' 이상이면 무료배송.</li>';
+    if (shipUnder != null && shipRate != null) {
+      shipHtml = '<li>판매가가 '+won(shipUnder)+' 미만인 상품은 <b>고객 배송비 '+won(shipRate)+'</b>으로 설정합니다. '+won(shipUnder)+' 이상이면 무료배송.</li>';
     }
     document.getElementById('guide').innerHTML=
       '<summary>📖 처음이신가요? — 작업 순서와 배지 읽는 법</summary>'+
