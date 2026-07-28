@@ -1085,6 +1085,16 @@ function dashForceRefresh(){
       + '    <button class="v2btn ghost" onclick="closeModal()">취소</button>'
       + '    <button class="v2btn ghost" style="color:#dc2626" onclick="delProduct(\'' + pid + '\')">🗑 제품 삭제</button>'
       + '  </div>'
+      /* (2026-07-29 단계2) 판매 중 표시 토글 — 사장키 전용 */
+      + (function() {
+          var BP = window.BPSTATE || {};
+          var selling = (BP.selling || {})[pid] || {};
+          return hasKey() ? '<div style="margin-top:14px;padding-top:14px;border-top:1px dashed var(--line)">'
+            + '  <button id="sellingToggle" class="v2btn" style="width:100%;background:' + (selling.on ? '#2e7d32' : 'var(--accent)') + '" onclick="toggleSelling(\'' + pid + '\')">'
+            + (selling.on ? '✓ 판매 중 표시됨' : '🛒 판매 중 표시') + '</button>'
+            + '  <div class="v2sub" style="text-align:center;margin-top:6px">테무에 이미 올려둔 상품을 표시하세요</div>'
+            + '</div>' : '';
+        })()
       /* (2026-07-28) 뒤로가기 버튼 추가 */
       + '  <div style="text-align:center;margin-top:12px">'
       + '    <button class="v2btn ghost" style="width:100%;max-width:300px;font-size:15px;padding:12px" onclick="closeModal()">← 뒤로가기</button>'
@@ -2193,8 +2203,9 @@ body.modal-open #bosspanel{display:none}
 
   var DBU = 'https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app';
   var R = '/shared/wholesale/';
-  var S = { products: [], vendors: [], confirm: {}, regstate: {}, files: {} };
+  var S = { products: [], vendors: [], confirm: {}, regstate: {}, files: {}, selling: {} };
   var F = { kind: null, key: null };          // 현재 필터
+  window.BPSTATE = S;                         // v2 editProduct에서 참조용
 
   function esc(s) {
     return String(s == null ? '' : s).replace(/[<>&"]/g, function (c) {
@@ -2249,6 +2260,23 @@ body.modal-open #bosspanel{display:none}
     return c;
   }
 
+  function listSelling() {          // 🛒 판매 중 — selling 노드 + 지인 등록 완료 건
+    var out = [];
+    S.products.forEach(function (p) {
+      // 1) 사장님이 수동으로 표시한 경우
+      if (S.selling[p.pid] && S.selling[p.pid].on) {
+        out.push(p);
+        return;
+      }
+      // 2) 지인이 등록 완료 체크한 경우 자동 전환
+      var r = S.regstate[p.pid];
+      if (r && String(r.status || '').toUpperCase() === 'DONE') {
+        out.push(p);
+      }
+    });
+    return out;
+  }
+
   /* ── 카테고리 자동 분류 (품목 g + 이름 기준) ───────────── */
   var CATS = [
     ['닭가슴살·간편식', /닭가슴살|간편식|도시락|건강스낵|샐러드/],
@@ -2278,9 +2306,36 @@ body.modal-open #bosspanel{display:none}
 
   window.__bpRefresh = function () { try { start(); } catch (e) { } };
 
+  /* ── 판매 중 토글 (사장키 화면 전용, 2026-07-29 단계2) ── */
+  window.toggleSelling = function (pid) {
+    var now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    var current = S.selling[pid] || {};
+    var newState = !current.on;
+
+    S.selling[pid] = { on: newState, at: now, by: '사장님' };
+
+    fetch(DBU + R + 'selling/' + pid + '.json', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(S.selling[pid])
+    }).then(function () {
+      paint();  // 패널 숫자 갱신
+      // 모달이 열려 있으면 버튼 텍스트만 갱신
+      var btn = document.getElementById('sellingToggle');
+      if (btn) {
+        btn.textContent = newState ? '✓ 판매 중 표시됨' : '🛒 판매 중 표시';
+        btn.style.background = newState ? '#2e7d32' : 'var(--accent)';
+      }
+    }).catch(function (e) {
+      console.error('[판매중] 저장 실패:', e);
+      alert('저장에 실패했습니다. 다시 시도해주세요.');
+    });
+  };
+
   function paint() {
     var wait = listWaiting().length, re = listRecheck().length;
     var nf = listNoFiles(), nfN = Object.keys(nf).length, rc = regCount();
+    var selling = listSelling().length;
     var cc = catCounts();
 
     var html = '<h3>오늘 할 일</h3><div class="bp-todo">' +
@@ -2289,6 +2344,7 @@ body.modal-open #bosspanel{display:none}
       tile('nofile', '📦', '자료 없는 확정품', nfN, '거래처 기준') +
       tile('reg', '🟢', '지인 진행', rc.TODO + rc.WORK + rc.DONE,
            '등록 ' + rc.TODO + ' · 작업 ' + rc.WORK + ' · 완료 ' + rc.DONE) +
+      tile('selling', '🛒', '판매 중', selling, '테무 등록 상품') +
       '</div>';
 
     html += '<h3>카테고리</h3><div class="bp-chips">' +
@@ -2355,6 +2411,17 @@ body.modal-open #bosspanel{display:none}
           nf[vid].map(function (p) { return esc(p.name); }).join(', ') + '</div></div>';
       }).join('') : '<div class="bp-empty">자료가 빠진 확정품이 없습니다.</div>';
     }
+    else if (F.kind === 'selling') {
+      title = '🛒 판매 중';
+      var list = listSelling();
+      body = list.length ? list.map(function (p) {
+        var src = S.selling[p.pid] ? '사장님 표시' : '지인 등록 완료';
+        var at = S.selling[p.pid] ? (S.selling[p.pid].at || '') : (S.regstate[p.pid] || {}).at || '';
+        return '<div class="bp-row"><div class="r1">' + (p.emoji || '📦') + ' ' + esc(p.name) + '</div>' +
+          '<div class="r2">' + esc(vname(p.vendorId)) + ' · ' + src +
+          (at ? ' · ' + at.substring(0, 10) : '') + '</div></div>';
+      }).join('') : '<div class="bp-empty">아직 판매 중인 상품이 없습니다.</div>';
+    }
     else if (F.kind === 'cat') {
       title = '🏷 ' + F.key;
       body = rowsOf(S.products.filter(function (p) { return catOf(p) === F.key; }));
@@ -2415,9 +2482,10 @@ body.modal-open #bosspanel{display:none}
   function start() {
     mount();
     Promise.all([get('products'), get('vendors'), get('confirm'),
-                 get('regstate'), get('files')]).then(function (a) {
+                 get('regstate'), get('files'), get('selling')]).then(function (a) {
       S.products = a[0] || []; S.vendors = a[1] || [];
       S.confirm = a[2] || {}; S.regstate = a[3] || {}; S.files = a[4] || {};
+      S.selling = a[5] || {};
       paint();
       /* 데이터 기준일·산정 문구를 실제 값으로 되돌린다(구버전 6/27·네이버 문구 잔존 제거) */
       get('dataUpdated').then(function (d) {
