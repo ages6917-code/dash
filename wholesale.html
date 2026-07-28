@@ -2345,7 +2345,12 @@ body.has-bp{padding-right:316px}
     if (document.getElementById('bosspanel')) return;
     var p = document.createElement('div'); p.id = 'bosspanel';
     p.innerHTML = '<h3>오늘 할 일</h3><div class="bp-empty">불러오는 중…</div>';
-    document.body.appendChild(p);
+    /* ★DOM 상 '맨 앞'에 넣는다. PC 는 position:fixed 라 위치가 같지만,
+       폰은 static 으로 바뀌므로 DOM 순서가 곧 화면 순서다 —
+       body 끝에 붙이면 폰에서 패널이 페이지 맨 아래로 내려간다(2026-07-28 실측). */
+    var hero = document.querySelector('.hero');
+    if (hero && hero.parentNode) hero.parentNode.insertBefore(p, hero);
+    else document.body.insertBefore(p, document.body.firstChild);
     var v = document.getElementById('view');
     var box = document.createElement('div'); box.id = 'bpview';
     if (v && v.parentNode) v.parentNode.insertBefore(box, v);
