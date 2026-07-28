@@ -615,8 +615,24 @@ function _img(n){return (window.__IMG__&&window.__IMG__[n])||('images/'+n);}
     document.getElementById('modal').innerHTML=c;
     document.getElementById('overlay').classList.add('on');if(window.loadVimg)loadVimg(vk);
   }
-  function closeModal(){document.getElementById('overlay').classList.remove('on');}
+  function closeModal(){
+    document.getElementById('overlay').classList.remove('on');
+    /* (2026-07-28) 모달 닫을 때 history state 제거 — 폰 뒤로가기 대응 */
+    try {
+      if (history.state && history.state.modalOpen) {
+        history.back();
+      }
+    } catch (e) {}
+  }
   document.addEventListener('keydown',function(e){if(e.key==='Escape')closeModal();});
+  /* (2026-07-28) 폰 뒤로가기 버튼 대응 — 페이지 이탈 대신 모달만 닫힘 */
+  window.addEventListener('popstate', function(e) {
+    var ov = document.getElementById('overlay');
+    if (ov && ov.classList.contains('on')) {
+      ov.classList.remove('on');
+      e.preventDefault();
+    }
+  });
   setHeader(); render();
 </script>
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
@@ -1035,6 +1051,10 @@ function dashForceRefresh(){
     var modal = document.getElementById('modal'), ov = document.getElementById('overlay');
     if (!modal || !ov) return;
     _openIdx = null;
+    /* (2026-07-28) 모달 열 때 history state 추가 — 폰 뒤로가기 대응 */
+    try {
+      history.pushState({ modalOpen: true }, '');
+    } catch (e) {}
     modal.innerHTML =
       '<div class="mhead"><div class="avatar">' + (p.emoji || '📦') + '</div>'
       + '<div><h2 style="font-size:19px">' + esc(p.name) + '</h2>'
@@ -1054,12 +1074,16 @@ function dashForceRefresh(){
       + '      <input id="pe_mg" type="number" inputmode="numeric" oninput="peCalc(\'mg\')" placeholder="예) 40"></div>'
       + '  </div>'
       + '  <div class="pe-calc" id="pe_calc"></div>'
-      + '  <div class="pe-row"><label>시장 시세 <i>참고용 메모</i></label><input id="pe_mkt" value="' + esc(p.mkt || '') + '" placeholder="예) 네이버/쿠팡 20개입 23,900~30,900"></div>'
+      /* (2026-07-28) 네이버 시장시세 필드 제거 */
       + '  <div class="pe-row"><label>메모</label><textarea id="pe_note" rows="2" placeholder="특이사항·검증 필요 등">' + esc(p.note || '') + '</textarea></div>'
       + '  <div class="pe-btns">'
       + '    <button class="v2btn" style="flex:1" onclick="saveProduct(\'' + pid + '\')">💾 저장</button>'
       + '    <button class="v2btn ghost" onclick="closeModal()">취소</button>'
       + '    <button class="v2btn ghost" style="color:#dc2626" onclick="delProduct(\'' + pid + '\')">🗑 제품 삭제</button>'
+      + '  </div>'
+      /* (2026-07-28) 뒤로가기 버튼 추가 */
+      + '  <div style="text-align:center;margin-top:12px">'
+      + '    <button class="v2btn ghost" style="width:100%;max-width:300px;font-size:15px;padding:12px" onclick="closeModal()">← 뒤로가기</button>'
       + '  </div>'
       + '  <div class="v2sub" style="text-align:center;margin-top:8px">☁️ 저장하면 데탑·노트북·폰에 즉시 반영됩니다</div>'
       + '</div>';
@@ -1158,8 +1182,8 @@ function dashForceRefresh(){
     });
   };
 
-  /* 제품 카드에 클릭 붙이기 — 기존 pcardHtml 을 감싸서 확장(원본 유지) */
-  var _origPcard = window.pcardHtml;
+  /* 제품 카드에 클릭 붙이기 제거 — 가격 칸 탭 시 모달이 열리지 않게 (2026-07-28) */
+  /* var _origPcard = window.pcardHtml;
   if (typeof _origPcard === 'function') {
     window.pcardHtml = function (p) {
       var html = _origPcard(p);
@@ -1167,7 +1191,7 @@ function dashForceRefresh(){
       return html.replace('<div class="pcard">',
         '<div class="pcard pcard-edit" onclick="event.stopPropagation();editProduct(\'' + p.pid + '\')" title="눌러서 수정">');
     };
-  }
+  } */
 
   /* ---------- 5) 토스트 ---------- */
   function toast(msg) {
@@ -1738,6 +1762,10 @@ function dashForceRefresh(){
       '<div id="v2warn_' + p.pid + '">' + warnHtml(s) + '</div>' +
       '<div class="ledger" id="v2led_' + p.pid + '">' + ledHtml(s) + '</div>' +
       '<div class="netband' + (s.net <= 0 ? ' bad' : '') + '" id="v2net_' + p.pid + '">' + netHtml(s) + '</div>' +
+      /* (2026-07-28) 제품 정보 수정 링크 추가 */
+      '<div style="text-align:center;margin:12px 0 8px;border-top:1px dashed var(--line);padding-top:12px">' +
+      '<a href="javascript:void(0)" onclick="editProduct(\'' + p.pid + '\')" style="color:var(--accent);text-decoration:none;font-size:14px;font-weight:700">✏️ 제품 정보 수정</a>' +
+      '<div style="font-size:11px;color:var(--sub);margin-top:4px">(매입가·배송비·규격·메모 등)</div></div>' +
       (pr ? '<div class="pricelog">✏️ 사장님이 정한 값 · ' + esc(pr.at || '') + '</div>' : '') +
       (b ? '<div class="bdline">⚖️ <b>19,800원 ' + (b.better === 'A' ? '미만' : '이상') + ' 책정이 유리 (+' + b.diff_pp + '%p)</b>' +
         ' — ' + won(b.a_price) + ' → 마진 ' + b.a_pct + '% vs ' + won(b.b_price) + ' → ' + b.b_pct + '%</div>' : '');
