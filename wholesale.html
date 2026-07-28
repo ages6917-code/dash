@@ -1198,7 +1198,7 @@ function dashForceRefresh(){
     var t = document.getElementById('v2toast');
     if (!t) { t = document.createElement('div'); t.id = 'v2toast'; document.body.appendChild(t); }
     t.textContent = msg; t.className = 'on';
-    clearTimeout(t._h); t._h = setTimeout(function () { t.className = ''; }, 2600);
+    clearTimeout(t._h); t._h = setTimeout(function () { t.className = ''; }, 2000);   /* 2026-07-28 ■3 — 2초 후 자동 소멸 */
   }
   window.v2toast = toast;
 
@@ -1543,7 +1543,36 @@ function dashForceRefresh(){
       if (again && window.__reopenSup) window.__reopenSup();
     }, function () { });
   }
-  window.jbSet = function (pid, v) {
+  /* ===== 2026-07-28 ■3 — 확정 클릭 시 화면이 튀지 않게 =====================
+     종전: 저장 후 __reopenSup() 으로 목록 전체를 다시 그렸다 →
+           카드 위치·스크롤·필터가 초기화돼 사장님이 보던 자리를 잃는다.
+     현재: 그 카드의 확정 줄(.cfrow[data-cfpid]) 만 제자리에서 갈아끼운다.  */
+  function cfRepaint(pid) {
+    var el = document.querySelector('.cfrow[data-cfpid="' + pid + '"]');
+    if (!el) return false;
+    var p = null;
+    try { p = (window.V2A_FIND ? window.V2A_FIND(pid) : null); } catch (e) { }
+    if (!p) p = { pid: pid };
+    var tmp = document.createElement('div');
+    tmp.innerHTML = cfHtml(p);
+    var fresh = tmp.firstChild;
+    el.parentNode.replaceChild(fresh, el);
+    return true;
+  }
+  function bpBump() {                     /* 상단 칩 숫자만 조용히 갱신 */
+    try { if (window.__bpRefresh) window.__bpRefresh(); } catch (e) { }
+  }
+  window.jbSet = function (pid, v, forced) {
+    /* 시스템 제안이 '부적합'인데 GO 를 누르면 한 번만 되묻는다(보류 제안은 그냥 통과) */
+    if (v === 'GO' && !forced) {
+      var p = null;
+      try { p = window.V2A_FIND ? window.V2A_FIND(pid) : null; } catch (e) { }
+      var j = (p && p.judge) || {};
+      if (String(j.verdict || '').toUpperCase() === 'NOGO') {
+        var why = (j.reason || '시스템이 부적합으로 판정했습니다').toString().split('\n')[0];
+        if (!window.confirm('⚠️ 시스템 판정은 부적합입니다.\n\n' + why + '\n\n그래도 GO 로 확정할까요?')) return;
+      }
+    }
     var d = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
     var now = d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
     var body = { verdict: v, at: now, by: '사장님' };
@@ -1552,13 +1581,15 @@ function dashForceRefresh(){
       .then(function () {
         CF[pid] = body;
         toast('✅ ' + pid + ' → ' + VD[v][1] + ' 확정' + (v === 'GO' ? ' (대행자 화면에 바로 뜹니다)' : ''));
-        if (window.__reopenSup) window.__reopenSup();
+        if (!cfRepaint(pid) && window.__reopenSup) window.__reopenSup();  /* 못 찾을 때만 폴백 */
+        bpBump();
       }, function (e) { toast('❌ 확정 저장 실패: ' + (e && e.message)); });
   };
   window.jbClear = function (pid) {
     api(R + 'confirm/' + encodeURIComponent(pid), { method: 'DELETE' }).then(function () {
       delete CF[pid]; toast('↩ 확정을 지웠습니다 (다시 확정 대기)');
-      if (window.__reopenSup) window.__reopenSup();
+      if (!cfRepaint(pid) && window.__reopenSup) window.__reopenSup();
+      bpBump();
     });
   };
 
@@ -1782,7 +1813,8 @@ function dashForceRefresh(){
       ? '<span class="cfok ' + VD[c.verdict][0] + '">✅ 사장님 확정: ' + VD[c.verdict][1] + '</span>' +
       '<span class="cfat">' + esc(c.at || '') + '</span>'
       : '<span class="cfwait">⏳ 사장님 확정 대기</span>';
-    return '<div class="cfrow">' + line + btn + '</div>';
+    /* 2026-07-28 ■3 — 카드마다 제자리 갱신용 표식. 전체 재렌더 대신 이 줄만 바꾼다. */
+    return '<div class="cfrow" data-cfpid="' + esc(p.pid) + '">' + line + btn + '</div>';
   }
 
   function badgeHtml(p) {
@@ -1844,6 +1876,19 @@ function dashForceRefresh(){
       return i < 0 ? h : h.slice(0, i) + optHtml(p) + badgeHtml(p) + h.slice(i);
     };
   }
+
+  /* pid 로 품목을 되찾는다 — 제자리 갱신(cfRepaint)과 부적합 확인창이 쓴다.
+     window.DASH 는 RTDB 로 채워지므로 항상 최신이다. */
+  window.V2A_FIND = function (pid) {
+    try {
+      var sup = (window.DASH && window.DASH.suppliers) || [];
+      for (var i = 0; i < sup.length; i++) {
+        var ps = sup[i].products || [];
+        for (var j = 0; j < ps.length; j++) if (ps[j].pid === pid) return ps[j];
+      }
+    } catch (e) { }
+    return null;
+  };
 
   /* ── 필터 3종: 전체 / 확정 GO / 확정 대기 ── */
   window.__jf = 'all';
@@ -2222,6 +2267,8 @@ body.has-bp{padding-right:316px}
       '<div class="bp-n' + (n ? '' : ' zero') + '">' + icon + ' ' + n + '</div>' +
       '<div class="bp-l">' + label + (sub ? '<br>' + sub : '') + '</div></div>';
   }
+
+  window.__bpRefresh = function () { try { start(); } catch (e) { } };
 
   function paint() {
     var wait = listWaiting().length, re = listRecheck().length;
