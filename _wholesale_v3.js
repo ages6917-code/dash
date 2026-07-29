@@ -348,7 +348,8 @@
       '<div id="v2warn_' + p.pid + '">' + warnHtml(s) + '</div>' +
       '<div class="ledger" id="v2led_' + p.pid + '">' + ledHtml(s) + '</div>' +
       '<div class="netband' + (s.net <= 0 ? ' bad' : '') + '" id="v2net_' + p.pid + '">' + netHtml(s) + '</div>' +
-      (pr ? '<div class="pricelog">✏️ 사장님이 정한 값 · ' + esc(pr.at || '') +
+      /* 누가 정했는지 그대로 표시한다 — 사장님이 안 만진 값을 '사장님이 정한 값'으로 쓰면 안 된다 */
+      (pr ? '<div class="pricelog">✏️ ' + esc(pr.by || '사장님') + ' 지정 · ' + esc(pr.at || '') +
         (pr.cour != null ? ' · 배송비 ' + won(pr.cour) + ' <b>직접 지정</b>(원래 ' + won(courBase(p)) + ')' : '') + '</div>' : '') +
       (b ? '<div class="bdline">⚖️ <b>19,800원 ' + (b.better === 'A' ? '미만' : '이상') + ' 책정이 유리 (+' + b.diff_pp + '%p)</b>' +
         ' — ' + won(b.a_price) + ' → 마진 ' + b.a_pct + '% vs ' + won(b.b_price) + ' → ' + b.b_pct + '%</div>' : '');
