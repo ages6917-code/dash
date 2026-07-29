@@ -82,9 +82,25 @@
     var d = new Date(), z = function (n) { return (n < 10 ? '0' : '') + n; };
     return d.getFullYear() + '-' + z(d.getMonth() + 1) + '-' + z(d.getDate()) + ' ' + z(d.getHours()) + ':' + z(d.getMinutes());
   }
+  /* 택배비 우선순위 (2026-07-29 사장님 지시)
+       ① 사장님이 카드에서 직접 고친 값  ② 거래처 정책·조사 계산값  ③ 정본 기본값
+     ※ 저장 위치는 price/<pid>.cour — products 노드는 보안 규칙상 화면에서 못 쓴다(실측 확인).
+        그래서 배송비만 따로 이 노드에 얹는다. 대행자 화면도 같은 노드를 읽으므로 함께 반영된다. */
   function courOf(p) {
+    var r = PRICE[p.pid];
+    if (r && r.cour != null) return r.cour;
     var j = p.judge || {};
     return j.courier != null ? j.courier : (polOK() ? POL.courier_cost_default : null);
+  }
+  function courBase(p) {                    /* 사장님 지정을 뺀 '원래' 값 — 되돌리기용 */
+    var j = p.judge || {};
+    return j.courier != null ? j.courier : (polOK() ? POL.courier_cost_default : null);
+  }
+  function courSrc(p) {
+    var r = PRICE[p.pid];
+    if (r && r.cour != null) return '사장님이 직접 정함';
+    var j = p.judge || {};
+    return j.courier != null ? '거래처 배송정책' : '정본 기본값(실비 미확보)';
   }
   function priceOf(p) {
     var r = PRICE[p.pid];
@@ -202,7 +218,15 @@
   /* ── ⑤ 입력칸 (사장님 키에서만 수정 가능) ── */
   function calcRow(p, s) {
     var ro = hasKey() ? '' : ' readonly';
-    return '<div class="calcrow">' +
+    var over = (PRICE[p.pid] || {}).cour != null;
+    /* 배송비는 한 줄을 통째로 쓴다 — 390px 폰에서 3칸으로 쪼개면 숫자가 붙어 보인다(2026-07-27 실측 교훈) */
+    return '<div class="calcrow one"><div class="cfield' + (over ? ' edited' : '') + '">' +
+      '<label>거래처 택배비 <i>· ' + courSrc(p) + '</i></label><div class="inw">' +
+      '<input id="v2ci_' + p.pid + '" type="number" step="100" inputmode="numeric" value="' + s.cour + '"' + ro +
+      ' oninput="v2Calc(\'' + p.pid + '\',\'c\')" onchange="v2Save(\'' + p.pid + '\')"><span class="u">원</span>' +
+      (over && hasKey() ? '<button class="curev" onclick="v2CourReset(\'' + p.pid + '\')" title="원래 값으로">↩</button>' : '') +
+      '</div></div></div>' +
+      '<div class="calcrow">' +
       '<div class="cfield"><label>판매가 (등록가)</label><div class="inw">' +
       '<input id="v2pi_' + p.pid + '" type="number" step="100" inputmode="numeric" value="' + s.price + '"' + ro +
       ' oninput="v2Calc(\'' + p.pid + '\',\'p\')" onchange="v2Save(\'' + p.pid + '\')"><span class="u">원</span></div></div>' +
@@ -217,7 +241,11 @@
     var p = PMAP[pid]; if (!p) return;
     var pe = document.getElementById('v2pi_' + pid), me = document.getElementById('v2mi_' + pid);
     if (!pe || !me) return;
-    var buy = p.buy, cour = courOf(p), price;
+    /* 배송비 칸이 있으면 그 값이 기준이다 — 사장님이 방금 고친 값을 즉시 반영해야 한다 */
+    var ce = document.getElementById('v2ci_' + pid);
+    var buy = p.buy, price;
+    var cour = ce ? parseInt(String(ce.value).replace(/[^\d]/g, ''), 10) : courOf(p);
+    if (cour == null || isNaN(cour)) cour = courOf(p);
     if (src === 'm') {
       price = solvePrice(parseFloat(me.value), buy, cour);
       if (price == null) return;
@@ -227,6 +255,7 @@
       if (!price) return;
     }
     var s = settle(price, buy, cour); if (!s) return;
+    /* 배송비를 고친 경우엔 판매가를 그대로 두고 마진율만 다시 계산해 보여준다 */
     if (src !== 'm') me.value = s.pct;
     var set = function (id, html) { var e = document.getElementById(id); if (e) e.innerHTML = html; };
     set('v2op_' + pid, numf(price));
@@ -245,15 +274,65 @@
     if (!hasKey()) return;
     var p = PMAP[pid], pe = document.getElementById('v2pi_' + pid); if (!p || !pe) return;
     var price = parseInt(String(pe.value).replace(/[^\d]/g, ''), 10); if (!price) return;
-    var s = settle(price, p.buy, courOf(p));
+    /* 배송비도 함께 저장한다. 원래 값과 같으면 굳이 사장님 지정으로 박제하지 않는다(되돌릴 여지를 남김). */
+    var ce = document.getElementById('v2ci_' + pid);
+    var cour = ce ? parseInt(String(ce.value).replace(/[^\d]/g, ''), 10) : null;
+    if (cour == null || isNaN(cour) || cour < 0) cour = null;
+    var keep = (cour != null && cour !== courBase(p)) ? cour : null;
+    var s = settle(price, p.buy, cour != null ? cour : courOf(p));
     var body = { sell: price, margin_pct: s ? s.pct : null, at: nowStr(), by: '사장님' };
+    if (keep != null) { body.cour = keep; body.cour_by = '사장님'; }
     api(R + 'price/' + encodeURIComponent(pid), { method: 'PUT', body: JSON.stringify(body) })
-      .then(function () { return api(R + 'pricelog', { method: 'POST', body: JSON.stringify({ pid: pid, sell: price, margin_pct: body.margin_pct, ts: body.at, by: '사장님' }) }); })
+      .then(function () { return api(R + 'pricelog', { method: 'POST', body: JSON.stringify({ pid: pid, sell: price, margin_pct: body.margin_pct, cour: keep, ts: body.at, by: '사장님' }) }); })
       .then(function () {
         PRICE[pid] = body;
-        toast('💾 ' + pid + ' 판매가 ' + won(price) + ' 저장 (마진 ' + body.margin_pct + '%) — 대행자 화면에도 이 값이 나갑니다');
-      }, function () { toast('❌ 판매가 저장 실패 — 다시 눌러 주세요'); });
+        toast('💾 ' + pid + ' 저장 — 판매가 ' + won(price) + ' · 마진 ' + body.margin_pct + '%' +
+          (keep != null ? ' · 배송비 ' + won(keep) : '') + ' (대행자·다른 기기에도 반영)');
+        if (window.v2Repaint) window.v2Repaint(pid);
+      }, function () { toast('❌ 저장 실패 — 다시 눌러 주세요'); });
   };
+
+  /* 배송비를 원래 값(거래처 정책·조사값)으로 되돌린다 */
+  window.v2CourReset = function (pid) {
+    if (!hasKey()) return;
+    var p = PMAP[pid]; if (!p) return;
+    var cur = PRICE[pid] || {};
+    var body = { sell: cur.sell != null ? cur.sell : priceOf(p), margin_pct: cur.margin_pct != null ? cur.margin_pct : null, at: nowStr(), by: '사장님' };
+    api(R + 'price/' + encodeURIComponent(pid), { method: 'PUT', body: JSON.stringify(body) })
+      .then(function () {
+        PRICE[pid] = body;
+        toast('↩ ' + pid + ' 배송비를 원래 값 ' + won(courBase(p)) + '으로 되돌렸습니다');
+        if (window.v2Repaint) window.v2Repaint(pid);
+      }, function () { toast('❌ 되돌리기 실패 — 다시 눌러 주세요'); });
+  };
+
+  /* [제품 정보 수정] 모달의 배송비 칸도 실제로 반영되게 한다.
+     모달은 products 노드에 쓰는데 그 노드는 보안 규칙상 화면에서 쓰기가 막혀 있다(2026-07-29 실측).
+     그래서 배송비만은 쓰기가 열려 있는 price/<pid>.cour 로 따로 저장한다. */
+  (function wrapSaveProduct() {
+    var orig = window.saveProduct;
+    if (typeof orig !== 'function') return;
+    window.saveProduct = function (pid) {
+      var el = document.getElementById('pe_ship');
+      var v = el ? parseInt(String(el.value).replace(/[^\d]/g, ''), 10) : NaN;
+      try { orig(pid); } catch (e) { }
+      var p = PMAP[pid];
+      if (!p || isNaN(v) || v < 0) return;
+      if (!hasKey()) return;
+      if (v === courOf(p)) return;                       /* 안 바뀌었으면 저장하지 않는다 */
+      var cur = PRICE[pid] || {};
+      var body = { sell: cur.sell != null ? cur.sell : priceOf(p), margin_pct: cur.margin_pct != null ? cur.margin_pct : null, at: nowStr(), by: '사장님' };
+      if (v !== courBase(p)) { body.cour = v; body.cour_by = '사장님'; }
+      var s = settle(body.sell, p.buy, v);
+      if (s) body.margin_pct = s.pct;
+      api(R + 'price/' + encodeURIComponent(pid), { method: 'PUT', body: JSON.stringify(body) })
+        .then(function () {
+          PRICE[pid] = body;
+          toast('🚚 ' + pid + ' 배송비 ' + won(v) + ' 저장 — 모든 기기·대행자 화면에 반영');
+          if (window.v2Repaint) window.v2Repaint(pid);
+        }, function () { toast('❌ 배송비 저장 실패 — 카드의 배송비 칸으로 다시 시도해 주세요'); });
+    };
+  })();
 
   function v2aHtml(p) {
     var price = priceOf(p), buy = p.buy, cour = courOf(p);
@@ -269,10 +348,18 @@
       '<div id="v2warn_' + p.pid + '">' + warnHtml(s) + '</div>' +
       '<div class="ledger" id="v2led_' + p.pid + '">' + ledHtml(s) + '</div>' +
       '<div class="netband' + (s.net <= 0 ? ' bad' : '') + '" id="v2net_' + p.pid + '">' + netHtml(s) + '</div>' +
-      (pr ? '<div class="pricelog">✏️ 사장님이 정한 값 · ' + esc(pr.at || '') + '</div>' : '') +
+      (pr ? '<div class="pricelog">✏️ 사장님이 정한 값 · ' + esc(pr.at || '') +
+        (pr.cour != null ? ' · 배송비 ' + won(pr.cour) + ' <b>직접 지정</b>(원래 ' + won(courBase(p)) + ')' : '') + '</div>' : '') +
       (b ? '<div class="bdline">⚖️ <b>19,800원 ' + (b.better === 'A' ? '미만' : '이상') + ' 책정이 유리 (+' + b.diff_pp + '%p)</b>' +
         ' — ' + won(b.a_price) + ' → 마진 ' + b.a_pct + '% vs ' + won(b.b_price) + ' → ' + b.b_pct + '%</div>' : '');
   }
+
+  /* 저장 뒤 그 카드만 제자리에서 다시 그린다 — 전체 재렌더는 스크롤이 튀고 다른 카드 입력이 날아간다 */
+  window.v2Repaint = function (pid) {
+    var p = PMAP[pid]; if (!p) return;
+    var box = document.getElementById('v2a_' + pid); if (!box) return;
+    box.innerHTML = v2aInner(p);
+  };
 
   function cfHtml(p) {                             /* 확정 줄 + 버튼 */
     var c = CF[p.pid], can = hasKey();
@@ -288,19 +375,21 @@
     return '<div class="cfrow">' + line + btn + '</div>';
   }
 
-  function badgeHtml(p) {
+  /* .v2a 안쪽만 따로 뽑아 둔다 — 저장 후 이 부분만 다시 그리기 위해서다 */
+  function v2aInner(p) {
     var j = p.judge || {}, v = VD[j.verdict];
-    PMAP[p.pid] = p;
-    if (!v) return '<div class="v2a"><div class="jbadge wait">⚪ 조사 대기</div>' +
-      '<div class="jwhy">아직 테무 조사를 하지 않은 품목입니다. (지어낸 값 없음)</div>' + cfHtml(p) +
-      v2aHtml(p) + '</div>';
+    if (!v) return '<div class="jbadge wait">⚪ 조사 대기</div>' +
+      '<div class="jwhy">아직 테무 조사를 하지 않은 품목입니다. (지어낸 값 없음)</div>' + cfHtml(p) + v2aHtml(p);
     var rs = (j.reason || '').replace(/\s+/g, ' ');
     var why = (j.verdict !== 'GO' && rs) ? esc(rs.length > 150 ? rs.slice(0, 150) + '…' : rs) : '';
     var d = j.researched_at;
-    return '<div class="v2a">' +
-      '<div class="jbadge ' + v[0] + '">🤖 제안: ' + v[1] + (d ? '<span class="jdate">' + esc(d) + ' 조사</span>' : '') + '</div>' +
-      (why ? '<div class="jwhy">' + why + '</div>' : '') +
-      cfHtml(p) + v2aHtml(p) + '</div>';
+    return '<div class="jbadge ' + v[0] + '">🤖 제안: ' + v[1] + (d ? '<span class="jdate">' + esc(d) + ' 조사</span>' : '') + '</div>' +
+      (why ? '<div class="jwhy">' + why + '</div>' : '') + cfHtml(p) + v2aHtml(p);
+  }
+
+  function badgeHtml(p) {
+    PMAP[p.pid] = p;
+    return '<div class="v2a" id="v2a_' + p.pid + '">' + v2aInner(p) + '</div>';
   }
 
   /* ── 옵션 목록 (엑셀에서 온 다행 옵션 상품) ── */

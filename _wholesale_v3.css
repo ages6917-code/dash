@@ -63,6 +63,14 @@ table.cmp tr.ours .tt{color:#3f9c78}
 .cfield .u{flex:0 0 auto;font-size:12px;font-weight:800;color:#63707c}
 .cfield:focus-within{border-color:#1b8f5a;box-shadow:0 0 0 3px rgba(27,143,90,.12)}
 .rolock{margin-top:5px;font-size:10.5px;color:#8a94a3}
+/* (2026-07-29) 배송비 직접 수정 — 폰에서 3칸으로 쪼개면 숫자가 붙으므로 한 줄을 통째로 쓴다 */
+.calcrow.one{grid-template-columns:1fr}
+.cfield label i{font-style:normal;font-weight:700;color:#9aa5b1}
+.cfield.edited{border-color:#1b8f5a;background:#f2fbf6}
+.cfield.edited label i{color:#1b8f5a}
+.curev{flex:0 0 auto;margin-left:6px;border:1px solid #cfd8e2;background:#fff;border-radius:7px;
+  width:26px;height:24px;font-size:12px;line-height:1;cursor:pointer;color:#5b6570}
+.curev:active{background:#eef2f6}
 
 .cvwarn{margin-top:7px;font-size:11px;line-height:1.5;color:#96551a;background:#fff4e2;border:1px solid #f6dcb4;border-radius:7px;padding:6px 8px}
 .cvwarn.ok{color:#4a5b6b;background:#f1f5f9;border-color:#e2e8f0}
