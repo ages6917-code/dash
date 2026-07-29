@@ -2308,7 +2308,9 @@ body.modal-open #bosspanel{display:none}
 
   /* ── 판매 중 토글 (사장키 화면 전용, 2026-07-29 단계2) ── */
   window.toggleSelling = function (pid) {
-    var now = new Date().toISOString().replace('T', ' ').substring(0, 16);
+    /* ★2026-07-29 — toISOString() 은 UTC 라 09:19 에 누르면 '00:19' 로 찍혔다.
+       가격 저장(nowStr)은 이미 한국 시각을 쓰고 있었다. 같은 함수로 통일한다. */
+    var now = nowStr();
     var current = S.selling[pid] || {};
     var newState = !current.on;
 
