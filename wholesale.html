@@ -251,6 +251,8 @@
 
 
 
+
+
 <!--V3PATCH-->
 ﻿/* ===== 위탁 대시보드 v3 (2026-07-27) — 판정 배지 · GO 필터 · 자료실 2종 ===== */
 .jbadge{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;font-weight:800;border-radius:20px;padding:3px 9px;margin-top:7px}
@@ -1945,6 +1947,8 @@ body.modal-open #bosspanel{display:none}
 
 
 
+
+
 <!--V3PATCH-->
 <script>
 ﻿/* ============================================================
@@ -2047,7 +2051,7 @@ body.modal-open #bosspanel{display:none}
   }
   function courSrc(p) {
     var r = PRICE[p.pid];
-    if (r && r.cour != null) return '사장님이 직접 정함';
+    if (r && r.cour != null) return (r.cour_by || '사장님') + ' 직접 지정';
     var j = p.judge || {};
     return j.courier != null ? '거래처 배송정책' : '정본 기본값(실비 미확보)';
   }

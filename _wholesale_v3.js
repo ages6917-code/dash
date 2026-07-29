@@ -98,7 +98,7 @@
   }
   function courSrc(p) {
     var r = PRICE[p.pid];
-    if (r && r.cour != null) return '사장님이 직접 정함';
+    if (r && r.cour != null) return (r.cour_by || '사장님') + ' 직접 지정';
     var j = p.judge || {};
     return j.courier != null ? '거래처 배송정책' : '정본 기본값(실비 미확보)';
   }
