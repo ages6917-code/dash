@@ -784,7 +784,7 @@ window.openGalleryVendor=function(vk){
 </script>
 <!-- DASH_AUTOFRESH v1 -->
 <button id="dashRefreshBtn" title="최신화" onclick="dashForceRefresh()" style="position:fixed;left:12px;bottom:12px;z-index:99999;border:none;background:rgba(79,70,229,.92);color:#fff;border-radius:20px;padding:8px 13px;font-size:13px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.28);cursor:pointer;font-family:'Malgun Gothic',sans-serif">🔄 최신화</button>
-<script>window.__DASHVER__="2026-07-29 10:55";</script><div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신" style="position:fixed;left:12px;bottom:54px;z-index:99998;background:rgba(17,24,39,.80);color:#c7d2fe;border-radius:13px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.2px;box-shadow:0 3px 9px rgba(0,0,0,.22);font-family:'Malgun Gothic',sans-serif;pointer-events:none">v2026-07-28 13:35</div><script>try{if(window.__SYNC__)document.getElementById("dashVerBadge").textContent="v"+window.__SYNC__;}catch(e){}</script>
+<script>window.__DASHVER__="2026-07-29 11:20";</script><div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신" style="position:fixed;left:12px;bottom:54px;z-index:99998;background:rgba(17,24,39,.80);color:#c7d2fe;border-radius:13px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.2px;box-shadow:0 3px 9px rgba(0,0,0,.22);font-family:'Malgun Gothic',sans-serif;pointer-events:none">v2026-07-28 13:35</div><script>try{if(window.__SYNC__)document.getElementById("dashVerBadge").textContent="v"+window.__SYNC__;}catch(e){}</script>
 <script>
 function dashForceRefresh(){
   try{
@@ -2208,7 +2208,7 @@ body.modal-open #bosspanel{display:none}
 
   var DBU = 'https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app';
   var R = '/shared/wholesale/';
-  var S = { products: [], vendors: [], confirm: {}, regstate: {}, files: {}, selling: {}, price: {} };
+  var S = { products: [], vendors: [], confirm: {}, regstate: {}, files: {}, selling: {}, price: {}, pub: {} };
   var F = { kind: null, key: null };          // 현재 필터
   window.BPSTATE = S;                         // v2 editProduct에서 참조용
 
@@ -2437,9 +2437,12 @@ body.modal-open #bosspanel{display:none}
       var tl = listToReg();
       body = tl.length ? tl.map(function (p) {
         var pr = S.price[p.pid] || {};
+        var pubP = (S.pub[p.pid] || {}).price;
         var priceTxt = pr.sell
-          ? '판매가 ' + Number(pr.sell).toLocaleString() + '원' + (pr.margin_pct != null ? ' · 마진 ' + pr.margin_pct + '%' : '')
-          : '⚠️ 판매가 미입력 — 카드에서 먼저 입력';
+          ? '등록가 ' + Number(pr.sell).toLocaleString() + '원' + (pr.margin_pct != null ? ' · 마진 ' + pr.margin_pct + '%' : '') + ' · 사장님 지정'
+          : (pubP != null
+              ? '등록가 ' + Number(pubP).toLocaleString() + '원 · 추천가(직접 정하려면 카드에서 입력)'
+              : '⚠️ 등록가 없음 — 카드에서 판매가를 입력하세요');
         var at = (S.confirm[p.pid] || {}).at || '';
         return '<div class="bp-row"><div class="r1">' + (p.emoji || '📦') + ' ' + esc(p.name) +
                ' <span style="font-weight:400;color:#8a94a6">' + esc(p.spec || '') + '</span></div>' +
@@ -2534,10 +2537,12 @@ body.modal-open #bosspanel{display:none}
   function start() {
     mount();
     Promise.all([get('products'), get('vendors'), get('confirm'),
-                 get('regstate'), get('files'), get('selling'), get('price')]).then(function (a) {
+                 get('regstate'), get('files'), get('selling'), get('price'), get('public')]).then(function (a) {
       S.products = a[0] || []; S.vendors = a[1] || [];
       S.confirm = a[2] || {}; S.regstate = a[3] || {}; S.files = a[4] || {};
       S.selling = a[5] || {}; S.price = a[6] || {};
+      S.pub = {};
+      (a[7] || []).forEach(function (x) { if (x && x.pid) S.pub[x.pid] = x; });
       paint();
       /* 데이터 기준일·산정 문구를 실제 값으로 되돌린다(구버전 6/27·네이버 문구 잔존 제거) */
       get('dataUpdated').then(function (d) {
