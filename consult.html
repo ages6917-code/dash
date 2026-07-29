@@ -1431,14 +1431,21 @@ function stgSave(id,imm){
 function summaryHtml(id,c){
   const sm=c.summary;
   if(GENNING.has(id)){
-    return `<div class="fsum"><div class="empty"><div class="spin"></div><b style="color:#3b82f6;font-size:14px">🤖 제미나이가 재무요약 생성 중…</b><br><br>첨부한 서류를 읽고 있어요. 잠시만요.</div></div>`;
+    return `<div class="fsum"><div class="empty"><div class="spin"></div><b style="color:#3b82f6;font-size:14px">🖥️ 내 PC에서 서류 읽는 중…</b><br><br>서류는 이 PC를 벗어나지 않습니다. 1~2분 걸립니다.</div></div>`;
   }
   if(!sm||!Object.keys(sm).length){
     /* ★2026-07-16 — 여기에 '서류로 분석' 버튼이 없던 게 사장님이 아무리 최신화해도
        화면이 그대로였던 진짜 이유. 서류함에 10개가 있어도 분석을 시작할 버튼 자체가
        이 화면(=요약 없음 상태)에 없었다. 버튼은 진단서가 이미 있을 때만 보였다. */
     const nDoc=(typeof _docsOf==='function'?_docsOf(c):[]).filter(d=>d&&d.data&&SUM_MIMES[extOf(d.name)]).length;
-    const genBtn=nDoc?`<button class="btn p" style="padding:9px 16px;font-size:13px;font-weight:800" onclick="autoSummarizeStored('${id}')">🤖 서류 ${nDoc}건으로 재무 진단서 만들기</button>`:'';
+    const genBtn=nDoc?`<button class="btn p" style="padding:9px 16px;font-size:13px;font-weight:800" onclick="deskSummarizeStored('${id}')">🖥️ 서류 ${nDoc}건 요약하기 (내 PC에서 처리)</button>`:'';
+    /* ★2026-07-29 — 데탑 처리 요약(summaryText)이 있으면 그걸 먼저 보여준다 */
+    if(c.summaryText){
+      return `<div class="fsum">
+        <div style="font-size:11.5px;color:#0f766e;font-weight:800;margin-bottom:6px">🖥️ 내 PC에서 만든 서류 요약 <span style="font-weight:500;color:#94a3b8">· ${esc(c.summaryTextAt||'')} · 검수 필요</span></div>
+        <div style="white-space:pre-wrap;font-size:13px;line-height:1.8;color:#1e293b;background:#f0fdfa;border:1px solid #99f6e4;border-radius:11px;padding:12px 14px">${esc(c.summaryText)}</div>
+        <div style="text-align:right;margin-top:10px">${genBtn?`<span class="add" onclick="deskSummarizeStored('${id}')">🔄 다시 요약</span> `:''}<span class="add" onclick="editSummary('${id}')">✍️ 재무 직접 입력</span></div></div>`;
+    }
     const auto=autoSummaryText(c);
     if(auto){
       return `<div class="fsum">
@@ -3246,6 +3253,44 @@ async function autoSummarizeStored(id,silent){
   }catch(e){ GENNING.delete(id); rerender(); toast('요약 실패: '+(e&&e.message||'')); }
 }
 window.autoSummarizeStored=autoSummarizeStored;
+/* ===== 데탑 처리 요약 (2026-07-29 사장님 지시) =====
+   제미나이는 서류를 구글로 업로드했다. 민감 서류(재무제표·신분증)라 원칙에 어긋난다.
+   이제 버튼을 누르면 이 PC의 파일서버에 '요약해 달라'는 쪽지만 남기고,
+   데탑 자동화가 서류에서 글자만 뽑아 요약한다. 서류 원본은 어디로도 안 나간다.
+   대신 즉시가 아니라 1~2분 걸린다(자동화가 1분마다 확인). */
+async function deskSummarizeStored(id){
+  const c=getCust(id); if(!c) return;
+  const nm=c.nm||''; if(!nm){ toast('고객 이름이 필요합니다'); return; }
+  let jid='';
+  try{
+    const r=await fetch(FILESRV+'/aijob',{method:'POST',headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({customer:nm})});
+    const j=await r.json(); if(!j.ok) throw new Error(j.err||'접수 실패');
+    jid=j.id;
+  }catch(e){ toast('데탑 파일서버가 꺼져 있습니다 — 요약 불가'); return; }
+  GENNING.add(id); rerender();
+  toast('내 PC에서 서류 읽는 중… 1~2분 걸립니다');
+  const t0=Date.now();
+  const tick=async()=>{
+    if(Date.now()-t0>360000){ GENNING.delete(id); rerender(); toast('요약이 오래 걸립니다 — 잠시 후 다시 눌러 주세요'); return; }
+    let j={};
+    try{ j=await (await fetch(FILESRV+'/aijob?id='+encodeURIComponent(jid))).json(); }catch(e){}
+    if(j.status==='done'){
+      GENNING.delete(id);
+      const cur=getCust(id)||{};
+      dref('customers/'+id).update({
+        summaryText:j.summary,
+        summaryTextAt:new Date().toISOString().slice(0,16).replace('T',' '),
+        memo:(cur.memo||'')+((cur.memo||'').indexOf('서류 요약')<0?'\n🖥️ 서류 요약 완료 — 검수 필요':'')
+      }).catch(()=>{});
+      rerender(); toast('요약 완료'); return;
+    }
+    if(j.status==='failed'){ GENNING.delete(id); rerender(); toast(j.summary||'요약 실패'); return; }
+    setTimeout(tick,5000);
+  };
+  setTimeout(tick,5000);
+}
+window.deskSummarizeStored=deskSummarizeStored;
 /* 요약 결과 반영 — autoSummarize / autoSummarizeStored 공통 (중복 코드 제거) */
 function applySummary(id,sm,skipped){
   const prof=sm.profile||{};
