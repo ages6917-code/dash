@@ -784,7 +784,7 @@ window.openGalleryVendor=function(vk){
 </script>
 <!-- DASH_AUTOFRESH v1 -->
 <button id="dashRefreshBtn" title="최신화" onclick="dashForceRefresh()" style="position:fixed;left:12px;bottom:12px;z-index:99999;border:none;background:rgba(79,70,229,.92);color:#fff;border-radius:20px;padding:8px 13px;font-size:13px;font-weight:800;box-shadow:0 4px 12px rgba(0,0,0,.28);cursor:pointer;font-family:'Malgun Gothic',sans-serif">🔄 최신화</button>
-<script>window.__DASHVER__="2026-07-28 13:35";</script><div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신" style="position:fixed;left:12px;bottom:54px;z-index:99998;background:rgba(17,24,39,.80);color:#c7d2fe;border-radius:13px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.2px;box-shadow:0 3px 9px rgba(0,0,0,.22);font-family:'Malgun Gothic',sans-serif;pointer-events:none">v2026-07-28 13:35</div><script>try{if(window.__SYNC__)document.getElementById("dashVerBadge").textContent="v"+window.__SYNC__;}catch(e){}</script>
+<script>window.__DASHVER__="2026-07-29 10:10";</script><div id="dashVerBadge" title="배포 버전 — 이 시각 이후가 최신" style="position:fixed;left:12px;bottom:54px;z-index:99998;background:rgba(17,24,39,.80);color:#c7d2fe;border-radius:13px;padding:4px 10px;font-size:11px;font-weight:700;letter-spacing:.2px;box-shadow:0 3px 9px rgba(0,0,0,.22);font-family:'Malgun Gothic',sans-serif;pointer-events:none">v2026-07-28 13:35</div><script>try{if(window.__SYNC__)document.getElementById("dashVerBadge").textContent="v"+window.__SYNC__;}catch(e){}</script>
 <script>
 function dashForceRefresh(){
   try{
@@ -2203,7 +2203,7 @@ body.modal-open #bosspanel{display:none}
 
   var DBU = 'https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app';
   var R = '/shared/wholesale/';
-  var S = { products: [], vendors: [], confirm: {}, regstate: {}, files: {}, selling: {} };
+  var S = { products: [], vendors: [], confirm: {}, regstate: {}, files: {}, selling: {}, price: {} };
   var F = { kind: null, key: null };          // 현재 필터
   window.BPSTATE = S;                         // v2 editProduct에서 참조용
 
@@ -2277,6 +2277,15 @@ body.modal-open #bosspanel{display:none}
     return out;
   }
 
+  function listToReg() {           // 📋 등록할 제품 — 사장님 GO 확정 & 아직 판매 중 아님 (2026-07-29)
+    var sell = {};
+    listSelling().forEach(function (p) { sell[p.pid] = 1; });
+    return S.products.filter(function (p) {
+      var c = S.confirm[p.pid];
+      return c && String(c.verdict || c.status || '').toUpperCase() === 'GO' && !sell[p.pid];
+    });
+  }
+
   /* ── 카테고리 자동 분류 (품목 g + 이름 기준) ───────────── */
   var CATS = [
     ['닭가슴살·간편식', /닭가슴살|간편식|도시락|건강스낵|샐러드/],
@@ -2336,7 +2345,8 @@ body.modal-open #bosspanel{display:none}
 
   function paint() {
     var wait = listWaiting().length, re = listRecheck().length;
-    var nf = listNoFiles(), nfN = Object.keys(nf).length, rc = regCount();
+    var nf = listNoFiles(), nfN = Object.keys(nf).length;
+    var toreg = listToReg().length;
     var selling = listSelling().length;
     var cc = catCounts();
 
@@ -2344,8 +2354,7 @@ body.modal-open #bosspanel{display:none}
       tile('wait', '🔴', '확정 대기', wait, 'GO 제안 · 미확정') +
       tile('recheck', '🟡', '보류 재검토', re, '유사상품 비교 도착') +
       tile('nofile', '📦', '자료 없는 확정품', nfN, '거래처 기준') +
-      tile('reg', '🟢', '지인 진행', rc.TODO + rc.WORK + rc.DONE,
-           '등록 ' + rc.TODO + ' · 작업 ' + rc.WORK + ' · 완료 ' + rc.DONE) +
+      tile('toreg', '📋', '등록할 제품', toreg, 'GO 확정 · 등록 대기') +
       tile('selling', '🛒', '판매 중', selling, '테무 등록 상품') +
       '</div>';
 
@@ -2393,15 +2402,20 @@ body.modal-open #bosspanel{display:none}
     var title = '', body = '';
     if (F.kind === 'wait') { title = '🔴 확정 대기'; body = rowsOf(listWaiting()); }
     else if (F.kind === 'recheck') { title = '🟡 보류 재검토'; body = rowsOf(listRecheck()); }
-    else if (F.kind === 'reg') {
-      title = '🟢 지인 진행';
-      var ids = Object.keys(S.regstate);
-      body = ids.length ? ids.map(function (pid) {
-        var st = (S.regstate[pid] || {}).status || '';
-        var p = S.products.filter(function (x) { return x.pid === pid; })[0] || { name: pid };
-        return '<div class="bp-row"><div class="r1">' + esc(p.name) + '</div>' +
-               '<div class="r2">' + esc(st) + ' · ' + esc((S.regstate[pid] || {}).at || '') + '</div></div>';
-      }).join('') : '<div class="bp-empty">아직 등록 진행 중인 품목이 없습니다.</div>';
+    else if (F.kind === 'toreg') {
+      title = '📋 등록할 제품 — 사장님 GO 확정, 지인이 이 목록대로 등록';
+      var tl = listToReg();
+      body = tl.length ? tl.map(function (p) {
+        var pr = S.price[p.pid] || {};
+        var priceTxt = pr.sell
+          ? '판매가 ' + Number(pr.sell).toLocaleString() + '원' + (pr.margin_pct != null ? ' · 마진 ' + pr.margin_pct + '%' : '')
+          : '⚠️ 판매가 미입력 — 카드에서 먼저 입력';
+        var at = (S.confirm[p.pid] || {}).at || '';
+        return '<div class="bp-row"><div class="r1">' + (p.emoji || '📦') + ' ' + esc(p.name) +
+               ' <span style="font-weight:400;color:#8a94a6">' + esc(p.spec || '') + '</span></div>' +
+               '<div class="r2">' + esc(vname(p.vendorId)) + ' · ' + priceTxt +
+               (at ? ' · 확정 ' + esc(String(at).substring(0, 10)) : '') + '</div></div>';
+      }).join('') : '<div class="bp-empty">GO 확정 후 등록 대기인 상품이 없습니다.</div>';
     }
     else if (F.kind === 'nofile') {
       title = '📦 자료 없는 확정품 — 거래처별 요청 목록';
@@ -2419,9 +2433,11 @@ body.modal-open #bosspanel{display:none}
       body = list.length ? list.map(function (p) {
         var src = S.selling[p.pid] ? '사장님 표시' : '지인 등록 완료';
         var at = S.selling[p.pid] ? (S.selling[p.pid].at || '') : (S.regstate[p.pid] || {}).at || '';
+        var pr = S.price[p.pid] || {};
+        var prTxt = pr.sell ? ' · 판매가 ' + Number(pr.sell).toLocaleString() + '원' + (pr.margin_pct != null ? ' · 마진 ' + pr.margin_pct + '%' : '') : '';
         return '<div class="bp-row"><div class="r1">' + (p.emoji || '📦') + ' ' + esc(p.name) + '</div>' +
           '<div class="r2">' + esc(vname(p.vendorId)) + ' · ' + src +
-          (at ? ' · ' + at.substring(0, 10) : '') + '</div></div>';
+          (at ? ' · ' + at.substring(0, 10) : '') + prTxt + '</div></div>';
       }).join('') : '<div class="bp-empty">아직 판매 중인 상품이 없습니다.</div>';
     }
     else if (F.kind === 'cat') {
@@ -2484,10 +2500,10 @@ body.modal-open #bosspanel{display:none}
   function start() {
     mount();
     Promise.all([get('products'), get('vendors'), get('confirm'),
-                 get('regstate'), get('files'), get('selling')]).then(function (a) {
+                 get('regstate'), get('files'), get('selling'), get('price')]).then(function (a) {
       S.products = a[0] || []; S.vendors = a[1] || [];
       S.confirm = a[2] || {}; S.regstate = a[3] || {}; S.files = a[4] || {};
-      S.selling = a[5] || {};
+      S.selling = a[5] || {}; S.price = a[6] || {};
       paint();
       /* 데이터 기준일·산정 문구를 실제 값으로 되돌린다(구버전 6/27·네이버 문구 잔존 제거) */
       get('dataUpdated').then(function (d) {
