@@ -1,0 +1,304 @@
+<!-- ============================================================
+     사장 화면 우측 고정 패널 (2026-07-28 사장님 지시 · 클로드 시안)
+       ① 오늘 할 일 4칸(클릭=필터)  ② 카테고리 칩  ③ 거래처 필터(접이식)
+     숫자는 전부 RTDB 실데이터에서 계산한다. 하드코딩 0 없음.
+     사장키(hd15) 뷰에서만 뜬다. 기존 render() 를 건드리지 않고
+     결과를 자기 영역(#bpview)에 그린다 — 한 파일 안이라도 책임을 섞지 않는다.
+     ============================================================ -->
+<style>
+#bosspanel{position:fixed;top:0;right:0;width:304px;height:100vh;overflow-y:auto;
+  background:#fff;border-left:1px solid #e3e8ef;padding:14px 13px 40px;box-sizing:border-box;
+  font-size:13px;z-index:900;box-shadow:-2px 0 10px rgba(15,22,41,.04)}
+body.has-bp{padding-right:316px}
+#bosspanel h3{font-size:12px;color:#6b7688;margin:16px 0 8px;font-weight:700;letter-spacing:.02em}
+#bosspanel h3:first-child{margin-top:0}
+.bp-todo{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.bp-t{border:1px solid #e3e8ef;border-radius:11px;padding:10px 9px;cursor:pointer;background:#fbfcfe;
+  transition:border-color .12s,background .12s;min-width:0}
+.bp-t:hover{border-color:#b9c6da}
+.bp-t.on{border-color:#2563eb;background:#eef4ff;box-shadow:0 0 0 1px #2563eb inset}
+.bp-n{font-size:21px;font-weight:800;line-height:1.15;color:#0f1629}
+.bp-n.zero{color:#aab3c0}
+.bp-l{font-size:11px;color:#5b6570;margin-top:3px;word-break:keep-all;line-height:1.35}
+.bp-chips{display:flex;flex-wrap:wrap;gap:6px}
+.bp-c{border:1px solid #e3e8ef;background:#fff;border-radius:999px;padding:5px 10px;font-size:12px;
+  cursor:pointer;white-space:nowrap}
+.bp-c.on{border-color:#2563eb;background:#eef4ff;color:#1d4ed8;font-weight:700}
+.bp-c i{font-style:normal;color:#8a94a6;margin-left:4px}
+.bp-c.on i{color:#1d4ed8}
+#bosspanel details{border-top:1px solid #eef1f5;padding-top:10px;margin-top:14px}
+#bosspanel summary{cursor:pointer;font-size:12px;color:#6b7688;font-weight:700;list-style:none}
+#bosspanel summary::-webkit-details-marker{display:none}
+#bosspanel summary::before{content:'▸ ';color:#9aa5b5}
+#bosspanel details[open] summary::before{content:'▾ '}
+.bp-clear{margin-top:12px;width:100%;padding:8px;border:1px solid #e3e8ef;background:#fff;
+  border-radius:9px;font-size:12px;color:#5b6570;cursor:pointer}
+#bpview{margin-bottom:16px}
+.bp-head{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:4px 0 12px}
+.bp-head b{font-size:15px}
+.bp-x{border:1px solid #e3e8ef;background:#fff;border-radius:8px;padding:4px 9px;font-size:12px;cursor:pointer}
+.bp-row{border:1px solid #e9edf3;border-radius:10px;padding:10px 12px;margin-bottom:7px;background:#fff}
+.bp-row .r1{font-weight:700;word-break:keep-all}
+.bp-row .r2{font-size:12px;color:#6b7688;margin-top:3px;word-break:keep-all}
+.bp-empty{border:1px dashed #d7deea;border-radius:10px;padding:16px;color:#7b8698;text-align:center}
+@media(max-width:900px){
+  body.has-bp{padding-right:0}
+  #bosspanel{position:static;width:auto;height:auto;border-left:none;
+    border-bottom:1px solid #e3e8ef;padding:12px 12px 14px;box-shadow:none}
+  /* 폰에서는 가로 스크롤 칩 줄로 바뀐다. 스크롤은 이 줄 안에서만 일어난다. */
+  .bp-todo{display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;
+    padding-bottom:4px;grid-template-columns:none}
+  .bp-todo .bp-t{flex:0 0 auto;width:132px}
+  .bp-chips{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}
+}
+</style>
+<script>
+(function () {
+  var Q = new URLSearchParams(location.search);
+  var isBoss = (Q.get('k') || sessionStorage.getItem('w_key') || '') === 'hd15';
+  if (!isBoss) return;                       // 대행자 화면엔 붙이지 않는다
+
+  var DBU = 'https://consult-crm-cfef6-default-rtdb.asia-southeast1.firebasedatabase.app';
+  var R = '/shared/wholesale/';
+  var S = { products: [], vendors: [], confirm: {}, regstate: {}, files: {} };
+  var F = { kind: null, key: null };          // 현재 필터
+
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[<>&"]/g, function (c) {
+      return { '<': '&lt;', '>': '&gt;', '&': '&amp;', '"': '&quot;' }[c]; });
+  }
+  function get(p) {
+    return fetch(DBU + R + p + '.json').then(function (r) { return r.json(); })
+      .catch(function () { return null; });
+  }
+  function vname(id) {
+    for (var i = 0; i < S.vendors.length; i++) if (S.vendors[i].id === id) return S.vendors[i].name;
+    return id || '';
+  }
+  /* files 노드는 거래처 이름의 공백을 _ 로 바꾼 키를 쓴다 */
+  function fileKey(n) { return String(n || '').replace(/\s+/g, '_'); }
+  function hasFiles(vid) {
+    var k = fileKey(vname(vid)), f = S.files[k];
+    if (!f) return false;
+    var src = f.src || {};
+    return Object.keys(src).length > 0;
+  }
+
+  /* ── 판정 ─────────────────────────────────────────────── */
+  function verdict(p) { return ((p.judge || {}).verdict || '').toUpperCase(); }
+  function confirmed(p) { var c = S.confirm[p.pid]; return c && (c.verdict || c.status || ''); }
+
+  function listWaiting() {          // 🔴 확정 대기 — GO 제안인데 사장님 확정이 없다
+    return S.products.filter(function (p) { return verdict(p) === 'GO' && !confirmed(p); });
+  }
+  function listRecheck() {          // 🟡 보류 재검토 — 보류 건에 유사상품 비교가 새로 채워졌다
+    return S.products.filter(function (p) {
+      return verdict(p) === 'HOLD' && (p.judge || {}).similar; });
+  }
+  function listNoFiles() {          // 📦 자료 없는 확정품 — 확정 GO 인데 거래처 자료가 없다
+    var out = {};
+    S.products.forEach(function (p) {
+      var c = confirmed(p);
+      if (!c || String(c).toUpperCase().indexOf('GO') < 0) return;
+      if (hasFiles(p.vendorId)) return;
+      (out[p.vendorId] = out[p.vendorId] || []).push(p);
+    });
+    return out;
+  }
+  function regCount() {             // 🟢 지인 진행 — 등록상태 기준
+    var c = { TODO: 0, WORK: 0, DONE: 0 };
+    Object.keys(S.regstate).forEach(function (pid) {
+      var st = String((S.regstate[pid] || {}).status || '').toUpperCase();
+      if (st === 'DONE') c.DONE++;
+      else if (st === 'WORK' || st === 'ING') c.WORK++;
+      else c.TODO++;
+    });
+    return c;
+  }
+
+  /* ── 카테고리 자동 분류 (품목 g + 이름 기준) ───────────── */
+  var CATS = [
+    ['닭가슴살·간편식', /닭가슴살|간편식|도시락|건강스낵|샐러드/],
+    ['수산',            /수산|해물|오징어|새우|생선|김|미역|다시마|어묵|멸치/],
+    ['과일·선식',       /과일|선식|쌀|곡물/],
+    ['육류',            /양념육|원료육|육류|돈육|우육|삼겹|목살/],
+    ['면·밀키트',       /면|밀키트|안주|육수|국물|탕|찌개/],
+  ];
+  function catOf(p) {
+    var t = (p.g || '') + ' ' + (p.name || '') + ' ' + (p.spec || '');
+    for (var i = 0; i < CATS.length; i++) if (CATS[i][1].test(t)) return CATS[i][0];
+    return '기타';
+  }
+  function catCounts() {
+    var m = {}; CATS.forEach(function (c) { m[c[0]] = 0; }); m['기타'] = 0;
+    S.products.forEach(function (p) { m[catOf(p)]++; });
+    return m;
+  }
+
+  /* ── 그리기 ───────────────────────────────────────────── */
+  function tile(kind, icon, label, n, sub) {
+    var on = F.kind === kind ? ' on' : '';
+    return '<div class="bp-t' + on + '" data-kind="' + kind + '">' +
+      '<div class="bp-n' + (n ? '' : ' zero') + '">' + icon + ' ' + n + '</div>' +
+      '<div class="bp-l">' + label + (sub ? '<br>' + sub : '') + '</div></div>';
+  }
+
+  function paint() {
+    var wait = listWaiting().length, re = listRecheck().length;
+    var nf = listNoFiles(), nfN = Object.keys(nf).length, rc = regCount();
+    var cc = catCounts();
+
+    var html = '<h3>오늘 할 일</h3><div class="bp-todo">' +
+      tile('wait', '🔴', '확정 대기', wait, 'GO 제안 · 미확정') +
+      tile('recheck', '🟡', '보류 재검토', re, '유사상품 비교 도착') +
+      tile('nofile', '📦', '자료 없는 확정품', nfN, '거래처 기준') +
+      tile('reg', '🟢', '지인 진행', rc.TODO + rc.WORK + rc.DONE,
+           '등록 ' + rc.TODO + ' · 작업 ' + rc.WORK + ' · 완료 ' + rc.DONE) +
+      '</div>';
+
+    html += '<h3>카테고리</h3><div class="bp-chips">' +
+      Object.keys(cc).map(function (k) {
+        var on = (F.kind === 'cat' && F.key === k) ? ' on' : '';
+        return '<div class="bp-c' + on + '" data-cat="' + esc(k) + '">' + esc(k) +
+               '<i>' + cc[k] + '</i></div>';
+      }).join('') + '</div>';
+
+    html += '<details><summary>거래처로 보기</summary><div class="bp-chips" style="margin-top:9px">' +
+      S.vendors.map(function (v) {
+        var n = S.products.filter(function (p) { return p.vendorId === v.id; }).length;
+        var on = (F.kind === 'vendor' && F.key === v.id) ? ' on' : '';
+        return '<div class="bp-c' + on + '" data-vendor="' + esc(v.id) + '">' +
+               esc(v.name) + '<i>' + n + '</i></div>';
+      }).join('') + '</div></details>';
+
+    if (F.kind) html += '<button class="bp-clear" id="bpClear">✕ 필터 해제</button>';
+
+    var el = document.getElementById('bosspanel');
+    el.innerHTML = html;
+    document.body.classList.add('has-bp');
+    bind();
+    paintView();
+  }
+
+  function rowsOf(list) {
+    if (!list.length) return '<div class="bp-empty">해당하는 품목이 없습니다.</div>';
+    return list.map(function (p) {
+      var j = p.judge || {};
+      return '<div class="bp-row"><div class="r1">' + (p.emoji || '📦') + ' ' + esc(p.name) +
+        ' <span style="font-weight:400;color:#8a94a6">' + esc(p.spec || '') + '</span></div>' +
+        '<div class="r2">' + esc(vname(p.vendorId)) + ' · ' + esc(p.g || '') +
+        (j.price_reco != null ? ' · 추천 ' + Number(j.price_reco).toLocaleString() + '원' : '') +
+        '</div></div>';
+    }).join('');
+  }
+
+  function paintView() {
+    var box = document.getElementById('bpview'), view = document.getElementById('view');
+    if (!F.kind) { box.innerHTML = ''; if (view) view.style.display = ''; return; }
+    if (view) view.style.display = 'none';
+
+    var title = '', body = '';
+    if (F.kind === 'wait') { title = '🔴 확정 대기'; body = rowsOf(listWaiting()); }
+    else if (F.kind === 'recheck') { title = '🟡 보류 재검토'; body = rowsOf(listRecheck()); }
+    else if (F.kind === 'reg') {
+      title = '🟢 지인 진행';
+      var ids = Object.keys(S.regstate);
+      body = ids.length ? ids.map(function (pid) {
+        var st = (S.regstate[pid] || {}).status || '';
+        var p = S.products.filter(function (x) { return x.pid === pid; })[0] || { name: pid };
+        return '<div class="bp-row"><div class="r1">' + esc(p.name) + '</div>' +
+               '<div class="r2">' + esc(st) + ' · ' + esc((S.regstate[pid] || {}).at || '') + '</div></div>';
+      }).join('') : '<div class="bp-empty">아직 등록 진행 중인 품목이 없습니다.</div>';
+    }
+    else if (F.kind === 'nofile') {
+      title = '📦 자료 없는 확정품 — 거래처별 요청 목록';
+      var nf = listNoFiles(), ks = Object.keys(nf);
+      body = ks.length ? ks.map(function (vid) {
+        return '<div class="bp-row"><div class="r1">' + esc(vname(vid)) +
+          ' <span style="font-weight:400;color:#8a94a6">' + nf[vid].length + '개 품목</span></div>' +
+          '<div class="r2">요청할 것: ' +
+          nf[vid].map(function (p) { return esc(p.name); }).join(', ') + '</div></div>';
+      }).join('') : '<div class="bp-empty">자료가 빠진 확정품이 없습니다.</div>';
+    }
+    else if (F.kind === 'cat') {
+      title = '🏷 ' + F.key;
+      body = rowsOf(S.products.filter(function (p) { return catOf(p) === F.key; }));
+    }
+    else if (F.kind === 'vendor') {
+      title = '🏢 ' + vname(F.key);
+      body = rowsOf(S.products.filter(function (p) { return p.vendorId === F.key; }));
+    }
+    box.innerHTML = '<div class="bp-head"><b>' + title + '</b>' +
+      '<button class="bp-x" id="bpBack">← 전체 보기</button></div>' + body;
+    var bk = document.getElementById('bpBack');
+    if (bk) bk.onclick = function () { F = { kind: null, key: null }; paint(); };
+  }
+
+  function bind() {
+    var el = document.getElementById('bosspanel');
+    el.querySelectorAll('.bp-t').forEach(function (t) {
+      t.onclick = function () {
+        var k = t.dataset.kind;
+        F = (F.kind === k) ? { kind: null, key: null } : { kind: k, key: null };
+        paint();
+      };
+    });
+    el.querySelectorAll('[data-cat]').forEach(function (c) {
+      c.onclick = function () {
+        var k = c.dataset.cat;
+        F = (F.kind === 'cat' && F.key === k) ? { kind: null, key: null } : { kind: 'cat', key: k };
+        paint();
+      };
+    });
+    el.querySelectorAll('[data-vendor]').forEach(function (c) {
+      c.onclick = function () {
+        var k = c.dataset.vendor;
+        F = (F.kind === 'vendor' && F.key === k) ? { kind: null, key: null } : { kind: 'vendor', key: k };
+        paint();
+      };
+    });
+    var cl = document.getElementById('bpClear');
+    if (cl) cl.onclick = function () { F = { kind: null, key: null }; paint(); };
+  }
+
+  function mount() {
+    if (document.getElementById('bosspanel')) return;
+    var p = document.createElement('div'); p.id = 'bosspanel';
+    p.innerHTML = '<h3>오늘 할 일</h3><div class="bp-empty">불러오는 중…</div>';
+    /* ★DOM 상 '맨 앞'에 넣는다. PC 는 position:fixed 라 위치가 같지만,
+       폰은 static 으로 바뀌므로 DOM 순서가 곧 화면 순서다 —
+       body 끝에 붙이면 폰에서 패널이 페이지 맨 아래로 내려간다(2026-07-28 실측). */
+    var hero = document.querySelector('.hero');
+    if (hero && hero.parentNode) hero.parentNode.insertBefore(p, hero);
+    else document.body.insertBefore(p, document.body.firstChild);
+    var v = document.getElementById('view');
+    var box = document.createElement('div'); box.id = 'bpview';
+    if (v && v.parentNode) v.parentNode.insertBefore(box, v);
+    else document.body.appendChild(box);
+  }
+
+  function start() {
+    mount();
+    Promise.all([get('products'), get('vendors'), get('confirm'),
+                 get('regstate'), get('files')]).then(function (a) {
+      S.products = a[0] || []; S.vendors = a[1] || [];
+      S.confirm = a[2] || {}; S.regstate = a[3] || {}; S.files = a[4] || {};
+      paint();
+      /* 데이터 기준일·산정 문구를 실제 값으로 되돌린다(구버전 6/27·네이버 문구 잔존 제거) */
+      get('dataUpdated').then(function (d) {
+        var el = document.getElementById('date');
+        if (el && d) {
+          var wd = ['일', '월', '화', '수', '목', '금', '토'][new Date(d).getDay()];
+          el.textContent = d + ' (' + wd + ') 기준';
+        }
+        var pn = document.getElementById('pnote');
+        if (pn) pn.textContent = '💡 추천 판매가는 저장된 정책값(수수료·목표마진·배송비)으로 자동 산정됩니다.';
+      });
+    });
+  }
+
+  if (document.readyState === 'loading')
+    document.addEventListener('DOMContentLoaded', function () { setTimeout(start, 600); });
+  else setTimeout(start, 600);
+})();
+</script>

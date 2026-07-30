@@ -1,0 +1,23 @@
+Firebase RTDB 규칙 추가 (2026-07-29 단계2)
+============================================
+
+shared/wholesale/selling 경로에 다음 규칙 추가:
+
+"selling": {
+  "$pid": {
+    ".validate": "newData.hasChildren(['on', 'at', 'by']) &&
+                  newData.child('on').isBoolean() &&
+                  newData.child('at').isString() &&
+                  newData.child('by').isString()",
+    ".write": "true",  // 사장키 인증 로직에 맞게 조정 필요
+    ".read": "true"
+  }
+}
+
+또는 기존 shared/wholesale 하위에 이미 쓰기 규칙이 있다면,
+selling도 같은 방식으로 추가합니다.
+
+형식 검증:
+- on: boolean (true/false)
+- at: string (날짜시간 YYYY-MM-DD HH:MM)
+- by: string (작성자, 예: "사장님")
