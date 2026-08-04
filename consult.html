@@ -1254,17 +1254,49 @@ function iTypes(box,id){
 
 /* ===== 서류함 (D:\컨설팅_서류 로컬 파일서버 연동) ===== */
 const FILESRV='http://127.0.0.1:8799';
+/* ★2026-08-04 사고 — 노트북에서 서류를 넣으면 조용히 사라졌다.
+   원인: 서류함은 전부 이 PC의 127.0.0.1:8799 파일서버를 부른다. 노트북엔 그게 없다.
+   그런데 실패했을 때 짧은 토스트 한 번 띄우고 그냥 return 해서, 화면상으론 들어간 것처럼
+   보이다가 새로고침하면 없어졌다. 사장님이 두 번 집어넣으셨다.
+   → 이제 ①넣기 전에 서버 생존을 먼저 확인하고 ②죽어 있으면 서류함에 빨간 안내를 계속
+     띄우며 ③받지 않는다. "받은 척"이 가장 나쁘다. */
+let SRVUP=null;                       // null=아직 모름 / true=살아있음 / false=꺼짐
+async function srvPing(force){
+  if(SRVUP!==null && !force) return SRVUP;
+  try{ const r=await fetch(FILESRV+'/list?customer=__ping__',{cache:'no-store'}); SRVUP=r.ok; }
+  catch(e){ SRVUP=false; }
+  return SRVUP;
+}
+function srvWarnHtml(){
+  if(SRVUP!==false) return '';
+  return `<div style="background:#fef2f2;border:1px solid #fecaca;color:#b91c1c;border-radius:8px;padding:10px 12px;margin:8px 0;font-size:13px;line-height:1.6">
+    <b>⚠ 이 컴퓨터에서는 서류를 저장할 수 없습니다.</b><br>
+    서류는 데스크탑의 <b>D:\\컨설팅_서류</b> 에만 보관됩니다(민감 서류라 클라우드에 올리지 않습니다).
+    지금은 그 파일서버에 연결되지 않아 <b>넣어도 저장되지 않습니다.</b><br>
+    · 데스크탑에서 대시보드를 열어 넣어 주세요<br>
+    · 노트북에서 쓰시려면 데스크탑이 켜져 있어야 하고 중계기가 떠 있어야 합니다
+    <span style="cursor:pointer;text-decoration:underline;margin-left:6px" onclick="srvPing(1).then(()=>rerender())">다시 확인</span>
+  </div>`;
+}
 function _b64(f){ return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(r.result);r.onerror=rej;r.readAsDataURL(f);}); }
 async function docUpload(id,fileList,opts){
   opts=opts||{};
   const c=getCust(id)||{}; const nm=c.nm||id; const files=[...fileList]; if(!files.length)return;
+  /* ★넣기 전에 먼저 확인한다 — 못 받을 거면 아예 받지 않는다 */
+  if(!(await srvPing(1))){
+    rerender();
+    if(!opts.silent) alert('이 컴퓨터에서는 서류가 저장되지 않습니다.\n\n서류는 데스크탑 D:\\컨설팅_서류 에만 보관됩니다.\n데스크탑에서 대시보드를 열어 넣어 주세요.\n\n(넣은 것처럼 보였다가 사라지는 일을 막기 위해 아예 받지 않습니다)');
+    return;
+  }
   if(!opts.silent) toast('업로드 중… '+files.length+'개'); let last=null;
   for(const f of files){
     if(f.size>40*1024*1024){ if(!opts.silent) toast(f.name+' 40MB 초과 — 제외'); continue; }
     try{ const data=await _b64(f);
       const r=await fetch(FILESRV+'/upload',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({customer:nm,name:f.name,data})});
       last=await r.json();
-    }catch(e){ if(!opts.silent) toast('⚠ 데탑 파일서버 꺼짐 — 데탑에서 대시보드 열어야 업로드돼요'); return; }
+    }catch(e){ SRVUP=false; rerender();
+      if(!opts.silent) alert('업로드 중 파일서버 연결이 끊겼습니다.\n저장되지 않았습니다 — 데스크탑에서 다시 넣어 주세요.');
+      return; }
   }
   if(last&&last.files){ const cc=getCust(id)||{}; setCust(id,{docs:last.files.map(x=>({name:x.name})),docStatus:'접수완료',...(cc.docDate?{}:{docDate:today()})}); toast(opts.silent?('서류 '+last.files.length+'개 저장 ✓'):'저장 완료 ✓ (D드라이브)'); }
 }
@@ -1308,7 +1340,8 @@ function docsHtml(id,c){
   const items=docs.map(d=>`<div class="docitem">📄<span class="nm" style="cursor:pointer" title="미리보기" onclick="viewFile('${esc(nm)}','${esc(d.name)}')">${esc(d.name||'서류')}</span>
      <span class="dl" title="다운로드" onclick="dlFile('${esc(nm)}','${esc(d.name)}')">⬇</span>
      <span class="x" title="삭제" onclick="docDelete('${id}','${esc(nm)}','${esc(d.name)}')">✕</span></div>`).join('');
-  return `<div class="docbox" id="docbox"><div class="dh"><b>📁 서류함 <span style="color:#b9a96b;font-weight:600">(${docs.length})</span></b>
+  srvPing();   /* ★서버 생존 확인(1회) — 꺼져 있으면 아래 빨간 안내가 뜬다 */
+  return `<div class="docbox" id="docbox">${srvWarnHtml()}<div class="dh"><b>📁 서류함 <span style="color:#b9a96b;font-weight:600">(${docs.length})</span></b>
     <div style="display:flex;gap:6px;align-items:center;flex-wrap:wrap"><span class="docbadge ${dd?'on':''}" onclick="toggleDocStatus('${id}')">${dd?'✅ 접수완료':'⏳ 접수전'}</span>
       ${docs.length?`<span class="add" onclick="dlZip('${esc(nm)}')">📦 전체 zip</span><span class="add" onclick="openFolder('${esc(nm)}')">📂 폴더</span><span class="add" style="background:#fef2f2;color:#dc2626;border-color:#fecaca" onclick="docDeleteAll('${id}','${esc(nm)}')">🗑 전체삭제</span>`:''}</div></div>
     <div class="dropzone" ondragover="event.preventDefault();this.classList.add('drag')" ondragleave="this.classList.remove('drag')" ondrop="docDrop(event,'${id}')">
@@ -3267,7 +3300,9 @@ async function deskSummarizeStored(id){
       body:JSON.stringify({customer:nm})});
     const j=await r.json(); if(!j.ok) throw new Error(j.err||'접수 실패');
     jid=j.id;
-  }catch(e){ toast('데탑 파일서버가 꺼져 있습니다 — 요약 불가'); return; }
+  }catch(e){ SRVUP=false; rerender();
+    alert('요약은 데스크탑에서만 됩니다.\n\n서류를 밖으로 내보내지 않고 데스크탑 안에서 글자를 읽어 요약하는 방식이라,\n그 파일서버에 연결되지 않으면 요약할 수 없습니다.\n\n데스크탑에서 대시보드를 열고 다시 눌러 주세요.');
+    return; }
   GENNING.add(id); rerender();
   toast('내 PC에서 서류 읽는 중… 1~2분 걸립니다');
   const t0=Date.now();
