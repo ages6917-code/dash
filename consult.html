@@ -3572,7 +3572,10 @@ if('serviceWorker' in navigator){
    ★수정: 60초마다 확인 + 창을 다시 볼 때(visibilitychange) 확인.
      · 입력 중(input/textarea 포커스)이면 리로드하지 않고 배너만 → 타이핑 날림 방지
      · 그 외엔 배너 띄우고 5초 뒤 자동 새로고침(데이터는 RTDB 실시간 저장이라 유실 없음) */
-window.BUILD_VER='20260727-174425';
+/* ★이 값이 version.txt 와 다르면 화면이 무한 새로고침한다(2026-08-05 실제 사고).
+   손으로 고치지 마라 — scripts\dash_version_sync.py 가 이 값을 읽어 version.txt 에 복사한다.
+   배포할 때마다 이 줄의 시각만 새로 찍고 그 스크립트를 돌린다. */
+window.BUILD_VER='20260805-171943';
 (function(){
   var busy=false, banner=null, timer=null;
   function typing(){
@@ -3589,7 +3592,12 @@ window.BUILD_VER='20260727-174425';
       location.replace(u.pathname+u.search);
     }catch(e){ location.replace(location.pathname+'?v='+encodeURIComponent(v)); }
   }
-  function showBanner(v){
+  /* ★2026-08-05 수리 — auto 인자 신설.
+     종전엔 '이미 최신으로 리로드했는데 또 옛 버전' 인 경우에도 5초 뒤 자동 리로드를 걸어
+     무한 새로고침이 났다. 바로 위 주석은 "배너로만 알리고 사용자가 누르게 한다" 인데
+     구현이 그 반대였다 — 의도와 코드가 어긋나 있었다.
+     auto=false 면 배너만 띄우고 자동 리로드를 걸지 않는다. */
+  function showBanner(v, auto){
     if(banner) return;
     banner=document.createElement('div');
     banner.style.cssText='position:fixed;left:50%;top:14px;transform:translateX(-50%);z-index:99999;'
@@ -3598,7 +3606,7 @@ window.BUILD_VER='20260727-174425';
     banner.innerHTML='<span>🆕 새 버전이 있습니다</span><span style="background:rgba(255,255,255,.22);padding:4px 10px;border-radius:7px">지금 새로고침</span>';
     banner.onclick=function(){ reload(v); };
     (document.body||document.documentElement).appendChild(banner);
-    if(!typing()) timer=setTimeout(function(){ if(!typing()) reload(v); }, 5000);
+    if(auto && !typing()) timer=setTimeout(function(){ if(!typing()) reload(v); }, 5000);
   }
   function check(){
     if(busy) return; busy=true;
@@ -3609,8 +3617,11 @@ window.BUILD_VER='20260727-174425';
          또 리로드하면 무한루프 → 배너로만 알리고 사용자가 누르게 한다. */
       var already=false;
       try{ already=(new URL(location.href)).searchParams.get('v')===v; }catch(e){ already=location.search.indexOf('v='+v)>=0; }
-      if(already){ showBanner(v); return; }
-      if(typing()){ showBanner(v); return; }
+      /* 이미 최신으로 리로드했는데도 옛 빌드 = 캐시가 안 풀렸거나 BUILD_VER 이 어긋난 것.
+         자동 리로드를 걸면 무한루프다 → 배너만 띄우고 멈춘다(auto=false). */
+      if(already){ showBanner(v, false); return; }
+      /* 입력 중이면 글이 날아가지 않게 배너만. 입력이 끝나면 사용자가 누른다. */
+      if(typing()){ showBanner(v, false); return; }
       reload(v);
     }).catch(function(){ busy=false; });
   }
