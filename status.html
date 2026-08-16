@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="T봇 현황판">
 <link rel="apple-touch-icon" href="icon180.png">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260816125947">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260816154017">
 <script>(function(){var B=(document.querySelector('meta[name=app-build]')||{}).content;function c(){fetch(location.pathname+'?_c='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/name="app-build" content="([^"]+)"/);if(m&&m[1]&&m[1]!=B){location.replace(location.pathname+'?v='+encodeURIComponent(m[1]))}}).catch(function(){})}setTimeout(c,700);document.addEventListener('visibilitychange',function(){if(!document.hidden)c()})})();</script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon512.png">
@@ -163,6 +163,51 @@ body{background:#eef0f7;color:var(--ink)}
  .autop .row .tk{order:1;flex:1 1 100%;font-weight:700;color:#3f3a5c}
  .autop .row .cy{order:2;flex:none}
  .autop .row .st{order:3;flex:none}
+}
+/* ── 받은 메일 (해외팀 우측 세로 패널) — 2026-08-16 #EL 사장님 지시 ──
+   ★폰에서 본문을 밀어내지 않게: 1100px 아래에서는 오른칸을 없애고 아래로 떨어뜨린다.
+   ★min-width:0 이 없으면 flex 자식이 안 줄어들어 **가로 스크롤**이 난다(검수봇 ②번 항목).
+   ★말줄임은 '한 줄 nowrap+ellipsis' 만 쓴다. -webkit-line-clamp 는 스크롤 잔량을 남겨
+     검수봇이 「내용 잘림」으로 잡는다(ui_gate:82). 여러 줄은 서버에서 잘라 보낸다. */
+.tvsplit{display:flex;gap:16px;align-items:flex-start}
+.tvsplit>.tvmain{flex:1 1 auto;min-width:0}
+.mbx{flex:0 0 330px;width:330px;min-width:0;position:sticky;top:14px;max-height:calc(100vh - 30px);
+ display:flex;flex-direction:column;background:#fff;border-radius:14px;border-left:5px solid #0e9f6e;
+ overflow:hidden;box-shadow:0 2px 10px rgba(34,28,70,.05)}
+.mbx .mh{padding:13px 15px 10px;border-bottom:1px solid #f2f0fa;flex:none}
+.mbx .mh h3{font-size:14px;font-weight:800;color:#2f2b45;display:flex;align-items:center;gap:7px;flex-wrap:wrap}
+.mbx .mh h3 .cc{font-size:11px;font-weight:800;color:#fff;background:#0e9f6e;border-radius:20px;padding:1px 9px}
+.mbx .mh h3 .cc.todo{background:#dc2626}
+.mbx .mh .stamp{font-size:10.5px;color:#9a96b5;font-weight:600;margin-top:4px;line-height:1.5;
+ word-break:keep-all;overflow-wrap:break-word}
+.mbx .fail{background:#fee2e2;color:#b91c1c;font-size:11.5px;font-weight:800;padding:9px 15px;line-height:1.55;
+ word-break:keep-all;overflow-wrap:break-word;flex:none}
+.mbx .lst{overflow-y:auto;min-height:0;padding:10px 11px 13px;display:flex;flex-direction:column;gap:9px}
+.mbx a.mc{display:block;text-decoration:none;color:inherit;background:#f8f8fd;border:1px solid #f0eefb;
+ border-radius:11px;padding:10px 11px}
+.mbx a.mc:hover{background:#f1eefc;border-color:#d9d3f6}
+.mbx .r1{display:flex;align-items:center;gap:5px;flex-wrap:wrap;margin-bottom:4px}
+.mbx .dt{font-size:10.5px;font-weight:800;color:#4b40c4;flex:none}
+.mbx .ln{font-size:9px;font-weight:800;color:#fff;border-radius:20px;padding:1px 7px;flex:none}
+.mbx .stg{font-size:9px;font-weight:800;border-radius:20px;padding:1px 7px;margin-left:auto;flex:none}
+.mbx .stg.todo{background:#fee2e2;color:#b91c1c}
+.mbx .stg.done{background:#dcfce7;color:#15803d}
+.mbx .stg.closed{background:#f1f5f9;color:#64748b}
+.mbx .co{font-size:12.5px;font-weight:800;color:#2f2b45;line-height:1.4;overflow-wrap:anywhere}
+.mbx .sj{font-size:11.5px;font-weight:700;color:#4b40c4;margin-top:3px;line-height:1.5;
+ word-break:keep-all;overflow-wrap:anywhere}
+.mbx .ko{font-size:11.5px;color:#3f3a5c;margin-top:6px;line-height:1.6;word-break:keep-all;overflow-wrap:anywhere}
+.mbx .og{font-size:10px;color:#a5a1bb;margin-top:6px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mbx .hold{display:inline-block;margin-top:5px;font-size:9.5px;font-weight:800;color:#b45309;
+ background:#fef3c7;border-radius:6px;padding:1px 7px}
+.mbx .go{font-size:10.5px;font-weight:800;color:#0e9f6e;margin-top:7px}
+.mbx .more{font-size:11px;color:#8a83b0;font-weight:700;text-align:center;padding:7px 4px}
+.mbx .empty{font-size:12px;color:#8a83b0;padding:16px 15px;line-height:1.7;
+ word-break:keep-all;overflow-wrap:break-word}
+@media(max-width:1100px){
+ .tvsplit{display:block}
+ .mbx{width:auto;max-width:100%;position:static;max-height:none;margin-bottom:16px}
+ .mbx .lst{max-height:60vh}
 }
 /* ── 팀 성과 ── */
 .perfw{background:#fff;border-radius:14px;padding:15px 17px;margin-bottom:16px;border-left:5px solid #38bdf8}
@@ -769,7 +814,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "08-16 12:59",
+    "asof": "08-16 15:39",
     "ago": "38일 전",
     "ok": false,
     "date": "2026-07-08 20:43",
@@ -837,7 +882,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 12:59",
+    "asof": "08-16 15:40",
     "ago": "22일 전",
     "ok": false,
     "date": "2026-07-25 05:20",
@@ -911,8 +956,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 12:59",
-    "ago": "20시간 전",
+    "asof": "08-16 15:40",
+    "ago": "22시간 전",
     "ok": false,
     "date": "2026-08-15 16:57",
     "stale_days": 1,
@@ -997,13 +1042,13 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 12:59",
-    "ago": "1시간 전",
+    "asof": "08-16 15:40",
+    "ago": "19분 전",
     "ok": true,
-    "date": "2026-08-16 11:02",
+    "date": "2026-08-16 15:20",
     "stale_days": 0,
     "state": "가동",
-    "headline": "오늘 SNS 발행 4건"
+    "headline": "오늘 SNS 발행 8건"
    }
   },
   {
@@ -1046,7 +1091,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "08-16 12:59",
+    "asof": "08-16 15:40",
     "ago": "22일 전",
     "ok": false,
     "date": "2026-07-25 12:00",
@@ -1094,8 +1139,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 12:59",
-    "ago": "39일 전",
+    "asof": "08-16 15:40",
+    "ago": "40일 전",
     "ok": false,
     "date": "2026-07-07 13:05",
     "stale_days": 40,
@@ -1134,7 +1179,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 12:59",
+    "asof": "08-16 15:40",
     "ago": "8일 전",
     "ok": false,
     "date": "2026-08-08 11:24",
@@ -1171,10 +1216,10 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 12:59",
-    "ago": "5분 전",
+    "asof": "08-16 15:40",
+    "ago": "방금",
     "ok": true,
-    "date": "2026-08-16 12:54",
+    "date": "2026-08-16 15:40",
     "stale_days": 0,
     "state": "가동"
    }
@@ -1208,10 +1253,10 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 12:59",
-    "ago": "4시간 전",
+    "asof": "08-16 15:40",
+    "ago": "27분 전",
     "ok": true,
-    "date": "2026-08-16 08:20",
+    "date": "2026-08-16 15:12",
     "stale_days": 0,
     "state": "가동",
     "headline": "오늘 발굴 20건(검수대기)"
@@ -1770,7 +1815,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-08-16 12:59",
+ "_autosync": "2026-08-16 15:40",
  "perf": {
   "overseas_total": 11,
   "by_country": [
@@ -1783,7 +1828,7 @@ body{background:#eef0f7;color:var(--ink)}
  },
  "_detail_updated": "2026-08-16T08:41:05"
 };window.__AUTO__={
- "built": "08-16 12:59",
+ "built": "08-16 15:40",
  "snapshot": "08-16 12:26",
  "total": 77,
  "on_total": 55,
@@ -2109,7 +2154,7 @@ body{background:#eef0f7;color:var(--ink)}
     }
    ],
    "on_count": 33,
-   "next": "13:00"
+   "next": "16:00"
   },
   {
    "no": 1,
@@ -2738,7 +2783,7 @@ body{background:#eef0f7;color:var(--ink)}
   }
  ]
 };window.__PERF__={
- "built": "2026-08-16 12:59",
+ "built": "2026-08-16 15:40",
  "origin": {
   "claude": {
    "label": "클로드",
@@ -2987,7 +3032,7 @@ body{background:#eef0f7;color:var(--ink)}
  ],
  "sent_all": 361,
  "reply_class": {
-  "built": "2026-08-16 12:54",
+  "built": "2026-08-16 15:39",
   "inbox_total": 266,
   "real": 14,
   "auto": 47,
@@ -3573,13 +3618,13 @@ body{background:#eef0f7;color:var(--ink)}
   "dup_canon": []
  }
 };window.__VERIFY__={
- "built": "08-16 12:59",
+ "built": "08-16 15:40",
  "date": "2026-08-16",
- "summary": "제작 0 → 게이트 통과 0 → 발송 2, 걸러진 것 1건",
+ "summary": "제작 0 → 게이트 통과 0 → 발송 3, 걸러진 것 1건",
  "counts": {
   "made": 0,
   "passed": 0,
-  "sent": 2,
+  "sent": 3,
   "filtered": 1
  },
  "sections": [
@@ -3607,9 +3652,9 @@ body{background:#eef0f7;color:var(--ink)}
    "key": "gateway",
    "icon": "📮",
    "title": "발송 관문",
-   "head": "발송 2건 (morning_reply 1 · 해외 회신 1) / 거부 1건",
-   "made": 3,
-   "ok": 2,
+   "head": "발송 3건 (morning_reply 1 · 해외 회신 2) / 거부 1건",
+   "made": 4,
+   "ok": 3,
    "bad": 1,
    "rows": [
     {
@@ -3632,6 +3677,13 @@ body{background:#eef0f7;color:var(--ink)}
      "sub": "📋 <b>제미나이 수집 이메일 전수 대조</b> (08-16)",
      "verdict": "발송",
      "reason": ""
+    },
+    {
+     "t": "14:37",
+     "label": "해외 회신 · 글",
+     "sub": "✍️ 보낼 답장 · Rikumo",
+     "verdict": "발송",
+     "reason": ""
     }
    ]
   },
@@ -3639,10 +3691,10 @@ body{background:#eef0f7;color:var(--ink)}
    "key": "alert",
    "icon": "🚨",
    "title": "산출 경보",
-   "head": "경보 22건 발화",
-   "made": 22,
+   "head": "경보 46건 발화",
+   "made": 46,
    "ok": 0,
-   "bad": 22,
+   "bad": 46,
    "rows": [
     {
      "t": "00:01",
@@ -3797,12 +3849,180 @@ body{background:#eef0f7;color:var(--ink)}
      "sub": "",
      "verdict": "발화",
      "reason": "📩 잔여 미착수 1건 기한 도달 [대상 1건 중 1건 읽음] · [C001] 반송목록 읽기 파서 통일 잔여 5곳 (send_gate·scien_campaign·account_health·scien_revive·**source_bounce_rate**) — bounce_"
+    },
+    {
+     "t": "15:09",
+     "label": "알람 무작동",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 알람 무작동 9건 — 세션은 떴는데 도구를 한 번도 안 불렀다    04:31  세션 31cc3ac6  40KB    05:00  세션 9aeb0b5b  25KB    05:31  세션 1f967dcf  38KB    08:31  세션 b6c90e26  37KB  "
+    },
+    {
+     "t": "15:09",
+     "label": "명단 축소",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 사이언숯_바이어_마스터_v4 명단이 664행 → 663행으로 1건 줄었습니다. 격리본: C:\\TTAPP\\_backup\\master_guard\\사이언숯_바이어_마스터_v4_20260816_150959_664행에서663행.csv 📩 사이언숯_form_only 명단이 6"
+    },
+    {
+     "t": "15:09",
+     "label": "마스터 스키마",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 마스터 스키마 이상 — 사이언숯_form_only: 칸수 5≠정본 9 / 순서·이름 다름 [(1  'company_name'  'company')  (3  'priority_tag'  'mx')  (4  'extraction_date'  'priority')] / "
+    },
+    {
+     "t": "15:10",
+     "label": "알림 스텁(감시의 성대)",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "[2026-08-16 15:10:11] 파일 481개 / 검사함수 152개 STUB 2 / SILENT 3 / 허용 11 / UNKNOWN 82 / WIRED 54 📩 알림 스텁 5건 — 감시가 벙어리다 결과: C:\\Users\\User\\ttapp-tbot\\_state\\"
+    },
+    {
+     "t": "15:10",
+     "label": "바탕화면 규칙",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 바탕화면 규칙 위반 8건 — 루트에 저장 금지(각자 폴더·_tmp 로): 4504724b-e3fc-45b4-81f3-04d9c1f100a7.jpg  dbe3c9edd24dae4e1b689120433f20fd.jpg  구글옴니.txt  다운로드.png  뚝딱컷.txt"
+    },
+    {
+     "t": "15:10",
+     "label": "T봇 대화 비대",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 세션 비대 방 7개 (경고선 15MB) — 새 대화 필요: Desktop----------- 20MB / Desktop-555 50MB / Desktop-AI-------11 30MB / Desktop-OneDrive-------- 23MB / Desktop-One"
+    },
+    {
+     "t": "15:10",
+     "label": "발송풀 잔량",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 긴급 — 사이언숯: 남은 55건 = 1일치 (하루 40통) | 📩 긴급 — 한국대행: 남은 80건 = 4일치 (하루 20통)"
+    },
+    {
+     "t": "15:11",
+     "label": "경보 배선",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 경보 배선 없음(신규) — ag_reply_send.py (★부르는 곳도 없음) 📩 경보 배선 없음(신규) — alarm_prefix_apply.py (★부르는 곳도 없음) 📩 경보 배선 없음(신규) — alarm_rollback.py (★부르는 곳도 없음) 📩 경"
+    },
+    {
+     "t": "15:11",
+     "label": "SNS 발행",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "[nagomi] ⛔중지 라인 — 2026-08-10 사장님 결정(나고미 접고 야월 몰빵). 발행 감시 제외. 채널·데이터·업로드분 보존. 되살림은 사장님 명시 시에만. [표시] 쓰레드@생활노트 토큰 정상 · 정지일수 경보 제외 — 직원16 당분간 운영 계획 없음 (20"
+    },
+    {
+     "t": "15:11",
+     "label": "메타 토큰",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 메타 토큰 1건 — 인스타 토큰 만료됨(0일 경과) — 재발급은 브라우저 로그인 필요  [보류] 쓰레드 보류중 — @yawol_music 스레드를 사장님이 새 계정으로 다시 만드신다. 현 계정 토큰은 되살릴 대상이 아니므로"
+    },
+    {
+     "t": "15:11",
+     "label": "노래 방치",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "[제외] 5집(archive) / _플레이리스트(pipeline) / 나고미 (和みの宿)(archive) / 야월 (夜月)(archive) [미등록→감시] _조선랩_파일럿 / _커버파일럿 📩 D:\\AI노래 방치 2건 — _조선랩_파일럿 12곡 7.4일째 미처리 / _커"
+    },
+    {
+     "t": "15:11",
+     "label": "잔여 미착수",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 잔여 미착수 1건 기한 도달 [대상 1건 중 1건 읽음] · [C001] 반송목록 읽기 파서 통일 잔여 5곳 (send_gate·scien_campaign·account_health·scien_revive·**source_bounce_rate**) — bounce_"
+    },
+    {
+     "t": "15:11",
+     "label": "알람 무작동",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 알람 무작동 9건 — 세션은 떴는데 도구를 한 번도 안 불렀다    04:31  세션 31cc3ac6  40KB    05:00  세션 9aeb0b5b  25KB    05:31  세션 1f967dcf  38KB    08:31  세션 b6c90e26  37KB  "
+    },
+    {
+     "t": "15:11",
+     "label": "명단 축소",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 사이언숯_바이어_마스터_v4 명단이 664행 → 663행으로 1건 줄었습니다. 격리본: C:\\TTAPP\\_backup\\master_guard\\사이언숯_바이어_마스터_v4_20260816_151155_664행에서663행.csv 📩 사이언숯_form_only 명단이 6"
+    },
+    {
+     "t": "15:11",
+     "label": "마스터 스키마",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 마스터 스키마 이상 — 사이언숯_form_only: 칸수 5≠정본 9 / 순서·이름 다름 [(1  'company_name'  'company')  (3  'priority_tag'  'mx')  (4  'extraction_date'  'priority')] / "
+    },
+    {
+     "t": "15:12",
+     "label": "알림 스텁(감시의 성대)",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "[2026-08-16 15:12:01] 파일 481개 / 검사함수 152개 STUB 2 / SILENT 3 / 허용 11 / UNKNOWN 82 / WIRED 54 📩 알림 스텁 5건 — 감시가 벙어리다 결과: C:\\Users\\User\\ttapp-tbot\\_state\\"
+    },
+    {
+     "t": "15:12",
+     "label": "바탕화면 규칙",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 바탕화면 규칙 위반 8건 — 루트에 저장 금지(각자 폴더·_tmp 로): 4504724b-e3fc-45b4-81f3-04d9c1f100a7.jpg  dbe3c9edd24dae4e1b689120433f20fd.jpg  구글옴니.txt  다운로드.png  뚝딱컷.txt"
+    },
+    {
+     "t": "15:12",
+     "label": "T봇 대화 비대",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 세션 비대 방 7개 (경고선 15MB) — 새 대화 필요: Desktop----------- 20MB / Desktop-555 50MB / Desktop-AI-------11 30MB / Desktop-OneDrive-------- 23MB / Desktop-One"
+    },
+    {
+     "t": "15:12",
+     "label": "발송풀 잔량",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 긴급 — 사이언숯: 남은 55건 = 1일치 (하루 40통) | 📩 긴급 — 한국대행: 남은 80건 = 4일치 (하루 20통)"
+    },
+    {
+     "t": "15:13",
+     "label": "경보 배선",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 경보 배선 없음(신규) — ag_reply_send.py (★부르는 곳도 없음) 📩 경보 배선 없음(신규) — alarm_prefix_apply.py (★부르는 곳도 없음) 📩 경보 배선 없음(신규) — alarm_rollback.py (★부르는 곳도 없음) 📩 경"
+    },
+    {
+     "t": "15:13",
+     "label": "SNS 발행",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "[nagomi] ⛔중지 라인 — 2026-08-10 사장님 결정(나고미 접고 야월 몰빵). 발행 감시 제외. 채널·데이터·업로드분 보존. 되살림은 사장님 명시 시에만. [표시] 쓰레드@생활노트 토큰 정상 · 정지일수 경보 제외 — 직원16 당분간 운영 계획 없음 (20"
+    },
+    {
+     "t": "15:13",
+     "label": "메타 토큰",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 메타 토큰 1건 — 인스타 토큰 만료됨(0일 경과) — 재발급은 브라우저 로그인 필요  [보류] 쓰레드 보류중 — @yawol_music 스레드를 사장님이 새 계정으로 다시 만드신다. 현 계정 토큰은 되살릴 대상이 아니므로"
+    },
+    {
+     "t": "15:13",
+     "label": "노래 방치",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "[제외] 5집(archive) / _플레이리스트(pipeline) / 나고미 (和みの宿)(archive) / 야월 (夜月)(archive) [미등록→감시] _조선랩_파일럿 / _커버파일럿 📩 D:\\AI노래 방치 2건 — _조선랩_파일럿 12곡 7.4일째 미처리 / _커"
+    },
+    {
+     "t": "15:13",
+     "label": "잔여 미착수",
+     "sub": "",
+     "verdict": "발화",
+     "reason": "📩 잔여 미착수 1건 기한 도달 [대상 1건 중 1건 읽음] · [C001] 반송목록 읽기 파서 통일 잔여 5곳 (send_gate·scien_campaign·account_health·scien_revive·**source_bounce_rate**) — bounce_"
     }
    ]
   }
  ]
 };window.__SNS__={
- "built": "2026-08-16 12:59",
+ "built": "2026-08-16 15:40",
  "channels": [
   {
    "key": "econ_threads",
@@ -3870,30 +4090,356 @@ body{background:#eef0f7;color:var(--ink)}
   {
    "f": "정찰브리핑_20260809.md",
    "at": "2026-08-09 15:10",
-   "age_h": 165.8,
+   "age_h": 168.5,
    "stale": true
   },
   {
    "f": "쓰레드_벤치마킹_20260724.md",
    "at": "2026-07-24 17:18",
-   "age_h": 547.7,
+   "age_h": 550.4,
    "stale": true
   },
   {
    "f": "brief_20260806.md",
    "at": "2026-08-06 12:06",
-   "age_h": 240.9,
+   "age_h": 243.6,
    "stale": true
   },
   {
    "f": "brief_20260804.md",
    "at": "2026-08-04 12:06",
-   "age_h": 288.9,
+   "age_h": 291.6,
    "stale": true
   }
  ],
  "note": "배달 성립 기준 = 관문 대장(tg_send_log.csv)의 mid. 파일만 있고 mid 가 없으면 '제작됨 · 폰 미도착'이다. 팔로워는 자동 측정 수단이 없어 사장님 입력값만 쓴다."
-};window.__BACKEND__=false;window.__SYNC__="2026-08-16 12:59";</script>
+};window.__MAILBOX__={
+ "built": "2026-08-16 15:40",
+ "ok": true,
+ "last_ok": "2026-08-16 15:40",
+ "error": "",
+ "cards": [
+  {
+   "uid": "252",
+   "when": "2026-08-05 10:24",
+   "d": "08/05",
+   "hm": "10:24",
+   "co": "Storage Organisers",
+   "addr": "info@storageorganisers.com.au",
+   "subj": "Re: Natural charcoal deodorizer & dehumidifier from Korea - IVE CHARCOAL",
+   "subj_ko": "Re: 한국산 천연숯 탈취제 & 제습기 - IVE CHARCOAL",
+   "ko": "안녕하세요 영태님\n문의해 주셔서 감사합니다.\n귀하의 제품은 우리에게 매우 적합한 것 같습니다. 먼저 가서 보내주세요\n귀하의 전체 영어 카탈로그.",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "Hi Youngtae, Thank you for reaching out. Your products sound like a great fit for us. Please go ahead and send over your full English catalogue.",
+   "line": "charcoal",
+   "line_l": "숯·탈취",
+   "line_c": "#0e9f6e",
+   "line_why": "발송대장 5건 전부 charcoal (최초 2026-08-05 10:20)",
+   "st": "답장함 08-10",
+   "stk": "done",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:CACBhMokLtbo3aFYvqik%2BE7vNchv9XoYQL6Pfn5mXARe5EbOg-g%40mail.gmail.com",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "248",
+   "when": "2026-08-05 10:00",
+   "d": "08/05",
+   "hm": "10:00",
+   "co": "Rikumo.com",
+   "addr": "info@rikumo.com",
+   "subj": "We will respond in 2 to 3 business days Re: Natural charcoal deodorizer & dehumidifier from Korea - IVE CHARCOAL",
+   "subj_ko": "영업일 기준 2~3일 내로 답변드리겠습니다. Re: 한국산 천연숯 탈취제&제습기 - IVE CHARCOAL",
+   "ko": "이메일을 보내주셔서 감사합니다!\n간혹 주문량이 많아 문의하신 내용에 바로 답변을 드리지 못하는 경우가 있습니다.\n즉각적인 답변이 필요한 문의사항은 영업시간 내에 매장으로 전화주시기 바랍니다. 모든 이메일 및 전화 문의는 접수된 순서대로 답변 및 후속 조치를 취하겠습니다. Rikumo 직원은 알에 참석하기 위해 최선을 다하고 있습니다",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "Thank you for your email! Due to the occasional number of high orders, it is possible that we may not be able to answer your inquiry immediately. If y",
+   "line": "charcoal",
+   "line_l": "숯·탈취",
+   "line_c": "#0e9f6e",
+   "line_why": "발송대장 1건 전부 charcoal (최초 2026-08-05 10:00)",
+   "st": "⚠ 미처리",
+   "stk": "todo",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:CAMHWTeQA8JDZfnzs8EYJMVwhWj8aNEYxSEu-8e8YoAx9sVdgbA%40mail.gmail.com",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "215",
+   "when": "2026-07-28 21:35",
+   "d": "07/28",
+   "hm": "21:35",
+   "co": "宇树客服",
+   "addr": "sales_global@unitree.cc",
+   "subj": "Re: Growing Unitree Robotics Ordination in the Korean market - localization & influencer campaigns",
+   "subj_ko": "Re: 한국 시장에서 Unitree Robotics Ordination 성장 - 현지화 및 영향력 행사 캠페인",
+   "ko": "안녕하세요, 유니트리 판매 이메일 주소입니다. 조달 문제를 조정합니다. 어떻게 도와드릴까요? 우리 제품 중 어떤 제품에 관심이 있으신가요? 그리고 귀하의 프로젝트는 어느 국가에 위치할 예정입니까? 책임자는 국가마다 다릅니다. 당사 웹사이트는 다음과 같습니다: https://www.unitree.com/.\n한국의 대리점이 되는 것을 말씀하시는 건가요?\n감사합니다,\n유니트리 로보틱스｜글로벌 영업&지원",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "Hi, this is Unitree's sales email address. Coordinate procurement matters.How can I help you? Which of our products are you interested in? And in whic",
+   "line": "agency",
+   "line_l": "K-pop 대행(옛 라인)",
+   "line_c": "#8b7ff0",
+   "line_why": "발송대장 2건 전부 agency (최초 2026-07-30 10:56)",
+   "st": "답장함 07-30",
+   "stk": "done",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:0569F04801CBFFA5%2B20260728203541757414177%40unitree.cc",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "165",
+   "when": "2026-07-16 19:49",
+   "d": "07/16",
+   "hm": "19:49",
+   "co": "TOKKI-SHOP CUSTOMER SUPPORT",
+   "addr": "service@tokki-shop.de",
+   "subj": "Re: Your Korea-side team for K-pop buying, pre-orders & shipping - TOKKI-SHOP?",
+   "subj_ko": "Re: K-pop 구매, 선주문, 배송을 담당하는 한국 측 팀 - TOKKI-SHOP이요?",
+   "ko": "친애하는 선생님, 저희에게 연락해 주시고 귀하의 서비스를 소개해주셔서 감사합니다. 귀하의 가격 목록, 웹사이트, 회사 정보 및 추가 세부 사항을 당사 전무이사 Mrs. Blum에게 admin@tokki-shop.de로 직접 보내주십시오.귀하의 메시지는 현재 고객 서비스 팀에 전달되었습니다. 따라서 향후 사업 문의나 협력 제안이 있는 경우 당사에 직접 문의하시기 바랍니다.",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "Dear Sir or Madam,Thank you for contacting us and for introducing your services.Please feel free to send your price list, website, company information",
+   "line": "agency",
+   "line_l": "K-pop 대행(옛 라인)",
+   "line_c": "#8b7ff0",
+   "line_why": "발송대장 1건 전부 agency (최초 2026-06-13 18:35)",
+   "st": "답장함 07-20",
+   "stk": "done",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:1784198940495953417.11.1784198940495955225%40UO8ZMHKTRTWK-8150629-UO8ZMHKTRTWK",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "154",
+   "when": "2026-06-24 22:34",
+   "d": "06/24",
+   "hm": "22:34",
+   "co": "Diego Sala",
+   "addr": "admin@siamdevelopment.com",
+   "subj": "Re: Growing Siam Trade Development Co. Ltd. in the Korean market -\r\n localization & influencer campaigns",
+   "subj_ko": "답변: 한국 시장에서 성장하는 Siam Trade Development Co. Ltd. -\r\n 현지화 및 인플루언서 캠페인",
+   "ko": "보낸 사람: 이영태 <sciensourcing@gmail.com>\n보낸 날짜: 2026년 6월 24일 수요일 16:10:24\n받는 사람: 디에고 살라 <admin@siamdevelopment.com>\n제목: 한국 시장에서 성장하는 Siam Trade Development Co. Ltd. - 현지화 및 인플루언서 캠페인\n안녕하세요, Siam Trade Development Co. Ltd. 팀,\n나는 Siam Trade Development Co. Ltd.와 귀사의 제품을 발견했습니다. 한국 시장 자체에서 성장하고 싶다면,",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "From: Youngtae Lee <sciensourcing@gmail.com> Sent: Wednesday, 24 June 2026 16:10:24 To: Diego Sala <admin@siamdevelopment.com> Subject: Growing Siam T",
+   "line": "agency",
+   "line_l": "K-pop 대행(옛 라인)",
+   "line_c": "#8b7ff0",
+   "line_why": "발송대장 2건 전부 agency (최초 2026-06-24 02:10)",
+   "st": "종결",
+   "stk": "closed",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:KL1PR0601MB4081498F5949E521955D4D2BBFED2%40KL1PR0601MB4081.apcprd06.prod.outlook.com",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "132",
+   "when": "2026-06-19 08:46",
+   "d": "06/19",
+   "hm": "08:46",
+   "co": "Ddalgi Store",
+   "addr": "info@ddalgistore.com",
+   "subj": "Re: Your Korea-side team for K-pop buying, pre-orders & shipping -\r\n Ddalgi Store?",
+   "subj_ko": "Re: K-pop 구매, 예약주문, 배송을 담당하는 한국팀 -\r\n 딸기매장?",
+   "ko": "안녕하세요 이씨님\n우리는 Stray Kids 상품을 대량 구매하는 데 관심이 있습니다.\n응원봉. Stray Kids 50개 구매 가격을 알고 싶습니다\n나침봉 V2\n우리는 귀하의 답변을 기다리고 있습니다\n*https://ddalgistore.com <https://ddalgistore.com>*\n*IG: ddalgi.kpop*\n엘 엘 3월, 6월 16일 2026 a la(s) 오후 6시 53분, 이영태 <\nsciensourcing@gmail.com> 설명:",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "Hi Mr. Lee We are interesed in buying Stray Kids merchandise in bulk, mostly lightsticks. We’d like to know the price of buying 50 units of Stray Kids",
+   "line": "agency",
+   "line_l": "K-pop 대행(옛 라인)",
+   "line_c": "#8b7ff0",
+   "line_why": "발송대장 6건 전부 agency (최초 2026-06-16 16:53)",
+   "st": "답장함 08-02",
+   "stk": "done",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:CAF3wN7vZF4G7bacGPNeSDTH_C81np5wFjT75BR-aOEWzYYG9Nw%40mail.gmail.com",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "130",
+   "when": "2026-06-18 14:13",
+   "d": "06/18",
+   "hm": "14:13",
+   "co": "Lia Kim",
+   "addr": "goldenseakorea@gmail.com",
+   "subj": "Re: Your Korea-side team for K-pop buying, pre-orders & shipping - K-Mart?",
+   "subj_ko": "Re: K-pop 구매, 선주문, 배송을 담당하는 한국팀 - K-Mart요?",
+   "ko": "안녕하세요.\n골든시 한국 법인 대표 김리아입니다.\n인기있는 제품들의 단가 포함 제품 리스트를 받을 수 있을까요?\n감사합니다.\n김리아 드림\n*김리아 대표 이사(Lia Kim) *\nCEO / Goldensea Co., Ltd.\nMobile: +82 10-9473-1896 / Email: goldenseakorea@gmail.com\nA40, 7FL, 11-9, Teheran-ro 77-gil, Gangnam-gu, Seoul, Republic of Korea\n2026년 6월 18일 (목) 오후 1:15, Youngtae Lee <sciensourcing@gmail.com>님이 작성:",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "안녕하세요. 골든시 한국 법인 대표 김리아입니다. 인기있는 제품들의 단가 포함 제품 리스트를 받을 수 있을까요? 감사합니다. 김리아 드림 *김리아 대표 이사(Lia Kim) * CEO / Goldensea Co., Ltd. Mobile: +82 10-9473-1896 ",
+   "line": "agency",
+   "line_l": "K-pop 대행(옛 라인)",
+   "line_c": "#8b7ff0",
+   "line_why": "발송대장 4건 전부 agency (최초 2026-06-17 21:15)",
+   "st": "답장함 07-28",
+   "stk": "done",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:CAF-j75pexXquZzKc7qo4vpwDCYfXMWzGQdgb3EA47Up3L6oitw%40mail.gmail.com",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "106",
+   "when": "2026-06-12 15:50",
+   "d": "06/12",
+   "hm": "15:50",
+   "co": "Customer Service HOK",
+   "addr": "support@houseofkpop.com",
+   "subj": "Re: Your Korea-side team for K-pop buying, pre-orders & shipping - House of Kpop?",
+   "subj_ko": "Re: K-pop 구매, 선주문, 배송을 담당하는 한국 측 팀 - House of Kpop?",
+   "ko": "영태에게\n우리가 볼 수 있는 웹사이트가 있는지 알려주세요.",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "Dear Youngtae Please advise whether you have any website that we can look at.",
+   "line": "agency",
+   "line_l": "K-pop 대행(옛 라인)",
+   "line_c": "#8b7ff0",
+   "line_why": "발송대장 2건 전부 agency (최초 2026-06-11 23:36)",
+   "st": "답장함 06-13",
+   "stk": "done",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:8A53DE11-36A8-4D5C-8771-CD714067ADAF%40houseofkpop.com",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "75",
+   "when": "2026-06-11 14:39",
+   "d": "06/11",
+   "hm": "14:39",
+   "co": "gmail.com",
+   "addr": "harukidanavietnam@gmail.com",
+   "subj": "Re: Free Korean-product import snapshot for Công Ty TNHH Đầu Tư XNK Haruki Dana Việt Nam?",
+   "subj_ko": "Re: 다나 하루키 베트남 수출입 투자 회사의 한국 제품 수입 스냅샷을 무료로 제공합니까?",
+   "ko": "문의해 주셔서 감사합니다. 예, 2페이지짜리 편지를 받으면 기쁘겠습니다.\n시장 개요.\n검증된 한국 제품에 대한 자세한 정보를 보내주세요.\n공급업체, 가격, 수입 요건. 저도 그렇게 해주시면 감사하겠습니다\n우리 사업과 일치하는 공급업체 추천을 공유할 수 있습니다.\n카테고리.\n귀하의 정보를 기대합니다. 감사합니다.\n2026년 11월 5일 11일 오전 8시 2분 Youngt",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "Thank you for reaching out. Yes, I would be happy to receive the 2-page market brief. Please send me more information about the Korean products, verif",
+   "line": "agency",
+   "line_l": "K-pop 대행(옛 라인)",
+   "line_c": "#8b7ff0",
+   "line_why": "발송대장 3건 전부 agency (최초 2026-06-10 18:02)",
+   "st": "답장함 06-12",
+   "stk": "done",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:CAFRhrxBUXrS4O3x%3Dpo7bvkuqiRUhTL5K3VjFCb2-xjQ2WSYxrw%40mail.gmail.com",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "56",
+   "when": "2026-06-10 15:48",
+   "d": "06/10",
+   "hm": "15:48",
+   "co": "pharmacity.vn",
+   "addr": "cskh@pharmacity.vn",
+   "subj": "Re: Free Korean-product import snapshot for Công ty CP Dược phẩm Pharmacity?",
+   "subj_ko": "Re: Pharmacity Pharmaceutical Joint Stock Company의 무료 한국 제품 수입 스냅샷이 무엇입니까?",
+   "ko": "---#####\n친애하는 선생님,\n고객 서비스 팀에서 따뜻한 인사를 드립니다!\n귀중한 정보를 제공해 주셔서 감사합니다. 귀하의 정보를 잘 기재하여 관련 부서로 전달하였습니다.\n필요한 경우 연락을 드릴 것입니다.\n도움이 필요하시면 언제든지 저희에게 연락해 주세요.\n건강을 기원합니다!\n감사합니다.\n고객 서비스 부서\n전화: 18006821\n이메일: cskh@pharmacity.vn\n여: www.",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "---##### Dear Ms/ Mr, Warm greetings from the Customer Service team! Thanks for your valuable information. We have well noted your information and it ",
+   "line": "agency",
+   "line_l": "K-pop 대행(옛 라인)",
+   "line_c": "#8b7ff0",
+   "line_why": "발송대장 2건 전부 agency (최초 2026-06-09 20:36)",
+   "st": "답장함 06-10",
+   "stk": "done",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:w9kyo7qm.z6fh6hd3tdtr%40pharmacity.vn",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "55",
+   "when": "2026-06-10 14:13",
+   "d": "06/10",
+   "hm": "14:13",
+   "co": "pharmacity.vn",
+   "addr": "cskh@pharmacity.vn",
+   "subj": "Re: Free Korean-product import snapshot for Công ty CP Dược phẩm Pharmacity?",
+   "subj_ko": "Re: Pharmacity Pharmaceutical Joint Stock Company의 무료 한국 제품 수입 스냅샷이 무엇입니까?",
+   "ko": "친애하는 선생님/부인께,\n귀하가 제공한 정보에 감사드립니다. 그러나 제품 협업 세부정보에는 여전히 파일/이미지가 누락되어 있습니다.\n관련 부서에 전달할 수 있도록 추가 제품 파일을 보내주실 수 있나요? 협업이 필요한 경우 해당 부서에서 적극적으로 연락하겠습니다.\n감사합니다!\n건강을 기원합니다!\n감사합니다.\n고객 서비스",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "Dear Sir/Ma'am, Thank you for the information you provided. However, the product collaboration details are still missing files/images. Could you pleas",
+   "line": "agency",
+   "line_l": "K-pop 대행(옛 라인)",
+   "line_c": "#8b7ff0",
+   "line_why": "발송대장 2건 전부 agency (최초 2026-06-09 20:36)",
+   "st": "답장함 06-10",
+   "stk": "done",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:1oopi7qm.6cityo355hcr%40pharmacity.vn",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "51",
+   "when": "2026-06-10 12:39",
+   "d": "06/10",
+   "hm": "12:39",
+   "co": "Dũng DuMartThaiLand Nguyễn Văn",
+   "addr": "dutuco.ceo.002@gmail.com",
+   "subj": "DuMartThaiLand Re: Free Korean-product import snapshot for Công Ty Cổ Phần DUTUCO?",
+   "subj_ko": "DuMartThaiLand Re: DUTUCO 합작회사의 무료 한국 제품 수입 스냅샷?",
+   "ko": "감사합니다.    --------********------------ Nguyen Van Dung Mobil 전화: 0903.224.768\n회사 본사 - 하노이 시의 DuMart-ThaiLand - 베트남\n시설 1: 하노이시 Nam Tu Liem 지구, Cau Dien Ward, 35B/12 Ham Nghi Street - VN 시설 2: 38 Nguyen Dong Chi,",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "Thanks & Best regard ---------*****----------- Nguyen Van Dung Mobil phone : 0903.224.768 Trụ sở Cty - DuMart-ThaiLand Tại TP Hà Nội - Việt Nam Cơ sở ",
+   "line": "agency",
+   "line_l": "K-pop 대행(옛 라인)",
+   "line_c": "#8b7ff0",
+   "line_why": "발송대장 2건 전부 agency (최초 2026-06-09 20:39)",
+   "st": "답장함 06-10",
+   "stk": "done",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:CACU5x1uExGWLnaAVFFj%3DLtr6c90HcDd4DyMaXU6dAvbZdKYXCg%40mail.gmail.com",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "48",
+   "when": "2026-06-10 12:38",
+   "d": "06/10",
+   "hm": "12:38",
+   "co": "CtyNam Tinh",
+   "addr": "namtinhcpn@gmail.com",
+   "subj": "http://duonggoinamtinh.com HOTLINE: 0987 909 281 Re: Free Korean-product import snapshot for Công Ty TNHH Thương Mại Dịc",
+   "subj_ko": "http://duonggoinamtinh.com 핫라인: 0987 909 281 Re: Nam Tinh Technology Service Trading Company Limited의 무료 한국 제품 수입 스냅샷?",
+   "ko": "--\n송 푸옹 생산 무역 수입 수출 회사 제한\n주소: 350/21/60 Highway 1, AN PHU DONG WARD, District 12\n전화:  0937 7272 86    핫라인: 0987.909.281  웹사이트: www.khanlanhnamtinh.com -  www. congtynamtinh.com - www.duonggoinamtinh.com",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "-- CÔNG TY TNHH SX TM XNK SONG PHƯƠNG ĐC:350/21/60 QL1, PHƯỜNG AN PHÚ ĐÔNG, Quân 12 ĐIỆN THOẠI: 0937 7272 86 HOTLINE: 0987.909.281 Website: www.khanla",
+   "line": "agency",
+   "line_l": "K-pop 대행(옛 라인)",
+   "line_c": "#8b7ff0",
+   "line_why": "발송대장 1건 전부 agency (최초 2026-06-09 20:37)",
+   "st": "종결",
+   "stk": "closed",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:CA%2BPZ94oEDKwrz3EPYy4a0rGHb66XUzN4Fo98qyLq_bss%3DFXHYw%40mail.gmail.com",
+   "url_t": "msgid"
+  },
+  {
+   "uid": "17",
+   "when": "2026-06-08 20:46",
+   "d": "06/08",
+   "hm": "20:46",
+   "co": "Info",
+   "addr": "info@guangzhoucosmetics.com",
+   "subj": "Re: Free K-Beauty import snapshot for Asia Exports Group (Guangzhou\r\n Cosmetics)?",
+   "subj_ko": "답글: 아시아수출그룹(광저우) K-뷰티 무료 수입 스냅샷\r\n 화장품)?",
+   "ko": "WhatsApp +86-18998453346을 추가해 주세요.\n---- 周一일, 2026-06-08 19:45:02 이영태 <sciensourcing@gmail.com> 작성 ----\n안녕하세요, 아시아 수출 그룹(광저우 화장품) 팀,\n저는 해외 바이어들이 검증된 공급업체, 실제 FOB 가격, 해당 시장의 규제 체크리스트 등 한국 미용 제품을 직접 소싱할 수 있도록 도와드립니다.\n저는 중국 K-뷰티 수입업자들을 위한 짧은 자유 시장 스냅샷을 준비했습니다. 내가 원해",
+   "ko_ok": true,
+   "ko_why": "",
+   "orig": "please add WhatsApp +86-18998453346 ---- On 周一, 2026-06-08 19:45:02 Youngtae Lee <sciensourcing@gmail.com> wrote ---- Hi Asia Exports Group (Guangzhou",
+   "line": "agency",
+   "line_l": "K-pop 대행(옛 라인)",
+   "line_c": "#8b7ff0",
+   "line_why": "발송대장 2건 전부 agency (최초 2026-06-08 04:45)",
+   "st": "종결",
+   "stk": "closed",
+   "url": "https://mail.google.com/mail/u/0/#search/rfc822msgid:19ea70dd986.c98693d643117.3231798522790024709%40guangzhoucosmetics.com",
+   "url_t": "msgid"
+  }
+ ],
+ "truncated": 0,
+ "hidden": 252,
+ "tr_fail": 0,
+ "counts": {
+  "total": 14,
+  "todo": 1,
+  "charcoal": 2,
+  "agency": 12,
+  "unknown": 0
+ },
+ "src": "_state\\reply_ledger.csv (real) + reply_bodies + reply_line"
+};window.__BACKEND__=false;window.__SYNC__="2026-08-16 15:40";</script>
 </head><body><div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
   <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
   <div style="color:#9fb3d1;font-size:13px">접속 비밀번호를 입력하세요</div>
@@ -4181,6 +4727,41 @@ return h+'</div>'}
 function teamBrief(k){var ks=TKEY[k]||[];var bs=BRIEF.filter(function(b){var t=(typeof b=='string')?b:b.t;return ks.some(function(w){return t.indexOf(w)>=0})});
 if(!bs.length)return '';
 return '<div class="bf hero" style="margin-bottom:16px"><h3>🐱 이 팀 오늘 브리핑 <span class="cc">'+bs.length+'</span></h3>'+briefRows(bs)+'</div>'}
+/* ── 받은 메일 세로 패널 (해외팀 전용) — 2026-08-16 #EL 사장님 지시 ──
+   데이터는 build_mailbox_panel.py 가 만든 것만 그린다. 여기서 판정하지 않는다.
+   ★실패를 새것처럼 보이지 않게: ok=false 면 빨간 띠로 「동기화 실패 · 마지막 성공」을 먼저 띄운다. */
+function eq(s){return esc(s).replace(/"/g,'&quot;')}
+function cut(s,n){s=String(s==null?'':s).replace(/\s+/g,' ').trim();return s.length>n?s.slice(0,n-1)+'…':s}
+function mailPanel(k){if(k!='overseas')return '';
+var M=window.__MAILBOX__;
+if(!M)return '<aside class="mbx"><div class="mh"><h3>📬 받은 메일</h3></div>'
+ +'<div class="fail">패널 데이터가 실려오지 않았습니다 — build_mailbox_panel.py 산출물 확인 필요</div></aside>';
+var C=M.counts||{},cards=M.cards||[];
+var h='<aside class="mbx"><div class="mh"><h3>📬 받은 메일 <span class="cc">'+(C.total||0)+'</span>'
+ +((C.todo||0)?'<span class="cc todo">미처리 '+C.todo+'</span>':'')+'</h3>'
+ +'<div class="stamp">🕒 '+esc(M.built||'-')+' 기준 · 사람이 보낸 회신만 (자동응답·반송 제외)</div></div>';
+if(M.ok===false){
+ h+='<div class="fail">⚠️ 동기화 실패 — 아래는 <b>'+esc(M.last_ok||'기록 없음')+'</b> 기준의 낡은 목록입니다.<br>'
+  +'사유: '+esc(cut(M.error||'미상',90))+'</div>'}
+if(!cards.length){
+ h+='<div class="empty">표시할 회신이 없습니다.<br>감춘 메일 '+(M.hidden||0)+'건은 자동응답·반송·지연 통지입니다.</div>';
+ return h+'</aside>'}
+h+='<div class="lst">';
+cards.forEach(function(c){
+ var t=(c.subj_ko||c.subj||'')+' | 원문: '+(c.orig||'');
+ h+='<a class="mc" href="'+eq(c.url)+'" target="_blank" rel="noopener" title="'+eq(cut(t,240))+'">'
+  +'<div class="r1"><span class="dt">'+esc(c.d||'')+' '+esc(c.hm||'')+'</span>'
+  +'<span class="ln" style="background:'+eq(c.line_c||'#94a3b8')+'">'+esc(c.line_l||'')+'</span>'
+  +'<span class="stg '+eq(c.stk||'todo')+'">'+esc(c.st||'')+'</span></div>'
+  +'<div class="co">'+esc(cut(c.co,34))+'</div>'
+  +'<div class="sj">'+esc(cut(c.subj_ko||c.subj,64))+'</div>'
+  +'<div class="ko">'+esc(cut(c.ko,150))+'</div>'
+  +(c.ko_ok===false?'<span class="hold">'+esc(c.ko_why||'번역 보류')+'</span>':'')
+  +'<div class="og">원문 '+esc(cut(c.orig,90))+'</div>'
+  +'<div class="go">✉️ Gmail 에서 열기 →</div></a>'});
+h+='</div>';
+if(M.truncated)h+='<div class="more">+'+M.truncated+'건 더 있습니다 (최신 '+cards.length+'건만 표시)</div>';
+return h+'</aside>'}
 /* ── 팀 성과 (실측 대장 rollup JSON 만 렌더. 직원 자가보고 안 씀) ── */
 function perfTeam(k){if(k!='overseas')return '';var P=window.__PERF__;if(!P||!P.cur)return '';
 function dlt(a,b){if(b==null)return '';var d=a-b;if(!b&&!a)return '';if(!b)return '<span class="dl up">신규</span>';var p=Math.round(d*100/b);return '<span class="dl '+(d>0?'up':d<0?'dn':'')+'">'+(d>0?'▲':d<0?'▼':'–')+(d?Math.abs(p)+'%':'')+'</span>'}
@@ -4315,10 +4896,15 @@ var tk='<div class="tkpis"><div class="tk"><div class="kdonut" style="background
 +'<div class="tk'+(bad?' warn':'')+'"><div class="v">'+bad+'</div><div class="l">문제 직원</div></div>'
 +'<div class="tk"><div class="v">'+todayN+'건</div><div class="l">오늘 일정</div></div>'
 +'<div class="tk'+(iv2?' warn':'')+'"><div class="v">'+iv2+'</div><div class="l">개입 대기</div></div></div>';
-return '<div class="thead"><span class="te">'+t.e+'</span><div><h2>'+t.l+' <span style="font-size:12px;opacity:.85">'+es.length+'명</span></h2></div></div>'
-+tk+perfTeam(k)+snsPanel(k)+teamFlow(k)+teamBrief(k)
+/* ★2026-08-16 #EL — 본문을 왼칸으로 묶고 「받은 메일」을 오른칸에 세운다.
+   DOM 순서는 본문 → 메일칸이다(폰에서 아래로 떨어질 때 본문이 먼저 보여야 한다).
+   메일칸이 없는 팀은 mailPanel() 이 '' 을 돌려주고, 그때 왼칸이 전폭을 쓴다. */
+var mbox=mailPanel(k);
+var body=tk+perfTeam(k)+snsPanel(k)+teamFlow(k)+teamBrief(k)
 +'<div class="tgoal"><div class="box g"><h4>🎯 팀 목표</h4><p>'+tg.goal+'</p></div><div class="box s"><h4>🧭 팀 전략</h4><p>'+tg.strat+'</p></div></div>'
-+'<div class="gr tvgr">'+es.map(card).join('')+'</div>'}
++'<div class="gr tvgr">'+es.map(card).join('')+'</div>';
+return '<div class="thead"><span class="te">'+t.e+'</span><div><h2>'+t.l+' <span style="font-size:12px;opacity:.85">'+es.length+'명</span></h2></div></div>'
++(mbox?('<div class="tvsplit"><div class="tvmain">'+body+'</div>'+mbox+'</div>'):body)}
 function op(e){document.getElementById('mt').textContent='직원'+e.no+' · '+e.n;document.getElementById('mr').textContent=e.bg+' · '+((e.auto&&e.auto.ago)?e.auto.ago:e.ago);document.getElementById('mbg').textContent='목표 · '+(e.goal||'');document.getElementById('mb').innerHTML=detail(e);document.getElementById('ov').classList.add('show')}
 function info(c,i){var x=(c=='iv'?INTERV:c=='rv'?REVIEW:PENDING)[i];document.getElementById('mt').textContent=x.t;document.getElementById('mr').textContent=(c=='iv'?'사람 개입 필요':c=='rv'?'검수 예정 · '+x.w:'보류중 · '+x.w);document.getElementById('mbg').textContent=(c=='iv'?'🚨 개입':c=='rv'?'📋 검수':'📌 보류');document.getElementById('mb').innerHTML='<div class="fb"><div class="h">왜 이게 필요한가</div><div class="id">'+x.why+'</div></div>';document.getElementById('ov').classList.add('show')}
 function cl(){document.getElementById('ov').classList.remove('show')}
