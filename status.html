@@ -7,7 +7,7 @@
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <meta name="apple-mobile-web-app-title" content="T봇 현황판">
 <link rel="apple-touch-icon" href="icon180.png">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260816084112">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate"><meta http-equiv="Pragma" content="no-cache"><meta name="app-build" content="20260816125648">
 <script>(function(){var B=(document.querySelector('meta[name=app-build]')||{}).content;function c(){fetch(location.pathname+'?_c='+Date.now(),{cache:'no-store'}).then(function(r){return r.text()}).then(function(t){var m=t.match(/name="app-build" content="([^"]+)"/);if(m&&m[1]&&m[1]!=B){location.replace(location.pathname+'?v='+encodeURIComponent(m[1]))}}).catch(function(){})}setTimeout(c,700);document.addEventListener('visibilitychange',function(){if(!document.hidden)c()})})();</script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon512.png">
@@ -175,6 +175,22 @@ body{background:#eef0f7;color:var(--ink)}
 .perfw .pc .v{font-size:23px;font-weight:800;color:#4b40c4;line-height:1.25}
 .perfw .pc .s{font-size:9.5px;color:#a5a1bb;font-weight:600}
 .perfw .dl{font-weight:800}.perfw .dl.up{color:#16a34a}.perfw .dl.dn{color:#dc2626}
+/* ★2026-08-16 #EC ① 누가 모았나 3칸 */
+.perfw .org{display:grid;grid-template-columns:repeat(3,1fr);gap:9px}
+.perfw .ocd{background:#f8f8fd;border-radius:11px;padding:10px 9px;min-width:0}
+.perfw .ocd .oh{font-size:11px;font-weight:800;color:#6b62a6}
+.perfw .ocd .on{font-size:22px;font-weight:800;color:#4b40c4;line-height:1.2}
+.perfw .ocd .on .ou{font-size:11px;font-weight:700;color:#8a83b0;margin-left:2px}
+.perfw .ocd .orw{font-size:9.5px;color:#a5a1bb;font-weight:600;margin-bottom:6px;overflow-wrap:break-word}
+.perfw .ob{display:flex;align-items:center;gap:5px;margin:2px 0}
+.perfw .ob .ok2{font-size:9.5px;color:#8a83b0;font-weight:700;width:46px;flex:none}
+.perfw .ob .otr{flex:1;height:6px;background:#eceaf6;border-radius:4px;overflow:hidden;min-width:0}
+.perfw .ob .ofl{display:block;height:100%;background:#8b7ff0;border-radius:4px}
+.perfw .ob .ofl.lo{background:#f59e0b}
+.perfw .ob .ov{font-size:9.5px;font-weight:800;color:#4b40c4;width:30px;text-align:right;flex:none}
+.perfw .ot{margin-top:6px;display:flex;flex-wrap:wrap;gap:3px}
+.perfw .ot .oc{font-size:9px;font-weight:700;color:#5c5490;background:#eceaf6;border-radius:20px;padding:1px 6px}
+.perfw .ot .oc.bad{background:#fee2e2;color:#dc2626}
 .perfw .phd{display:flex;align-items:center;gap:9px;margin:15px 0 6px;font-size:12px;color:#3f3a5c;flex-wrap:wrap}
 .perfw .phd .lg{font-size:10.5px;color:#8a83b0;font-weight:700;display:flex;align-items:center;gap:4px;margin-left:auto}
 .perfw .phd .lg i{width:8px;height:8px;border-radius:2px;display:inline-block;margin-left:6px}
@@ -218,7 +234,7 @@ body{background:#eef0f7;color:var(--ink)}
 .perfw .r3 .rc .v{font-size:18px;font-weight:800;color:#4b40c4}
 .perfw .r3 .rc .l{font-size:10px;color:#8a83b0;font-weight:700}
 .perfw .r3 .rc.bad .v{color:#dc2626}
-@media(max-width:780px){.perfw .p4{grid-template-columns:repeat(2,1fr)}.perfw .pc .v{font-size:20px}.perfw .fr .fk{width:48px}.perfw .pc .s{overflow-wrap:break-word}.perfw .r3{grid-template-columns:repeat(2,1fr)}.perfw .cr .ck{width:60px}}
+@media(max-width:780px){.perfw .p4{grid-template-columns:repeat(2,1fr)}.perfw .org{grid-template-columns:1fr}.perfw .ocd{display:grid;grid-template-columns:auto 1fr;gap:2px 10px;align-items:center}.perfw .ocd .oh,.perfw .ocd .orw,.perfw .ot{grid-column:1/-1}.perfw .ob{grid-column:1/-1}.perfw .pc .v{font-size:20px}.perfw .fr .fk{width:48px}.perfw .pc .s{overflow-wrap:break-word}.perfw .r3{grid-template-columns:repeat(2,1fr)}.perfw .cr .ck{width:60px}}
 /* ── SNS성장팀 패널 (2026-07-27 ■3) ── */
 .snsp{background:#fff;border-radius:14px;padding:15px 17px;margin-bottom:16px;border-left:5px solid #ec4899}
 .snsp h3{font-size:14px;font-weight:800;display:flex;align-items:center;gap:7px;flex-wrap:wrap;color:#2f2b45}
@@ -753,7 +769,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "08-16 08:41",
+    "asof": "08-16 12:56",
     "ago": "38일 전",
     "ok": false,
     "date": "2026-07-08 20:43",
@@ -821,7 +837,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 08:41",
+    "asof": "08-16 12:56",
     "ago": "22일 전",
     "ok": false,
     "date": "2026-07-25 05:20",
@@ -895,8 +911,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 08:41",
-    "ago": "15시간 전",
+    "asof": "08-16 12:56",
+    "ago": "19시간 전",
     "ok": false,
     "date": "2026-08-15 16:57",
     "stale_days": 1,
@@ -972,7 +988,7 @@ body{background:#eef0f7;color:var(--ink)}
    "res": [
     "유튜브 구독자 <b>92명</b> (야월 82·나고미 10)",
     "야월: 발행 쇼츠 <b>169</b>·일반 <b>27</b> / 누적 <b>95,452</b> 조회",
-    "나고미: 발행 쇼츠 <b>48</b>·일반 <b>18</b> / 누적 <b>4,551</b> 조회"
+    "나고미: 발행 쇼츠 <b>49</b>·일반 <b>18</b> / 누적 <b>4,825</b> 조회"
    ],
    "goal": "야월·나고미 멀티채널 구독자·조회 성장 (유튜브 구독 60명→확대)",
    "strat": [
@@ -981,12 +997,13 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 08:41",
-    "ago": "40분 전",
+    "asof": "08-16 12:56",
+    "ago": "1시간 전",
     "ok": true,
-    "date": "2026-08-16 08:00",
+    "date": "2026-08-16 11:02",
     "stale_days": 0,
-    "state": "가동"
+    "state": "가동",
+    "headline": "오늘 SNS 발행 4건"
    }
   },
   {
@@ -1029,8 +1046,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "demand",
    "auto": {
-    "asof": "08-16 08:41",
-    "ago": "21일 전",
+    "asof": "08-16 12:56",
+    "ago": "22일 전",
     "ok": false,
     "date": "2026-07-25 12:00",
     "stale_days": 22,
@@ -1077,7 +1094,7 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 08:41",
+    "asof": "08-16 12:56",
     "ago": "39일 전",
     "ok": false,
     "date": "2026-07-07 13:05",
@@ -1117,8 +1134,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 08:41",
-    "ago": "7일 전",
+    "asof": "08-16 12:56",
+    "ago": "8일 전",
     "ok": false,
     "date": "2026-08-08 11:24",
     "stale_days": 8,
@@ -1154,10 +1171,10 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 08:41",
-    "ago": "방금",
+    "asof": "08-16 12:56",
+    "ago": "2분 전",
     "ok": true,
-    "date": "2026-08-16 08:40",
+    "date": "2026-08-16 12:54",
     "stale_days": 0,
     "state": "가동"
    }
@@ -1191,8 +1208,8 @@ body{background:#eef0f7;color:var(--ink)}
    ],
    "cad": "24h",
    "auto": {
-    "asof": "08-16 08:41",
-    "ago": "20분 전",
+    "asof": "08-16 12:56",
+    "ago": "4시간 전",
     "ok": true,
     "date": "2026-08-16 08:20",
     "stale_days": 0,
@@ -1753,7 +1770,7 @@ body{background:#eef0f7;color:var(--ink)}
    }
   ]
  },
- "_autosync": "2026-08-16 08:41",
+ "_autosync": "2026-08-16 12:56",
  "perf": {
   "overseas_total": 11,
   "by_country": [
@@ -1766,10 +1783,10 @@ body{background:#eef0f7;color:var(--ink)}
  },
  "_detail_updated": "2026-08-16T08:41:05"
 };window.__AUTO__={
- "built": "08-16 08:41",
- "snapshot": "08-16 07:52",
- "total": 76,
- "on_total": 54,
+ "built": "08-16 12:56",
+ "snapshot": "08-16 12:26",
+ "total": 77,
+ "on_total": 55,
  "groups": [
   {
    "no": 0,
@@ -1966,6 +1983,13 @@ body{background:#eef0f7;color:var(--ink)}
     },
     {
      "cycle": "수시",
+     "task": "T봇_구글토큰_예열_0535",
+     "on": true,
+     "src": "자동화",
+     "sort": "50:00"
+    },
+    {
+     "cycle": "수시",
      "task": "[정지 2026-07-30] 대행 서비스 무인 발사 14·",
      "on": false,
      "src": "자동화",
@@ -2084,8 +2108,8 @@ body{background:#eef0f7;color:var(--ink)}
      "sort": "50:00"
     }
    ],
-   "on_count": 32,
-   "next": "09:00"
+   "on_count": 33,
+   "next": "13:00"
   },
   {
    "no": 1,
@@ -2207,7 +2231,7 @@ body{background:#eef0f7;color:var(--ink)}
     }
    ],
    "on_count": 2,
-   "next": "09:20"
+   "next": "내일 09:20"
   },
   {
    "no": 8,
@@ -2415,7 +2439,7 @@ body{background:#eef0f7;color:var(--ink)}
     }
    ],
    "on_count": 1,
-   "next": "09:00"
+   "next": "내일 09:00"
   },
   {
    "no": 17,
@@ -2437,7 +2461,7 @@ body{background:#eef0f7;color:var(--ink)}
     }
    ],
    "on_count": 2,
-   "next": "09:00"
+   "next": "내일 09:00"
   },
   {
    "no": 18,
@@ -2714,72 +2738,193 @@ body{background:#eef0f7;color:var(--ink)}
   }
  ]
 };window.__PERF__={
- "built": "2026-08-16 08:41",
+ "built": "2026-08-16 12:56",
+ "origin": {
+  "claude": {
+   "label": "클로드",
+   "n": 663,
+   "rows": 663,
+   "fill": {
+    "country": 242,
+    "evi": 54,
+    "src": 0
+   },
+   "pct": {
+    "country": 37,
+    "evi": 8,
+    "src": 0
+   },
+   "top": [
+    {
+     "c": "독일",
+     "n": 60
+    },
+    {
+     "c": "이탈리아",
+     "n": 38
+    },
+    {
+     "c": "호주",
+     "n": 25
+    },
+    {
+     "c": "영국",
+     "n": 17
+    },
+    {
+     "c": "일본",
+     "n": 16
+    }
+   ],
+   "unknown": 421,
+   "file": "사이언숯_바이어_마스터_v4.csv"
+  },
+  "gemini": {
+   "label": "제미나이",
+   "n": 218,
+   "rows": 572,
+   "fill": {
+    "country": 218,
+    "evi": 218,
+    "src": 218
+   },
+   "pct": {
+    "country": 100,
+    "evi": 100,
+    "src": 100
+   },
+   "top": [
+    {
+     "c": "미국",
+     "n": 40
+    },
+    {
+     "c": "영국",
+     "n": 37
+    },
+    {
+     "c": "일본",
+     "n": 31
+    },
+    {
+     "c": "캐나다",
+     "n": 23
+    },
+    {
+     "c": "호주",
+     "n": 18
+    }
+   ],
+   "unknown": 0,
+   "file": "DF_제미나이수집_스냅샷_20260815.csv"
+  },
+  "total": {
+   "label": "합계",
+   "n": 876,
+   "rows": 1235,
+   "fill": {
+    "country": 460,
+    "evi": 272,
+    "src": 218
+   },
+   "pct": {
+    "country": 53,
+    "evi": 31,
+    "src": 25
+   },
+   "top": [
+    {
+     "c": "독일",
+     "n": 60
+    },
+    {
+     "c": "영국",
+     "n": 54
+    },
+    {
+     "c": "일본",
+     "n": 47
+    },
+    {
+     "c": "호주",
+     "n": 43
+    },
+    {
+     "c": "미국",
+     "n": 40
+    }
+   ],
+   "unknown": 421,
+   "overlap": 5,
+   "file": "두 파일 합산"
+  },
+  "note": "큰 수 = 곳(고유 도메인). 행 수는 중복 적재를 포함한 원본 줄 수다 — 제미나이 스냅샷은 같은 주소가 최대 43번 반복돼 있어 행으로 세면 재고가 부풀어 보인다."
+ },
  "country": {
   "top": [
    {
+    "c": "독일",
+    "n": 58,
+    "est": true
+   },
+   {
+    "c": "이탈리아",
+    "n": 32,
+    "est": true
+   },
+   {
     "c": "미국",
-    "n": 25,
-    "est": false
-   },
-   {
-    "c": "일본",
-    "n": 5,
-    "est": false
-   },
-   {
-    "c": "캐나다",
-    "n": 4,
+    "n": 26,
     "est": false
    },
    {
     "c": "호주",
-    "n": 3,
+    "n": 24,
+    "est": false
+   },
+   {
+    "c": "일본",
+    "n": 16,
+    "est": false
+   },
+   {
+    "c": "영국",
+    "n": 16,
     "est": false
    },
    {
     "c": "싱가포르",
-    "n": 2,
+    "n": 10,
     "est": false
    },
    {
-    "c": "홍콩",
-    "n": 2,
+    "c": "네덜란드",
+    "n": 10,
     "est": true
    },
    {
-    "c": "Unknown",
-    "n": 1,
+    "c": "스페인",
+    "n": 9,
+    "est": true
+   },
+   {
+    "c": "캐나다",
+    "n": 7,
     "est": false
    },
    {
-    "c": "MADRID",
-    "n": 1,
-    "est": false
+    "c": "벨기에",
+    "n": 7,
+    "est": true
    },
    {
-    "c": "SEOUL, South Korea",
-    "n": 1,
-    "est": false
-   },
-   {
-    "c": "LONDON",
-    "n": 1,
-    "est": false
-   },
-   {
-    "c": "DUBAI, UAE",
-    "n": 1,
-    "est": false
-   },
-   {
-    "c": "Australia",
-    "n": 1,
-    "est": false
+    "c": "프랑스",
+    "n": 5,
+    "est": true
    }
   ],
-  "unknown": 62,
-  "total": 128,
+  "unknown": 501,
+  "total": 771,
   "note": "직원10=원본 국가칸 · 직원12=도메인 끝(TLD) 추정(est). .com 등 나라를 알 수 없는 것은 '미상'으로 둔다(미국으로 몰지 않음)."
  },
  "days14": [
@@ -2842,17 +2987,17 @@ body{background:#eef0f7;color:var(--ink)}
  ],
  "sent_all": 361,
  "reply_class": {
-  "built": "2026-08-16 07:51",
+  "built": "2026-08-16 12:54",
   "inbox_total": 266,
   "real": 14,
   "auto": 47,
   "bounce": 136,
   "delay": 64,
   "self": 5,
-  "sent_total": 1146,
+  "sent_total": 1147,
   "bounce_rate": 11.6,
   "bounce_rate_30d": 7.7,
-  "bounce_n_30d": 573,
+  "bounce_n_30d": 574,
   "bounce_alarm": false,
   "bounce_addr_n": 108,
   "by_day": {
@@ -2944,13 +3089,13 @@ body{background:#eef0f7;color:var(--ink)}
  "prev_month": "2026-07",
  "cur": {
   "collect": 305,
-  "pass": 0,
+  "pass": 55,
   "sent": 4,
   "reply": 0
  },
  "prev": {
   "collect": 3428,
-  "pass": 60,
+  "pass": 653,
   "sent": 357,
   "reply": 2
  },
@@ -2960,11 +3105,7 @@ body{background:#eef0f7;color:var(--ink)}
   "sent": true,
   "reply": true
  },
- "blocked": {
-  "reason": "퍼널 불변식 위반: 발송(4) > 검수통과(0)",
-  "detail": "단계별 모수가 서로 다른 대장을 보고 있다는 뜻이다. 원인을 고치기 전까지 이 성과 숫자는 발행하지 않는다.",
-  "at": "2026-08-16 08:41"
- },
+ "blocked": null,
  "weeks": [
   {
    "l": "06-22",
@@ -3023,13 +3164,13 @@ body{background:#eef0f7;color:var(--ink)}
   },
   {
    "k": "검수통과",
-   "n": 0,
-   "r": 0.0
+   "n": 55,
+   "r": 18.0
   },
   {
    "k": "발송",
    "n": 4,
-   "r": null
+   "r": 7.3
   },
   {
    "k": "회신",
@@ -3054,7 +3195,7 @@ body{background:#eef0f7;color:var(--ink)}
  "notes": [],
  "since": {
   "collect": "2026-07-01",
-  "pass": "2026-07-12",
+  "pass": "2026-07-01",
   "sent": "2026-07-13",
   "reply": "2026-06-10"
  },
@@ -3432,13 +3573,13 @@ body{background:#eef0f7;color:var(--ink)}
   "dup_canon": []
  }
 };window.__VERIFY__={
- "built": "08-16 08:41",
+ "built": "08-16 12:56",
  "date": "2026-08-16",
- "summary": "제작 0 → 게이트 통과 0 → 발송 1, 걸러진 것 1건",
+ "summary": "제작 0 → 게이트 통과 0 → 발송 2, 걸러진 것 1건",
  "counts": {
   "made": 0,
   "passed": 0,
-  "sent": 1,
+  "sent": 2,
   "filtered": 1
  },
  "sections": [
@@ -3456,19 +3597,19 @@ body{background:#eef0f7;color:var(--ink)}
    "key": "review",
    "icon": "🔍",
    "title": "검수봇 배치",
-   "head": "오늘 결과 파일 없음 (배치 10:40 / 17:40)",
-   "rows": [],
+   "head": "검수 2건 → 승인 0 / 반려 0 / 판정불가 2",
+   "made": 2,
    "ok": 0,
    "bad": 0,
-   "made": 0
+   "rows": []
   },
   {
    "key": "gateway",
    "icon": "📮",
    "title": "발송 관문",
-   "head": "발송 1건 (morning_reply 1) / 거부 1건",
-   "made": 2,
-   "ok": 1,
+   "head": "발송 2건 (morning_reply 1 · 해외 회신 1) / 거부 1건",
+   "made": 3,
+   "ok": 2,
    "bad": 1,
    "rows": [
     {
@@ -3484,6 +3625,13 @@ body{background:#eef0f7;color:var(--ink)}
      "sub": "coverage_alert",
      "verdict": "거부",
      "reason": "토큰없음"
+    },
+    {
+     "t": "12:54",
+     "label": "해외 회신 · 글",
+     "sub": "📋 <b>제미나이 수집 이메일 전수 대조</b> (08-16)",
+     "verdict": "발송",
+     "reason": ""
     }
    ]
   },
@@ -3654,7 +3802,7 @@ body{background:#eef0f7;color:var(--ink)}
   }
  ]
 };window.__SNS__={
- "built": "2026-08-16 08:41",
+ "built": "2026-08-16 12:56",
  "channels": [
   {
    "key": "econ_threads",
@@ -3722,30 +3870,30 @@ body{background:#eef0f7;color:var(--ink)}
   {
    "f": "정찰브리핑_20260809.md",
    "at": "2026-08-09 15:10",
-   "age_h": 161.5,
+   "age_h": 165.8,
    "stale": true
   },
   {
    "f": "쓰레드_벤치마킹_20260724.md",
    "at": "2026-07-24 17:18",
-   "age_h": 543.4,
+   "age_h": 547.6,
    "stale": true
   },
   {
    "f": "brief_20260806.md",
    "at": "2026-08-06 12:06",
-   "age_h": 236.6,
+   "age_h": 240.8,
    "stale": true
   },
   {
    "f": "brief_20260804.md",
    "at": "2026-08-04 12:06",
-   "age_h": 284.6,
+   "age_h": 288.8,
    "stale": true
   }
  ],
  "note": "배달 성립 기준 = 관문 대장(tg_send_log.csv)의 mid. 파일만 있고 mid 가 없으면 '제작됨 · 폰 미도착'이다. 팔로워는 자동 측정 수단이 없어 사장님 입력값만 쓴다."
-};window.__BACKEND__=false;window.__SYNC__="2026-08-16 08:41";</script>
+};window.__BACKEND__=false;window.__SYNC__="2026-08-16 12:56";</script>
 </head><body><div id="authgate" style="position:fixed;inset:0;background:#0f1629;display:flex;align-items:center;justify-content:center;z-index:99999;flex-direction:column;font-family:'Malgun Gothic',sans-serif;gap:14px">
   <div style="color:#fff;font-size:19px">🔒 팀 전용 대시보드</div>
   <div style="color:#9fb3d1;font-size:13px">접속 비밀번호를 입력하세요</div>
@@ -4052,6 +4200,27 @@ h+='<div class="p4">'
  /* 전월에 계측이 없었으면 '지난달 0 ▼100%' 같은 없는 사실을 만들지 않는다 */
  var sub=OKC[x[1]]?('지난달 '+V[x[1]]+' '+dlt(C[x[1]],V[x[1]])):('<span class="nocmp">데이터 수집 시작: '+(S[x[1]]||'기록없음')+'</span>');
  return '<div class="pc"><div class="l">'+x[0]+'</div><div class="v">'+C[x[1]]+'</div><div class="s">'+sub+'</div></div>'}).join('')+'</div>';
+/* ★2026-08-16 #EC ① — 「누가 모았나」 3칸 (클로드 / 제미나이 / 합계)
+   왜 띄우나: 같은 재고라도 모은 방식이 둘이고, 그 둘의 **쓸 수 있는 비율이 전혀 다르다**.
+   한 덩어리로 보면 그 차이가 사라져 "재고 N건"만 남는다.
+   ★큰 수는 '곳'(고유 도메인)이다. 행 수는 작게 옆에 적는다 —
+     제미나이 스냅샷은 같은 주소가 최대 43번 반복돼 행으로 세면 재고가 2.6배로 부푼다. */
+var OG=P.origin;
+if(OG&&!OG.error&&OG.claude){
+ h+='<div class="phd"><b>누가 모았나</b><span class="lg" style="color:#9a96b5">곳 = 고유 도메인 · 채움률 분모도 곳</span></div><div class="org">';
+ [OG.claude,OG.gemini,OG.total].forEach(function(s){
+  if(!s)return;
+  var bar=function(k,l){var p=(s.pct||{})[k]||0;var lo=p<50;
+   return '<div class="ob"><span class="ok2">'+l+'</span><span class="otr"><span class="ofl'+(lo?' lo':'')+'" style="width:'+Math.max(2,p)+'%"></span></span><span class="ov">'+p+'%</span></div>'};
+  var tops=(s.top||[]).map(function(t){return '<span class="oc">'+t.c+' '+t.n+'</span>'}).join('');
+  h+='<div class="ocd"><div class="oh">'+s.label+'</div>'
+   +'<div class="on">'+s.n+'<span class="ou">곳</span></div>'
+   +'<div class="orw">원본 '+s.rows+'행'+(s.rows!=s.n?' <b>(중복 '+(s.rows-s.n)+')</b>':'')+(s.overlap?' · 겹침 '+s.overlap:'')+'</div>'
+   +bar('country','국가')+bar('evi','업종근거')+bar('src','출처링크')
+   +'<div class="ot">'+(tops||'<span class="oc" style="opacity:.5">국가 미표시</span>')
+   +(s.unknown?'<span class="oc bad">모름 '+s.unknown+'</span>':'')+'</div></div>'});
+ h+='</div><div class="psrc">'+(OG.note||'')+' | 출처 파일 — 클로드 <code>'+(OG.claude.file||'')+'</code> · 제미나이 <code>'+(OG.gemini.file||'')+'</code></div>'}
+else if(OG&&OG.error){h+='<div class="pnote">⚠️ 누가 모았나 3칸 집계 실패 — '+OG.error+'</div>'}
 /* 최근 8주 막대 (인라인 SVG · 외부 CDN 없음) */
 var W=P.weeks||[],mx=1;W.forEach(function(w){mx=Math.max(mx,w.collect,w.sent,w.reply)});
 var bw=26,gap=13,H=104,pad=18,wd=pad*2+W.length*(bw+gap);
